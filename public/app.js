@@ -282,14 +282,8 @@ async function sendMessage() {
   saveConversations();
   renderConversations();
 
-  let html = '';
   const answer = finalContent || displayThinking;
-  if (displayThinking && finalContent) {
-    html += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(displayThinking)}</div></details>`;
-  }
-  html += formatMd(answer);
-  html += `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
-  contentDiv.innerHTML = html;
+  contentDiv.innerHTML = buildMessageHtml(displayThinking, finalContent);
   renderMath(contentDiv);
   if (answer) addCopyButton(assistantDiv, answer);
 
@@ -312,28 +306,23 @@ function appendMessage(role, content, streaming = false) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
   const avatar = role === 'user' ? 'U' : 'AI';
-  let rendered = '';
   let copyText = '';
+  let inner = '';
   if (!streaming) {
     if (role === 'assistant' && content) {
       const { thinking, content: mainContent } = extractThinking(content);
-      const answer = mainContent || thinking;
-      if (thinking && mainContent) {
-        rendered += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(thinking)}</div></details>`;
-      }
-      rendered += formatMd(answer);
-      copyText = answer;
+      inner = buildMessageHtml(thinking, mainContent);
+      copyText = mainContent || thinking;
     } else {
-      rendered = formatMd(content);
+      inner = formatMd(content) + `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
       copyText = content;
     }
   }
-  const time = !streaming && content ? `<div class="message-time">${new Date().toLocaleTimeString()}</div>` : '';
   div.innerHTML = `
     <div class="message-avatar">${avatar}</div>
-    <div class="message-content">${rendered}${streaming ? '<span class="cursor"></span>' : ''}${time}</div>`;
+    <div class="message-content">${inner}${streaming ? '<span class="cursor"></span>' : ''}</div>`;
   el.messages.appendChild(div);
-  if (!streaming && rendered) renderMath(div);
+  if (!streaming && inner) renderMath(div);
   if (!streaming && copyText) addCopyButton(div, copyText);
   el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
   return div;
@@ -502,6 +491,19 @@ function extractThinking(text) {
     content = content.slice(0, openIdx);
   }
   return { thinking: thinking.trim(), content: content.trim() };
+}
+
+function buildMessageHtml(thinking, answer) {
+  let html = '';
+  if (thinking) {
+    html += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(thinking)}</div></details>`;
+  }
+  html += formatMd(answer || '');
+  if (thinking && !answer) {
+    html += `<div class="truncated-note">Response truncated — the model stopped before producing an answer. Expand “Thinking…” to view its reasoning.</div>`;
+  }
+  html += `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+  return html;
 }
 
 function renderMath(element) {
