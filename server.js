@@ -1,16 +1,9 @@
 const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const { spawn, exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -19,7 +12,6 @@ const MODELS_PATH = process.env.LLMODELS_PATH || 'C:\\Users\\uttam\\.lmstudio\\m
 
 let llamaProcess = null;
 let currentModel = null;
-let serverPort = 8080;
 
 const defaultSettings = {
   port: 8080,
@@ -76,14 +68,13 @@ function formatBytes(bytes) {
 function startLlamaServer(modelPath) {
   return new Promise((resolve, reject) => {
     if (llamaProcess) {
-      llamaProcess.kill();
+      try { llamaProcess.kill(); } catch (e) {}
       llamaProcess = null;
     }
 
     const serverPath = path.join(LLAMA_CPP_PATH, 'llama-server.exe');
-    
     if (!fs.existsSync(serverPath)) {
-      reject(new Error('llama-server.exe not found'));
+      reject(new Error('llama-server.exe not found at: ' + serverPath));
       return;
     }
 
@@ -93,25 +84,30 @@ function startLlamaServer(modelPath) {
       '--port', settings.port.toString(),
       '-c', settings.contextSize.toString(),
       '-ngl', settings.gpuLayers.toString(),
-      '-t', settings.threads.toString(),
-      '-lv', '0'
+      '-t', settings.threads.toString()
     ];
 
-    console.log('Starting server:', serverPath, args.join(' '));
+    console.log('Starting:', serverPath);
+    console.log('Args:', args.join(' '));
 
     llamaProcess = spawn(serverPath, args, {
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true
     });
 
     let started = false;
 
     const onOutput = (data) => {
       const output = data.toString();
-      console.log(output);
-      
+      process.stdout.write(output);
       if (!started && output.includes('listening on')) {
         started = true;
         currentModel = modelPath;
+        llamaProcess.stdout.removeAllListeners('data');
+        llamaProcess.stderr.removeAllListeners('data');
+        llamaProcess.stdout.on('data', (d) => process.stdout.write(d));
+        llamaProcess.stderr.on('data', (d) => process.stderr.write(d));
+        console.log('[OK] Server ready');
         resolve({ success: true, port: settings.port });
       }
     };
@@ -120,131 +116,59 @@ function startLlamaServer(modelPath) {
     llamaProcess.stderr.on('data', onOutput);
 
     llamaProcess.on('error', (err) => {
-      console.error('Failed to start server:', err);
-      reject(err);
+      console.error('Spawn error:', err);
+      if (!started) reject(err);
     });
 
     llamaProcess.on('exit', (code) => {
-      console.log('Server exited with code:', code);
+      console.log('Server exited:', code);
       llamaProcess = null;
       currentModel = null;
+      if (!started) reject(new Error('Server exited with code ' + code));
     });
 
     setTimeout(() => {
       if (!started) {
-        llamaProcess.kill();
-        reject(new Error('Server startup timeout'));
+        try { llamaProcess.kill(); } catch (e) {}
+        reject(new Error('Timeout waiting for server'));
       }
-    }, 30000);
+    }, 60000);
   });
 }
 
 function stopLlamaServer() {
   return new Promise((resolve) => {
     if (llamaProcess) {
-      llamaProcess.on('exit', () => {
+      llamaProcess.once('exit', () => {
+        llamaProcess = null;
+        currentModel = null;
         resolve({ success: true });
       });
       llamaProcess.kill();
-      llamaProcess = null;
-      currentModel = null;
+      setTimeout(() => {
+        llamaProcess = null;
+        currentModel = null;
+        resolve({ success: true });
+      }, 3000);
     } else {
-      resolve({ success: true, message: 'No server running' });
+      resolve({ success: true });
     }
   });
 }
 
-async function queryLLM(messages, stream = true) {
-  const response = await fetch(`http://127.0.0.1:${settings.port}/v1/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages,
-      temperature: settings.temperature,
-      top_p: settings.topP,
-      top_k: settings.topK,
-      repeat_penalty: settings.repeatPenalty,
-      max_tokens: settings.maxTokens,
-      stream
-    })
-  });
-  return response;
-}
-
-wss.on('connection', (ws) => {
-  console.log('WebSocket client connected');
-
-  ws.on('message', async (data) => {
-    try {
-      const message = JSON.parse(data.toString());
-      
-      if (message.type === 'chat') {
-        const messages = [
-          { role: 'system', content: settings.systemPrompt },
-          ...message.history,
-          { role: 'user', content: message.content }
-        ];
-
-        try {
-          const response = await queryLLM(messages, true);
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n').filter(line => line.trim());
-            
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') {
-                  ws.send(JSON.stringify({ type: 'done' }));
-                } else {
-                  try {
-                    const parsed = JSON.parse(data);
-                    const content = parsed.choices?.[0]?.delta?.content;
-                    if (content) {
-                      ws.send(JSON.stringify({ type: 'token', content }));
-                    }
-                  } catch (e) {}
-                }
-              }
-            }
-          }
-        } catch (e) {
-          ws.send(JSON.stringify({ type: 'error', content: e.message }));
-        }
-      }
-    } catch (e) {
-      ws.send(JSON.stringify({ type: 'error', content: 'Invalid message format' }));
-    }
-  });
-
-  ws.on('close', () => {
-    console.log('WebSocket client disconnected');
-  });
-});
+// --- API Routes ---
 
 app.get('/api/models', (req, res) => {
-  const models = findGGUFModels();
-  res.json({ models });
+  res.json({ models: findGGUFModels() });
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({
-    running: llamaProcess !== null,
-    currentModel,
-    port: settings.port
-  });
+  res.json({ running: llamaProcess !== null, currentModel, port: settings.port });
 });
 
 app.post('/api/server/start', async (req, res) => {
   try {
-    const { modelPath } = req.body;
-    const result = await startLlamaServer(modelPath);
+    const result = await startLlamaServer(req.body.modelPath);
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -252,8 +176,7 @@ app.post('/api/server/start', async (req, res) => {
 });
 
 app.post('/api/server/stop', async (req, res) => {
-  const result = await stopLlamaServer();
-  res.json(result);
+  res.json(await stopLlamaServer());
 });
 
 app.get('/api/settings', (req, res) => {
@@ -262,50 +185,85 @@ app.get('/api/settings', (req, res) => {
 
 app.post('/api/settings', (req, res) => {
   settings = { ...settings, ...req.body };
-  res.json({ success: true, settings });
+  res.json({ success: true });
 });
 
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { messages, stream = false } = req.body;
-    
-    const allMessages = [
-      { role: 'system', content: settings.systemPrompt },
-      ...messages
-    ];
+// --- Chat endpoint with SSE streaming ---
 
-    const response = await queryLLM(allMessages, stream);
-    
-    if (stream) {
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      
+app.post('/api/chat', async (req, res) => {
+  const { messages } = req.body;
+
+  if (!llamaProcess) {
+    return res.status(503).json({ error: 'Server not running' });
+  }
+
+  const allMessages = [
+    { role: 'system', content: settings.systemPrompt },
+    ...messages
+  ];
+
+  console.log('[CHAT] Request with', allMessages.length, 'messages');
+
+  try {
+    const llmRes = await fetch(`http://127.0.0.1:${settings.port}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: allMessages,
+        temperature: settings.temperature,
+        top_p: settings.topP,
+        top_k: settings.topK,
+        repeat_penalty: settings.repeatPenalty,
+        max_tokens: settings.maxTokens,
+        stream: true
+      })
+    });
+
+    if (!llmRes.ok) {
+      const err = await llmRes.text();
+      console.log('[CHAT] LLM error:', llmRes.status, err);
+      return res.status(502).json({ error: err });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    const reader = llmRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        res.write(chunk);
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed) res.write(trimmed + '\n\n');
+        }
       }
-      res.end();
-    } else {
-      const data = await response.json();
-      res.json(data);
+      if (buffer.trim()) res.write(buffer.trim() + '\n\n');
+    } catch (e) {
+      console.error('[CHAT] Stream read error:', e.message);
     }
+
+    res.end();
+    console.log('[CHAT] Stream complete');
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error('[CHAT] Error:', e.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: e.message });
+    }
   }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║                    Llama.cpp Web UI                         ║
-║                  http://localhost:${PORT}                    ║
-╚══════════════════════════════════════════════════════════════╝
-  `);
+server = app.listen(PORT, () => {
+  console.log(`\n  Llama.cpp UI  ->  http://localhost:${PORT}\n`);
 });
