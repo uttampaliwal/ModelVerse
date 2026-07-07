@@ -254,10 +254,7 @@ async function sendMessage() {
   saveConversations();
   renderConversations();
 
-  const timeDiv = document.createElement('div');
-  timeDiv.className = 'message-time';
-  timeDiv.textContent = new Date().toLocaleTimeString();
-  contentDiv.appendChild(timeDiv);
+  contentDiv.innerHTML = formatMd(finalText) + `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
 
   isGenerating = false;
   el.sendBtn.style.display = 'flex';
@@ -278,25 +275,63 @@ function appendMessage(role, content, streaming = false) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
   const avatar = role === 'user' ? 'U' : 'AI';
+  const rendered = streaming ? '' : formatMd(content);
+  const time = !streaming && content ? `<div class="message-time">${new Date().toLocaleTimeString()}</div>` : '';
   div.innerHTML = `
     <div class="message-avatar">${avatar}</div>
-    <div class="message-content">
-      ${formatMd(content)}${streaming ? '<span class="cursor"></span>' : ''}
-      ${!streaming && content ? `<div class="message-time">${new Date().toLocaleTimeString()}</div>` : ''}
-    </div>`;
+    <div class="message-content">${rendered}${streaming ? '<span class="cursor"></span>' : ''}${time}</div>`;
   el.messages.appendChild(div);
   el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
   return div;
 }
 
-function formatMd(t) {
-  if (!t) return '';
-  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br>');
+function formatMd(text) {
+  if (!text) return '';
+  let t = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  t = t.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code class="lang-${lang}">${code.trim()}</code></pre>`);
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  const lines = t.split('\n');
+  let result = '';
+  let inList = false;
+  let listType = '';
+
+  for (const line of lines) {
+    const bulletMatch = line.match(/^\s*[\*\-]\s+(.*)/);
+    const numMatch = line.match(/^\s*\d+\.\s+(.*)/);
+
+    if (bulletMatch) {
+      if (!inList || listType !== 'ul') {
+        if (inList) result += `</${listType}>`;
+        result += '<ul>';
+        inList = true;
+        listType = 'ul';
+      }
+      result += `<li>${bulletMatch[1]}</li>`;
+    } else if (numMatch) {
+      if (!inList || listType !== 'ol') {
+        if (inList) result += `</${listType}>`;
+        result += '<ol>';
+        inList = true;
+        listType = 'ol';
+      }
+      result += `<li>${numMatch[1]}</li>`;
+    } else {
+      if (inList) { result += `</${listType}>`; inList = false; }
+      const trimmed = line.trim();
+      if (trimmed === '') {
+        result += '<br>';
+      } else if (trimmed.startsWith('<pre>') || trimmed.startsWith('<ul>') || trimmed.startsWith('<ol>')) {
+        result += trimmed;
+      } else {
+        result += `<p>${trimmed}</p>`;
+      }
+    }
+  }
+  if (inList) result += `</${listType}>`;
+  return result;
 }
 
 function scrollToBottom() { el.chatContainer.scrollTop = el.chatContainer.scrollHeight; }
