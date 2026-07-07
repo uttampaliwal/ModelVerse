@@ -90,10 +90,11 @@ function startLlamaServer(modelPath) {
     console.log('Starting:', serverPath);
     console.log('Args:', args.join(' '));
 
-    llamaProcess = spawn(serverPath, args, {
+    const proc = spawn(serverPath, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       windowsHide: true
     });
+    llamaProcess = proc;
 
     let started = false;
 
@@ -103,25 +104,31 @@ function startLlamaServer(modelPath) {
       if (!started && output.includes('listening on')) {
         started = true;
         currentModel = modelPath;
-        llamaProcess.stdout.removeAllListeners('data');
-        llamaProcess.stderr.removeAllListeners('data');
-        llamaProcess.stdout.on('data', (d) => process.stdout.write(d));
-        llamaProcess.stderr.on('data', (d) => process.stderr.write(d));
+        try {
+          proc.stdout.removeAllListeners('data');
+          proc.stderr.removeAllListeners('data');
+          proc.stdout.on('data', (d) => process.stdout.write(d));
+          proc.stderr.on('data', (d) => process.stderr.write(d));
+        } catch (e) {}
         console.log('[OK] Server ready');
         resolve({ success: true, port: settings.port });
       }
     };
 
-    llamaProcess.stdout.on('data', onOutput);
-    llamaProcess.stderr.on('data', onOutput);
+    proc.stdout.on('data', onOutput);
+    proc.stderr.on('data', onOutput);
 
-    llamaProcess.on('error', (err) => {
+    proc.on('error', (err) => {
       console.error('Spawn error:', err);
       if (!started) reject(err);
     });
 
-    llamaProcess.on('exit', (code) => {
+    proc.on('exit', (code) => {
       console.log('Server exited:', code);
+      try {
+        proc.stdout.removeAllListeners('data');
+        proc.stderr.removeAllListeners('data');
+      } catch (e) {}
       llamaProcess = null;
       currentModel = null;
       if (!started) reject(new Error('Server exited with code ' + code));
@@ -129,7 +136,7 @@ function startLlamaServer(modelPath) {
 
     setTimeout(() => {
       if (!started) {
-        try { llamaProcess.kill(); } catch (e) {}
+        try { proc.kill(); } catch (e) {}
         reject(new Error('Timeout waiting for server'));
       }
     }, 60000);
@@ -266,4 +273,13 @@ app.post('/api/chat', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 server = app.listen(PORT, () => {
   console.log(`\n  Llama.cpp UI  ->  http://localhost:${PORT}\n`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[ERROR] Port ${PORT} is already in use. Another instance may be running.`);
+  } else {
+    console.error('[ERROR] Server failed to start:', err.message);
+  }
+  process.exit(1);
 });
