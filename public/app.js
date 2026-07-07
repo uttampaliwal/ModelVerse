@@ -190,6 +190,26 @@ async function sendMessage() {
 
   const assistantDiv = appendMessage('assistant', '', true);
   const contentDiv = assistantDiv.querySelector('.message-content');
+  contentDiv.innerHTML = '';
+
+  const thinkingEl = document.createElement('details');
+  thinkingEl.className = 'thinking-block';
+  thinkingEl.open = false;
+  const thinkingSummary = document.createElement('summary');
+  thinkingSummary.textContent = 'Thinking...';
+  const thinkingContent = document.createElement('div');
+  thinkingContent.className = 'thinking-content';
+  thinkingEl.appendChild(thinkingSummary);
+  thinkingEl.appendChild(thinkingContent);
+
+  const responseEl = document.createElement('div');
+  responseEl.className = 'response-content';
+
+  contentDiv.appendChild(thinkingEl);
+  contentDiv.appendChild(responseEl);
+
+  let streamingText = '';
+  let extractedThinking = '';
 
   updateLatency();
 
@@ -228,10 +248,17 @@ async function sendMessage() {
             const parsed = JSON.parse(trimmed.slice(6));
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
-              const cursor = contentDiv.querySelector('.cursor');
-              if (cursor) {
-                cursor.parentNode.insertBefore(document.createTextNode(token), cursor);
+              streamingText += token;
+              const extracted = extractThinking(streamingText);
+              extractedThinking = extracted.thinking;
+
+              if (extracted.thinking) {
+                thinkingEl.style.display = '';
+                thinkingContent.textContent = extracted.thinking;
+              } else {
+                thinkingEl.style.display = 'none';
               }
+              responseEl.textContent = extracted.content;
               el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
             }
           } catch (e) {}
@@ -248,13 +275,20 @@ async function sendMessage() {
   const cursor = contentDiv.querySelector('.cursor');
   if (cursor) cursor.remove();
 
-  const finalText = contentDiv.textContent;
-  conv.messages.push({ role: 'assistant', content: finalText, timestamp: Date.now() });
+  const { thinking: finalThinking, content: finalContent } = extractThinking(streamingText);
+  const displayThinking = finalThinking || extractedThinking;
+  conv.messages.push({ role: 'assistant', content: streamingText, timestamp: Date.now() });
   conv.updatedAt = Date.now();
   saveConversations();
   renderConversations();
 
-  contentDiv.innerHTML = formatMd(finalText) + `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+  let html = '';
+  if (displayThinking) {
+    html += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(displayThinking)}</div></details>`;
+  }
+  html += formatMd(finalContent);
+  html += `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+  contentDiv.innerHTML = html;
 
   isGenerating = false;
   el.sendBtn.style.display = 'flex';
@@ -275,7 +309,18 @@ function appendMessage(role, content, streaming = false) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
   const avatar = role === 'user' ? 'U' : 'AI';
-  const rendered = streaming ? '' : formatMd(content);
+  let rendered = '';
+  if (!streaming) {
+    if (role === 'assistant' && content) {
+      const { thinking, content: mainContent } = extractThinking(content);
+      if (thinking) {
+        rendered += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(thinking)}</div></details>`;
+      }
+      rendered += formatMd(mainContent);
+    } else {
+      rendered = formatMd(content);
+    }
+  }
   const time = !streaming && content ? `<div class="message-time">${new Date().toLocaleTimeString()}</div>` : '';
   div.innerHTML = `
     <div class="message-avatar">${avatar}</div>
@@ -332,6 +377,25 @@ function formatMd(text) {
   }
   if (inList) result += `</${listType}>`;
   return result;
+}
+
+function extractThinking(text) {
+  let thinking = '';
+  let content = text;
+
+  const completeRegex = /<think>[\s\S]*?<\/think>/gi;
+  let match;
+  while ((match = completeRegex.exec(content)) !== null) {
+    const inner = match[0].replace(/^<think>/, '').replace(/<\/think>$/, '').trim();
+    thinking += inner + '\n';
+  }
+  content = content.replace(completeRegex, '');
+
+  const openIdx = content.lastIndexOf('');
+  if (openIdx !== -1) {
+    content = content.slice(0, openIdx);
+  }
+  return { thinking: thinking.trim(), content: content.trim() };
 }
 
 function scrollToBottom() { el.chatContainer.scrollTop = el.chatContainer.scrollHeight; }
