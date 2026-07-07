@@ -589,7 +589,7 @@ textarea#systemPrompt:focus {
   right: 14px;
   width: 30px;
   height: 30px;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
@@ -597,12 +597,12 @@ textarea#systemPrompt:focus {
   background: var(--bg-primary);
   color: var(--text-muted);
   cursor: pointer;
-  opacity: 0.9;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  opacity: 0.45;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, opacity 0.15s;
   z-index: 2;
 }
 
-.message:hover .copy-btn { display: flex; }
+.message:hover .copy-btn { opacity: 0.9; }
 
 .copy-btn:hover {
   color: var(--accent);

@@ -283,14 +283,15 @@ async function sendMessage() {
   renderConversations();
 
   let html = '';
-  if (displayThinking) {
+  const answer = finalContent || displayThinking;
+  if (displayThinking && finalContent) {
     html += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(displayThinking)}</div></details>`;
   }
-  html += formatMd(finalContent);
+  html += formatMd(answer);
   html += `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
   contentDiv.innerHTML = html;
   renderMath(contentDiv);
-  if (finalContent) addCopyButton(assistantDiv, finalContent);
+  if (answer) addCopyButton(assistantDiv, answer);
 
   isGenerating = false;
   el.sendBtn.style.display = 'flex';
@@ -316,11 +317,12 @@ function appendMessage(role, content, streaming = false) {
   if (!streaming) {
     if (role === 'assistant' && content) {
       const { thinking, content: mainContent } = extractThinking(content);
-      if (thinking) {
+      const answer = mainContent || thinking;
+      if (thinking && mainContent) {
         rendered += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(thinking)}</div></details>`;
       }
-      rendered += formatMd(mainContent);
-      copyText = mainContent;
+      rendered += formatMd(answer);
+      copyText = answer;
     } else {
       rendered = formatMd(content);
       copyText = content;
