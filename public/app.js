@@ -134,7 +134,9 @@ function setupListeners() {
   el.userInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!isGenerating) sendMessage();
+      if (!el.sendBtn.disabled && !isGenerating) {
+        sendMessage();
+      }
     }
   });
 
@@ -457,7 +459,7 @@ async function sendMessage() {
                 thinkingEl.style.display = 'none';
               }
               responseEl.textContent = extracted.content;
-              el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+              scrollToBottom();
             }
           } catch (e) {}
         }
@@ -500,8 +502,6 @@ async function sendMessage() {
 
   const answer = finalContent || displayThinking;
   contentDiv.innerHTML = buildMessageHtml(displayThinking, finalContent);
-  renderMath(contentDiv);
-  highlightCodeBlocks();
 
   const existingToolbar = assistantDiv.querySelector('.message-toolbar');
   if (!existingToolbar) {
@@ -532,6 +532,17 @@ async function sendMessage() {
   el.stopGenerateBtn.style.display = 'none';
   el.userInput.disabled = false;
   el.userInput.focus();
+
+  if (window.hljs) {
+    el.messages.querySelectorAll('pre code').forEach((block) => {
+      window.hljs.highlightElement(block);
+    });
+  }
+
+  if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+    window.MathJax.typesetPromise([el.messages])
+      .catch((err) => console.error('MathJax formatting exception:', err));
+  }
 
   const elapsed = Date.now() - startTime;
   el.latency.textContent = `${(elapsed / 1000).toFixed(1)}s`;
@@ -839,7 +850,17 @@ function addCopyButton(messageEl, copyText) {
   messageEl.appendChild(btn);
 }
 
-function scrollToBottom() { el.chatContainer.scrollTop = el.chatContainer.scrollHeight; }
+function scrollToBottom() {
+  const container = el.chatContainer;
+  if (!container) return;
+  const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+  if (isNearBottom || !isGenerating) {
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: isGenerating ? 'auto' : 'smooth'
+    });
+  }
+}
 function hideWelcome() { el.welcomeScreen.style.display = 'none'; }
 function showWelcome() { el.welcomeScreen.style.display = 'flex'; el.messages.innerHTML = ''; }
 
