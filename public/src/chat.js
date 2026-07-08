@@ -9,16 +9,16 @@ import {
   newConversation, updateMessageContent, updateStreamingContent, generateTitle
 } from './conversation.js';
 
-export let currentAbortController = null;
-export let isGenerating = false;
+let currentAbortController = null;
+let isGenerating = false;
 
 let editingMessageId = null;
 
-export function getEditingMessageId() {
+function getEditingMessageId() {
   return editingMessageId;
 }
 
-export function setEditingMessageId(id) {
+function setEditingMessageId(id) {
   editingMessageId = id;
 }
 

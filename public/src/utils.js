@@ -49,8 +49,6 @@ export function showWelcome() {
 
 export function showShortcuts() { el.shortcutsModal.classList.add('active'); }
 
-export function closeModal(id) { const m = $(id); if (m) m.classList.remove('active'); }
-
 export function closeSidebar() {
   el.sidebar.classList.remove('open');
   if (el.sidebarOverlay) el.sidebarOverlay.classList.remove('open');

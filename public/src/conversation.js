@@ -39,10 +39,6 @@ export function getConversations() {
   return Array.isArray(conversations) ? conversations : [];
 }
 
-export function setConversations(c) {
-  conversations = c;
-}
-
 export function newConversation() {
   const conv = {
     id: Date.now().toString(),
