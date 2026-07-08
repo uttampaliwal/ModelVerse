@@ -8,6 +8,7 @@ import {
   applyPreset,
   savePreset,
   deletePreset,
+  initSettingsNav,
 } from './settings.js';
 import { setupAttachmentListeners } from './attachments.js';
 import { sendMessage, stopGeneration, restartConversation, regenerateFrom } from './chat.js';
@@ -120,6 +121,7 @@ async function init(): Promise<void> {
   checkStatus().catch((e) => logError('init:checkStatus', e));
   setupAttachmentListeners();
   setupSidebarListeners();
+  initSettingsNav();
   updateWelcomeScreen();
 
   // Folder creation

@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="css/message.css?v=20260708c">
   <link rel="stylesheet" href="css/input.css?v=20260708c">
   <link rel="stylesheet" href="css/modal.css?v=20260708c">
+  <link rel="stylesheet" href="css/settings.css?v=20260708c">
   <link rel="stylesheet" href="css/toast.css?v=20260708c">
   <link rel="stylesheet" href="css/image-viewer.css?v=20260708c">
   <link rel="stylesheet" href="css/responsive.css?v=20260708c">
@@ -233,94 +234,159 @@
   </div>
 
   <div class="modal-overlay" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal modal-lg">
+    <div class="modal modal-settings">
       <div class="modal-header">
         <h3 id="settingsTitle">Settings</h3>
         <button class="icon-btn" aria-label="Close settings dialog">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="modal-body">
-        <div class="settings-tabs" role="tablist" aria-label="Settings categories">
-          <button class="settings-tab active" data-tab="params" role="tab" aria-selected="true" aria-controls="settingsParams">Parameters</button>
-          <button class="settings-tab" data-tab="system" role="tab" aria-selected="false" aria-controls="settingsSystem">System Prompt</button>
-          <button class="settings-tab" data-tab="presets" role="tab" aria-selected="false" aria-controls="settingsPresets">Presets</button>
-        </div>
-        <div class="settings-panel active" id="settingsParams" role="tabpanel" aria-labelledby="paramsTab">
-          <div class="param-row">
-            <label for="temperature">Temperature</label>
-            <div class="param-input">
-              <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" aria-describedby="temperatureVal">
-              <span id="temperatureVal" aria-live="polite">0.7</span>
+      <div class="settings-layout">
+        <nav class="settings-nav" role="tablist" aria-label="Settings categories">
+          <button class="settings-nav-item active" data-category="general" role="tab" aria-selected="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            General
+          </button>
+          <button class="settings-nav-item" data-category="models" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Models
+          </button>
+          <button class="settings-nav-item" data-category="performance" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Performance
+          </button>
+          <button class="settings-nav-item" data-category="generation" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            Generation
+          </button>
+          <button class="settings-nav-item" data-category="presets" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Presets
+          </button>
+          <button class="settings-nav-item" data-category="about" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            About
+          </button>
+        </nav>
+        <div class="settings-content">
+          <!-- General -->
+          <div class="settings-category active" id="settingsGeneral" role="tabpanel">
+            <h4 class="settings-category-title">General Settings</h4>
+            <div class="settings-group">
+              <label for="systemPrompt">System Prompt</label>
+              <textarea id="systemPrompt" rows="4" placeholder="Enter system prompt...">You are a helpful assistant.</textarea>
             </div>
           </div>
-          <div class="param-row">
-            <label for="topP">Top P</label>
-            <div class="param-input">
-              <input type="range" id="topP" min="0" max="1" step="0.05" value="0.9" aria-describedby="topPVal">
-              <span id="topPVal" aria-live="polite">0.9</span>
-            </div>
-          </div>
-          <div class="param-row">
-            <label for="topK">Top K</label>
-            <div class="param-input">
-              <input type="range" id="topK" min="1" max="100" step="1" value="40" aria-describedby="topKVal">
-              <span id="topKVal" aria-live="polite">40</span>
-            </div>
-          </div>
-          <div class="param-row">
-            <label for="maxTokens">Max Tokens</label>
-            <div class="param-input">
-              <input type="number" id="maxTokens" min="64" max="8192" value="4096">
-            </div>
-          </div>
-          <div class="param-row">
-            <label for="contextSize">Context Size</label>
-            <div class="param-input">
+
+          <!-- Models -->
+          <div class="settings-category" id="settingsModels" role="tabpanel" style="display:none">
+            <h4 class="settings-category-title">Model Settings</h4>
+            <div class="settings-group">
+              <label for="contextSize">Context Size</label>
               <input type="number" id="contextSize" min="512" max="131072" step="512" value="4096">
+              <span class="settings-hint">Number of tokens the model can remember</span>
             </div>
-          </div>
-          <div class="param-row">
-            <label for="gpuLayers">GPU Layers</label>
-            <div class="param-input">
+            <div class="settings-group">
+              <label for="gpuLayers">GPU Layers</label>
               <input type="number" id="gpuLayers" min="0" max="200" value="99">
+              <span class="settings-hint">Layers to offload to GPU (higher = faster, uses more VRAM)</span>
             </div>
-          </div>
-          <div class="param-row">
-            <label for="threads">Threads</label>
-            <div class="param-input">
+            <div class="settings-group">
+              <label for="threads">Threads</label>
               <input type="number" id="threads" min="1" max="32" value="4">
+              <span class="settings-hint">CPU threads for inference</span>
             </div>
           </div>
-          <div class="param-row">
-            <label for="repeatPenalty">Repeat Penalty</label>
-            <div class="param-input">
-              <input type="range" id="repeatPenalty" min="0" max="2" step="0.05" value="1.1" aria-describedby="repeatPenaltyVal">
-              <span id="repeatPenaltyVal" aria-live="polite">1.1</span>
+
+          <!-- Performance -->
+          <div class="settings-category" id="settingsPerformance" role="tabpanel" style="display:none">
+            <h4 class="settings-category-title">Performance Settings</h4>
+            <div class="settings-group">
+              <label for="maxTokens">Max Tokens</label>
+              <input type="number" id="maxTokens" min="64" max="8192" value="4096">
+              <span class="settings-hint">Maximum tokens to generate in response</span>
             </div>
           </div>
-          <button id="applySettings" class="btn btn-secondary btn-full">Apply Settings</button>
-        </div>
-        <div class="settings-panel" id="settingsSystem" role="tabpanel" aria-labelledby="systemTab">
-          <label for="systemPrompt" class="sr-only">System Prompt</label>
-          <textarea id="systemPrompt" rows="6" placeholder="Enter system prompt..." style="width:100%;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:13px;resize:vertical;font-family:inherit;">You are a helpful assistant.</textarea>
-        </div>
-        <div class="settings-panel" id="settingsPresets" role="tabpanel" aria-labelledby="presetsTab">
-          <div class="preset-section" style="border:none;padding:0;margin:0;">
-            <div class="preset-row">
-              <label for="presetSelect" class="sr-only">Select preset</label>
-              <select id="presetSelect" class="preset-select" aria-label="Select a preset">
-                <option value="">Load preset...</option>
-              </select>
-              <div class="preset-actions" role="group" aria-label="Preset actions">
-                <button class="icon-btn" id="savePresetBtn" title="Save current params as preset" aria-label="Save current settings as preset">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                </button>
-                <button class="icon-btn" id="deletePresetBtn" title="Delete selected preset" aria-label="Delete selected preset">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
+
+          <!-- Generation -->
+          <div class="settings-category" id="settingsGeneration" role="tabpanel" style="display:none">
+            <h4 class="settings-category-title">Generation Parameters</h4>
+            <div class="settings-group">
+              <label for="temperature">Temperature</label>
+              <div class="settings-slider">
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" aria-describedby="temperatureVal">
+                <span class="settings-value" id="temperatureVal" aria-live="polite">0.7</span>
+              </div>
+              <span class="settings-hint">Higher = more creative, lower = more focused</span>
+            </div>
+            <div class="settings-group">
+              <label for="topP">Top P</label>
+              <div class="settings-slider">
+                <input type="range" id="topP" min="0" max="1" step="0.05" value="0.9" aria-describedby="topPVal">
+                <span class="settings-value" id="topPVal" aria-live="polite">0.9</span>
+              </div>
+              <span class="settings-hint">Nucleus sampling threshold</span>
+            </div>
+            <div class="settings-group">
+              <label for="topK">Top K</label>
+              <div class="settings-slider">
+                <input type="range" id="topK" min="1" max="100" step="1" value="40" aria-describedby="topKVal">
+                <span class="settings-value" id="topKVal" aria-live="polite">40</span>
+              </div>
+              <span class="settings-hint">Limit vocabulary to top K tokens</span>
+            </div>
+            <div class="settings-group">
+              <label for="repeatPenalty">Repeat Penalty</label>
+              <div class="settings-slider">
+                <input type="range" id="repeatPenalty" min="0" max="2" step="0.05" value="1.1" aria-describedby="repeatPenaltyVal">
+                <span class="settings-value" id="repeatPenaltyVal" aria-live="polite">1.1</span>
+              </div>
+              <span class="settings-hint">Penalize repeated tokens (1.0 = disabled)</span>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="settings-category" id="settingsPresets" role="tabpanel" style="display:none">
+            <h4 class="settings-category-title">Presets</h4>
+            <div class="settings-group">
+              <label for="presetSelect">Load Preset</label>
+              <div class="preset-row">
+                <select id="presetSelect" aria-label="Select a preset">
+                  <option value="">Select preset...</option>
+                </select>
+                <div class="preset-actions">
+                  <button class="icon-btn" id="savePresetBtn" title="Save current settings" aria-label="Save current settings as preset">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  </button>
+                  <button class="icon-btn" id="deletePresetBtn" title="Delete preset" aria-label="Delete selected preset">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+
+          <!-- About -->
+          <div class="settings-category" id="settingsAbout" role="tabpanel" style="display:none">
+            <h4 class="settings-category-title">About</h4>
+            <div class="settings-about">
+              <div class="settings-about-item">
+                <span class="settings-about-label">Version</span>
+                <span class="settings-about-value">0.0.1</span>
+              </div>
+              <div class="settings-about-item">
+                <span class="settings-about-label">Engine</span>
+                <span class="settings-about-value">llama.cpp</span>
+              </div>
+              <div class="settings-about-item">
+                <span class="settings-about-label">Documentation</span>
+                <a href="https://github.com/uttampaliwal/llama-ui" target="_blank" rel="noopener">GitHub</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-footer">
+            <button id="applySettings" class="btn btn-primary">Apply Settings</button>
           </div>
         </div>
       </div>

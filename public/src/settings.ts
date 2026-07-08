@@ -78,7 +78,7 @@ export async function applySettings(): Promise<void> {
 export async function renderPresets(): Promise<void> {
   const presets = await getPresets();
   const sel = el.presetSelect;
-  sel.innerHTML = '<option value="">Load preset...</option>';
+  sel.innerHTML = '<option value="">Select preset...</option>';
   Object.keys(presets).forEach((name) => {
     const o = document.createElement('option');
     o.value = name;
@@ -134,4 +134,32 @@ export async function deletePreset(): Promise<void> {
   await deletePresetByName(name);
   await renderPresets();
   showToast('Preset "' + name + '" deleted');
+}
+
+// Initialize settings navigation
+export function initSettingsNav(): void {
+  const navItems = document.querySelectorAll('.settings-nav-item');
+  const categories = document.querySelectorAll('.settings-category');
+
+  navItems.forEach((item) => {
+    item.addEventListener('click', () => {
+      const category = (item as HTMLElement).dataset.category;
+
+      // Update nav
+      navItems.forEach((n) => n.classList.remove('active'));
+      item.classList.add('active');
+
+      // Update content
+      categories.forEach((c) => {
+        const cat = c as HTMLElement;
+        if (cat.id.toLowerCase().includes(category || '')) {
+          cat.style.display = 'block';
+          cat.classList.add('active');
+        } else {
+          cat.style.display = 'none';
+          cat.classList.remove('active');
+        }
+      });
+    });
+  });
 }
