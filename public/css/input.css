@@ -15,9 +15,8 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 16px 24px 20px;
-  border-top: 1px solid var(--border);
-  background: var(--bg-primary);
+  padding: 12px 24px 20px;
+  background: transparent;
 }
 
 .input-container {
@@ -29,12 +28,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 10px 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .input-container:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 16px rgba(99, 102, 241, 0.1), inset 0 0 8px rgba(99, 102, 241, 0.02);
+  box-shadow: 0 2px 16px rgba(99, 102, 241, 0.15), 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 #userInput {

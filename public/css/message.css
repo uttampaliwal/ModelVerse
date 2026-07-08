@@ -34,6 +34,8 @@
 
 .message.assistant {
   background: var(--bg-secondary);
+  max-width: 760px;
+  width: fit-content;
 }
 
 .message-avatar {
