@@ -4,6 +4,7 @@ import { el, $ } from './utils.js';
 import { updateModelInfo } from './models.js';
 import type { Settings, Preset } from './types.js';
 import { getPresets, savePreset as putPreset, deletePresetByName } from './db.js';
+import { logError } from './logger.js';
 
 export async function loadSettings(): Promise<void> {
   try {
@@ -22,7 +23,9 @@ export async function loadSettings(): Promise<void> {
     $<HTMLSpanElement>('repeatPenaltyVal').textContent = String(s.repeatPenalty);
     el.systemPrompt.value = s.systemPrompt;
     updateModelInfo();
-  } catch (e) {}
+  } catch (e) {
+    logError('loadSettings', e);
+  }
 }
 
 export function collectSettings(): Settings | null {

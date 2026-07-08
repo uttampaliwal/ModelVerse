@@ -10,6 +10,7 @@ import {
   deleteConversationById,
 } from './db.js';
 import { clearPendingAttachments } from './attachments.js';
+import { logError } from './logger.js';
 
 let conversations: Conversation[] = [];
 let currentConversationId: string | null = localStorage.getItem('currentConversationId') || null;
@@ -125,7 +126,8 @@ function fillContent(
       heights.set(id, contentDiv.offsetHeight);
       scheduleWindowUpdate();
     })
-    .catch(() => {
+    .catch((e) => {
+      logError('fillContent', e);
       contentDiv.innerHTML = escapeHtml(text);
       renderMath(contentDiv);
     });

@@ -1,6 +1,7 @@
 import { showToast } from './toast.js';
 import { el, $, esc } from './utils.js';
 import { modelMap } from './models.js';
+import { logError } from './logger.js';
 
 export type AttachKind =
   | 'image'
@@ -374,7 +375,7 @@ export function setupAttachmentListeners(): void {
           .then((att) => {
             pendingAttachments.push(att);
           })
-          .catch(() => {}),
+          .catch((e) => logError('parseFile', e, { name: file.name })),
       );
     }
     Promise.all(tasks).then(() => {

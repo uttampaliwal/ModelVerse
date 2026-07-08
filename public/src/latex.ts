@@ -1,3 +1,5 @@
+import { logError, logWarn } from './logger.js';
+
 let mathjaxLoading: Promise<void> | null = null;
 
 function ensureMathJax(): Promise<void> {
@@ -17,7 +19,10 @@ function ensureMathJax(): Promise<void> {
       check();
     };
     // If MathJax fails to load, don't block rendering of the rest of the UI.
-    s.onerror = () => resolve();
+    s.onerror = () => {
+      logWarn('MathJax', 'Failed to load vendor script, math rendering disabled');
+      resolve();
+    };
     document.head.appendChild(s);
   });
   return mathjaxLoading;
@@ -30,8 +35,8 @@ export function renderMath(element: Element): void {
         MathJax?: { typesetPromise?: (e: Element[]) => Promise<void> };
       }).MathJax;
       if (mj && typeof mj.typesetPromise === 'function') {
-        mj.typesetPromise([element]).catch(() => {});
+        mj.typesetPromise([element]).catch((e) => logError('MathJax typeset', e));
       }
     })
-    .catch(() => {});
+    .catch((e) => logError('MathJax ensure', e));
 }

@@ -25,9 +25,10 @@ import {
 import { checkStatus, startServer, stopServer } from './server.js';
 import { renderSidebar, setupSidebarListeners } from './sidebar.js';
 import { textOf, type ExportFormat } from './types.js';
+import { logError, logInfo } from './logger.js';
 
 async function init(): Promise<void> {
-  await loadConversations().catch(() => {});
+  await loadConversations().catch((e) => logError('init:loadConversations', e));
   setupVirtualScroll();
 
   try {
@@ -42,18 +43,21 @@ async function init(): Promise<void> {
   }
 
   renderSidebar();
-  renderPresets().catch(() => {});
-  loadModels().catch(() => {});
-  loadSettings().catch(() => {});
-  checkStatus().catch(() => {});
+  renderPresets().catch((e) => logError('init:renderPresets', e));
+  loadModels().catch((e) => logError('init:loadModels', e));
+  loadSettings().catch((e) => logError('init:loadSettings', e));
+  checkStatus().catch((e) => logError('init:checkStatus', e));
   setupAttachmentListeners();
   setupSidebarListeners();
 
   // Background warm-up: preload highlight.js so the first message renders fast
   // @ts-ignore — runtime URL path resolved by the static server
   import('/vendor/highlight/highlight.esm.js')
-    .then((m) => { (window as any).hljs = m.default; })
-    .catch(() => {});
+    .then((m) => {
+      (window as any).hljs = m.default;
+      logInfo('init', 'highlight.js warmed up');
+    })
+    .catch((e) => logError('init:highlight warmup', e));
 
   // Slider live value display
   ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach((id) => {
@@ -108,11 +112,11 @@ async function init(): Promise<void> {
   el.applySettings.addEventListener('click', applySettings);
 
   el.presetSelect.addEventListener('change', () => {
-    if (el.presetSelect.value) applyPreset(el.presetSelect.value).catch(() => {});
+    if (el.presetSelect.value) applyPreset(el.presetSelect.value).catch((e) => logError('applyPreset', e));
   });
 
-  el.savePresetBtn.addEventListener('click', () => { savePreset().catch(() => {}); });
-  el.deletePresetBtn.addEventListener('click', () => { deletePreset().catch(() => {}); });
+  el.savePresetBtn.addEventListener('click', () => { savePreset().catch((e) => logError('savePreset', e)); });
+  el.deletePresetBtn.addEventListener('click', () => { deletePreset().catch((e) => logError('deletePreset', e)); });
 
   el.settingsBtn.addEventListener('click', () => el.settingsModal.classList.add('active'));
 

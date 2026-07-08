@@ -17,6 +17,7 @@ import {
 } from './conversation.js';
 import type { ContentPart } from './types.js';
 import type { ChatMessage, ChatChunk, ChatCompletionResponse, StatusResponse, PayloadMessage } from './types.js';
+import { logWarn } from './logger.js';
 
 let currentAbortController: AbortController | null = null;
 let isGenerating = false;
@@ -262,7 +263,9 @@ export async function sendMessage(): Promise<void> {
               if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
               if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
               saveConversations();
-            } catch (e) {}
+            } catch (e) {
+              logWarn('stream', 'Failed to parse SSE chunk', { raw: trimmed });
+            }
           }
         }
       }
@@ -284,7 +287,9 @@ export async function sendMessage(): Promise<void> {
             if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
             saveConversations();
           }
-        } catch (e) {}
+        } catch (e) {
+          logWarn('stream', 'Failed to parse final SSE chunk', { raw: streamBuffer.trim() });
+        }
       }
 
       const { thinking } = extractThinking(assistantMsg.content as string);
