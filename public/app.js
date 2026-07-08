@@ -327,8 +327,22 @@ async function sendMessage() {
   const content = el.userInput.value.trim();
   if ((!content && !pendingAttachment) || isGenerating) return;
 
+  isGenerating = true;
+  startTime = Date.now();
+  el.sendBtn.style.display = 'none';
+  el.stopGenerateBtn.style.display = 'flex';
+  el.userInput.disabled = true;
+  el.tokenCount.textContent = '';
+  el.latency.textContent = '';
+
   const status = await api('/api/status');
-  if (!status.running) return showToast('Start the server first', 'error');
+  if (!status.running) {
+    isGenerating = false;
+    el.sendBtn.style.display = 'flex';
+    el.stopGenerateBtn.style.display = 'none';
+    el.userInput.disabled = false;
+    return showToast('Start the server first', 'error');
+  }
 
   if (!currentConversationId) newConversation();
 
@@ -341,7 +355,6 @@ async function sendMessage() {
   conv.messages.push(msg);
   conv.updatedAt = Date.now();
   saveConversations();
-  renderConversations();
 
   el.userInput.value = '';
   el.userInput.style.height = 'auto';
@@ -352,14 +365,6 @@ async function sendMessage() {
   $('attachmentPreview').style.display = 'none';
   $('previewImage').src = '';
   $('attachBtn').classList.remove('has-attachment');
-
-  isGenerating = true;
-  startTime = Date.now();
-  el.sendBtn.style.display = 'none';
-  el.stopGenerateBtn.style.display = 'flex';
-  el.userInput.disabled = true;
-  el.tokenCount.textContent = '';
-  el.latency.textContent = '';
 
   const assistantDiv = appendMessage('assistant', '', true);
   const contentDiv = assistantDiv.querySelector('.message-content');
@@ -466,6 +471,11 @@ async function sendMessage() {
     conv.messages.pop();
     const lastMsgDiv = el.messages.querySelector('.message.user:last-child');
     if (lastMsgDiv) lastMsgDiv.remove();
+    if (conv._backup) {
+      conv.messages.push(...conv._backup);
+      delete conv._backup;
+      conv.updatedAt = Date.now();
+    }
     saveConversations();
     renderConversations();
     isGenerating = false;
@@ -479,6 +489,7 @@ async function sendMessage() {
   const cursor = contentDiv.querySelector('.cursor');
   if (cursor) cursor.remove();
 
+  delete conv._backup;
   const { thinking: finalThinking, content: finalContent } = extractThinking(streamingText);
   const displayThinking = finalThinking || extractedThinking;
   conv.messages.push({ role: 'assistant', content: streamingText, timestamp: Date.now() });
@@ -536,7 +547,7 @@ function stopGeneration() {
   abortController = null;
 }
 
-function appendMessage(role, content, streaming = false, image = null) {
+function appendMessage(role, content, streaming = false, image = null, timestamp) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
   const avatar = role === 'user' ? 'U' : 'AI';
@@ -550,9 +561,11 @@ function appendMessage(role, content, streaming = false, image = null) {
     } else {
       let imageHtml = '';
       if (image) {
-        imageHtml = `<img src="${image}" class="message-image" alt="Attached image">`;
+        const safeSrc = image.startsWith('data:image/') ? image : '';
+        imageHtml = safeSrc ? `<img src="${safeSrc}" class="message-image" alt="Attached image">` : '';
       }
-      inner = imageHtml + formatMd(content) + `<div class="message-time">${new Date().toLocaleTimeString()}</div>`;
+      const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+      inner = imageHtml + formatMd(content) + `<div class="message-time">${time}</div>`;
       copyText = content;
     }
   }
@@ -847,7 +860,7 @@ function loadConversation(id) {
   const conv = conversations[id];
   if (!conv.messages.length) { showWelcome(); return; }
   hideWelcome();
-  conv.messages.forEach(m => appendMessage(m.role, m.content, false, m.image));
+  conv.messages.forEach(m => appendMessage(m.role, m.content, false, m.image, m.timestamp));
   renderConversations();
 }
 
@@ -884,6 +897,7 @@ function regenerateFrom(index) {
   if (index < 0 || index >= conv.messages.length) return;
   if (conv.messages[index].role !== 'assistant') return;
 
+  conv._backup = conv.messages.slice(index);
   conv.messages.splice(index);
   conv.updatedAt = Date.now();
   saveConversations();

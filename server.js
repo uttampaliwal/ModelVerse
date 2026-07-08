@@ -15,6 +15,7 @@ const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
 let llamaProcess = null;
 let currentModel = null;
+let isStarting = false;
 
 function loadSettings() {
   try {
@@ -102,36 +103,52 @@ function findAvailablePort(startPort) {
 }
 
 function killLlamaProcess() {
-  if (!llamaProcess) return;
-  if (process.platform === 'win32') {
-    const { exec } = require('child_process');
-    exec(`taskkill /pid ${llamaProcess.pid} /f /t`, (err) => {
-      if (err) console.error('Failed to kill process tree:', err.message);
-    });
-  } else {
-    llamaProcess.kill();
-  }
-  llamaProcess = null;
+  return new Promise((resolve) => {
+    if (!llamaProcess) return resolve();
+    const proc = llamaProcess;
+    llamaProcess = null;
+    if (process.platform === 'win32') {
+      const child = spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
+        stdio: 'ignore'
+      });
+      child.on('exit', () => resolve());
+      child.on('error', () => resolve());
+      setTimeout(resolve, 3000);
+    } else {
+      proc.kill();
+      resolve();
+    }
+  });
 }
 
 async function startLlamaServer(modelPath) {
-  if (llamaProcess) {
-    killLlamaProcess();
-  }
+  if (isStarting) throw new Error('Server start already in progress');
+  isStarting = true;
 
-  const serverPath = path.join(LLAMA_CPP_PATH, 'llama-server.exe');
-  if (!fs.existsSync(serverPath)) {
-    throw new Error('llama-server.exe not found at: ' + serverPath);
-  }
+  try {
+    if (llamaProcess) {
+      await killLlamaProcess();
+    }
 
-  const usedPort = await findAvailablePort(settings.port);
-  if (usedPort !== settings.port) {
-    console.log(`[WARN] Port ${settings.port} in use, using ${usedPort} instead`);
-    settings.port = usedPort;
-    saveSettings();
+    const serverPath = path.join(LLAMA_CPP_PATH, 'llama-server.exe');
+    if (!fs.existsSync(serverPath)) {
+      throw new Error('llama-server.exe not found at: ' + serverPath);
+    }
+
+    const usedPort = await findAvailablePort(settings.port);
+    if (usedPort !== settings.port) {
+      console.log(`[WARN] Port ${settings.port} in use, using ${usedPort} instead`);
+      settings.port = usedPort;
+      saveSettings();
+    }
+  } catch (e) {
+    isStarting = false;
+    throw e;
   }
 
   return new Promise((resolve, reject) => {
+
+    const serverReadyPatterns = ['listening on', 'running on', 'starting the server', 'server started', 'http://'];
 
     const args = [
       '-m', modelPath,
@@ -156,8 +173,9 @@ async function startLlamaServer(modelPath) {
     const onOutput = (data) => {
       const output = data.toString();
       process.stdout.write(output);
-      if (!started && output.includes('listening on')) {
+      if (!started && serverReadyPatterns.some(p => output.toLowerCase().includes(p))) {
         started = true;
+        isStarting = false;
         currentModel = modelPath;
         try {
           proc.stdout.removeAllListeners('data');
@@ -173,17 +191,23 @@ async function startLlamaServer(modelPath) {
     proc.stdout.on('data', onOutput);
     proc.stderr.on('data', onOutput);
 
+    const cleanup = () => {
+      isStarting = false;
+      try {
+        proc.stdout.removeAllListeners('data');
+        proc.stderr.removeAllListeners('data');
+      } catch (e) {}
+    };
+
     proc.on('error', (err) => {
       console.error('Spawn error:', err);
+      cleanup();
       if (!started) reject(err);
     });
 
     proc.on('exit', (code) => {
       console.log('Server exited:', code);
-      try {
-        proc.stdout.removeAllListeners('data');
-        proc.stderr.removeAllListeners('data');
-      } catch (e) {}
+      cleanup();
       llamaProcess = null;
       currentModel = null;
       if (!started) reject(new Error('Server exited with code ' + code));
@@ -191,6 +215,7 @@ async function startLlamaServer(modelPath) {
 
     setTimeout(() => {
       if (!started) {
+        cleanup();
         try { proc.kill(); } catch (e) {}
         reject(new Error('Timeout waiting for server'));
       }
@@ -198,23 +223,12 @@ async function startLlamaServer(modelPath) {
   });
 }
 
-function stopLlamaServer() {
-  return new Promise((resolve) => {
-    if (llamaProcess) {
-      llamaProcess.once('exit', () => {
-        llamaProcess = null;
-        currentModel = null;
-        resolve({ success: true });
-      });
-      killLlamaProcess();
-      setTimeout(() => {
-        currentModel = null;
-        resolve({ success: true });
-      }, 3000);
-    } else {
-      resolve({ success: true });
-    }
-  });
+async function stopLlamaServer() {
+  if (llamaProcess) {
+    await killLlamaProcess();
+    currentModel = null;
+  }
+  return { success: true };
 }
 
 // --- API Routes ---
