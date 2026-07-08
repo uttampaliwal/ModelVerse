@@ -24,9 +24,14 @@
           <span>Llama.cpp</span>
         </div>
         <div class="sidebar-header-actions">
-          <button class="icon-btn mobile-only" id="menuBtn" title="Menu">
+          <button class="icon-btn" id="menuBtn" title="Toggle sidebar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="collapseBtn" title="Collapse sidebar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
             </svg>
           </button>
         </div>
@@ -182,6 +187,11 @@
     </aside>
 
     <main class="main">
+      <button class="sidebar-expand-btn" id="sidebarExpandBtn" title="Expand sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
       <div class="chat-container" id="chatContainer">
         <div class="welcome-screen" id="welcomeScreen">
           <div class="welcome-icon">

@@ -128,7 +128,33 @@ function setupListeners() {
   $('newChatBtn').addEventListener('click', newConversation);
   $('applySettings').addEventListener('click', applySettings);
   $('settingsBtn').addEventListener('click', showShortcuts);
-  $('menuBtn').addEventListener('click', () => el.sidebar.classList.toggle('open'));
+  $('menuBtn').addEventListener('click', toggleSidebar);
+  $('collapseBtn').addEventListener('click', () => el.sidebar.classList.toggle('collapsed'));
+  $('sidebarExpandBtn').addEventListener('click', () => el.sidebar.classList.remove('collapsed'));
+
+  function toggleSidebar() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      el.sidebar.classList.toggle('open');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (el.sidebar.classList.contains('open')) {
+        if (!backdrop) {
+          const bd = document.createElement('div');
+          bd.id = 'sidebarBackdrop';
+          bd.className = 'sidebar-backdrop';
+          bd.addEventListener('click', () => {
+            el.sidebar.classList.remove('open');
+            bd.remove();
+          });
+          document.body.appendChild(bd);
+        }
+      } else if (backdrop) {
+        backdrop.remove();
+      }
+    } else {
+      el.sidebar.classList.toggle('collapsed');
+    }
+  }
 
   $('refreshModelsBtn').addEventListener('click', async () => {
     $('refreshModelsBtn').classList.add('loading');
@@ -185,11 +211,13 @@ function setupListeners() {
         if (m.id === 'shortcutsModal') m.classList.remove('active');
         else m.remove();
       });
+      const bd = document.getElementById('sidebarBackdrop');
+      if (bd) { el.sidebar.classList.remove('open'); bd.remove(); }
     }
     if (e.ctrlKey && e.shiftKey) {
       if (e.key === 'C') { e.preventDefault(); clearCurrentChat(); }
       else if (e.key === 'N') { e.preventDefault(); newConversation(); }
-      else if (e.key === 'S') { e.preventDefault(); $('sidebar').classList.toggle('collapsed'); }
+      else if (e.key === 'S') { e.preventDefault(); el.sidebar.classList.toggle('collapsed'); }
     }
   });
 }

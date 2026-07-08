@@ -53,6 +53,7 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   transition: width var(--transition), min-width var(--transition);
 }
 
@@ -74,10 +75,6 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.mobile-only {
-  display: none;
 }
 
 .logo {
@@ -410,6 +407,35 @@ textarea#systemPrompt:focus {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+}
+
+.sidebar-expand-btn {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  z-index: 5;
+  width: 24px;
+  height: 48px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-expand-btn:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.sidebar.collapsed ~ .main .sidebar-expand-btn {
+  display: flex;
 }
 
 .chat-container {
@@ -1151,6 +1177,15 @@ kbd {
   outline: none;
 }
 
+/* Sidebar backdrop for mobile */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.15s ease;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -1164,10 +1199,6 @@ kbd {
 
   .sidebar.open {
     transform: translateX(0);
-  }
-
-  .mobile-only {
-    display: flex;
   }
 
   .message {
