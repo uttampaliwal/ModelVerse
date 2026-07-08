@@ -387,7 +387,9 @@ export function updateStreamingContent(
     if (tc) tc.textContent = thinkingText;
   }
   if (responseContainer && responseText) {
-    responseContainer.innerHTML = formatMd(responseText);
+    const html = formatMd(responseText);
+    // Append cursor at end of streaming content
+    responseContainer.innerHTML = html + '<span class="cursor" aria-hidden="true"></span>';
   }
 }
 

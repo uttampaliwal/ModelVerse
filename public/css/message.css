@@ -285,19 +285,74 @@
 
 .copy-btn:active { transform: scale(0.94); }
 
+/* ---- Streaming cursor -------------------------------------------------- */
 .cursor {
   display: inline-block;
   width: 2px;
-  height: 1em;
+  height: 1.15em;
   background: var(--accent);
-  animation: blink 1s step-end infinite;
+  border-radius: 1px;
   vertical-align: text-bottom;
   margin-left: 2px;
+  animation: cursorPulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--accent), 0 0 2px var(--accent);
+  transition: opacity 0.15s ease;
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+@keyframes cursorPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scaleY(1);
+    box-shadow: 0 0 6px var(--accent), 0 0 2px var(--accent);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scaleY(1.1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scaleY(0.85);
+    box-shadow: 0 0 2px var(--accent);
+  }
+  75% {
+    opacity: 0.85;
+    transform: scaleY(1.05);
+  }
+}
+
+/* Variant: softer glow for assistant messages */
+.cursor.cursor-soft {
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
+  box-shadow: 0 0 8px var(--accent-dim);
+  animation: cursorSoftPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cursorSoftPulse {
+  0%, 100% {
+    opacity: 0.9;
+    width: 3px;
+  }
+  50% {
+    opacity: 0.25;
+    width: 2px;
+  }
+}
+
+/* Token fade-in: applied to newly streamed text spans */
+.token-fade {
+  animation: tokenFadeIn 0.25s ease-out forwards;
+}
+
+@keyframes tokenFadeIn {
+  from {
+    opacity: 0;
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 /* Thinking Block */
