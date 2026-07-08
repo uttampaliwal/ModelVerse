@@ -1,8 +1,8 @@
 import { api } from './api.js';
 import { showToast } from './toast.js';
-import { el, $, hideWelcome, showWelcome } from './utils.js';
+import { el, hideWelcome, showWelcome } from './utils.js';
 import { extractThinking } from './markdown.js';
-import { pendingAttachment, clearPendingAttachment } from './attachments.js';
+import { pendingAttachments, clearPendingAttachments } from './attachments.js';
 import { modelMap, updateModelInfo } from './models.js';
 import {
   getCurrentConv,
@@ -15,6 +15,7 @@ import {
   generateTitle,
   clearChatView,
 } from './conversation.js';
+import type { ContentPart } from './types.js';
 import type { ChatMessage, ChatChunk, ChatCompletionResponse, StatusResponse, PayloadMessage } from './types.js';
 
 let currentAbortController: AbortController | null = null;
@@ -46,11 +47,13 @@ export async function sendMessage(): Promise<void> {
 
   const conv = getCurrentConv();
   const userInput = el.userInput.value.trim();
-  let fileAttach = pendingAttachment || null;
+  const attachments = pendingAttachments;
+  const imageAttachments = attachments.filter((a) => a.kind === 'image');
+  const textAttachments = attachments.filter((a) => a.kind !== 'image');
 
-  if (!userInput && !fileAttach && !editingMessageId) return;
+  if (!userInput && attachments.length === 0 && !editingMessageId) return;
 
-  if (fileAttach && fileAttach.attachType === 'image') {
+  if (imageAttachments.length) {
     const model = modelMap[el.modelSelect.value];
     const caps = model && model.capabilities ? model.capabilities : [];
     if (!caps.includes('vision')) {
@@ -89,42 +92,37 @@ export async function sendMessage(): Promise<void> {
       resetRegenerateMode();
     }
   } else {
-    if (fileAttach) {
-      if (fileAttach.attachType === 'image') {
-        const msg: ChatMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          createdAt: new Date().toISOString(),
-          content: [
-            { type: 'image_url', image_url: { url: fileAttach.data } },
-            { type: 'text', text: userInput || 'Describe this image.' },
-          ],
-        };
-        currentConv.messages.push(msg);
-        renderMessage(currentConv.messages[currentConv.messages.length - 1]);
-      } else {
-        // Truncate text attachments based on context size
-        const ctxSize = parseInt($<HTMLInputElement>('contextSize').value) || 4096;
-        const maxChars = Math.floor(ctxSize * 3.5 * 0.7);
-        let fileData = fileAttach.data;
-        if (fileData.length > maxChars) {
-          fileData = fileData.slice(0, maxChars) + '\n\n[File truncated to ' + maxChars + ' characters]';
-        }
+    if (attachments.length) {
+      const imageParts = imageAttachments.map((a) => ({
+        type: 'image_url' as const,
+        image_url: { url: a.dataUrl! },
+      }));
+      let textBlob = userInput;
+      for (const a of textAttachments) {
+        textBlob += `\n\n[File: ${a.name}]\n${a.text ?? ''}`;
+      }
+      if (imageParts.length) {
+        const content: ContentPart[] = [];
+        if (textBlob.trim()) content.push({ type: 'text', text: textBlob });
+        content.push(...imageParts);
         currentConv.messages.push({
           id: Date.now().toString(),
           role: 'user',
           createdAt: new Date().toISOString(),
-          content: (userInput || '') + '\n\n[File: ' + fileAttach.name + ']\n' + fileData,
+          content,
         });
-        renderMessage(currentConv.messages[currentConv.messages.length - 1]);
+      } else {
+        currentConv.messages.push({
+          id: Date.now().toString(),
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          content: textBlob,
+        });
       }
-      clearPendingAttachment();
-      $('attachmentPreview').style.display = 'none';
-      $<HTMLImageElement>('previewImage').src = '';
-      $<HTMLImageElement>('previewImage').style.display = '';
-      $('attachmentName').style.display = 'none';
-      $('attachmentName').textContent = '';
-      $('attachBtn').classList.remove('has-attachment');
+      renderMessage(currentConv.messages[currentConv.messages.length - 1]);
+      clearPendingAttachments();
+      el.attachmentPreview.style.display = 'none';
+      el.attachBtn.classList.remove('has-attachment');
     } else {
       currentConv.messages.push({
         id: Date.now().toString(),
@@ -364,6 +362,7 @@ export function restartConversation(): void {
   }
   saveConversations();
   clearChatView();
+  clearPendingAttachments();
   showWelcome();
   resetRegenerateMode();
 }

@@ -131,12 +131,14 @@
 
 .attachment-preview {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   padding: 6px 8px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .attachment-preview img {
@@ -144,6 +146,108 @@
   max-height: 60px;
   border-radius: 4px;
   object-fit: cover;
+}
+
+.attach-chip {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+}
+
+.attach-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attach-icon { flex-shrink: 0; }
+
+.attach-fname {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attach-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.attach-error { color: var(--danger); }
+
+.attach-remove {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.attach-body {
+  margin-top: 6px;
+  max-height: 160px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+
+.attach-img {
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.attach-code {
+  margin: 0;
+  font-size: 11px;
+  background: var(--bg-code, #1e1e1e);
+  border-radius: 4px;
+  padding: 6px;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.attach-csv {
+  border-collapse: collapse;
+  font-size: 11px;
+  width: 100%;
+}
+
+.attach-csv td {
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attach-zip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  padding: 1px 0;
+}
+
+.attach-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.user-attached-img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--radius);
+  margin: 6px 0;
 }
 
 .attachment-name {

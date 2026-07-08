@@ -3,12 +3,13 @@ import { showToast } from './toast.js';
 import { extractThinking, formatMd, escapeHtml } from './markdown.js';
 import { renderMath } from './latex.js';
 import { formatMessage } from './formatter.js';
-import { textOf, type ChatMessage, type Conversation, type ExportFormat } from './types.js';
+import { textOf, type ChatMessage, type Conversation, type ContentPart, type ExportFormat } from './types.js';
 import {
   getAllConversations,
   putConversations,
   deleteConversationById,
 } from './db.js';
+import { clearPendingAttachments } from './attachments.js';
 
 let conversations: Conversation[] = [];
 let currentConversationId: string | null = localStorage.getItem('currentConversationId') || null;
@@ -130,6 +131,19 @@ function fillContent(
     });
 }
 
+function userContentHtml(content: string | ContentPart[]): string {
+  if (typeof content === 'string') return content;
+  return content
+    .map((p) => {
+      if (p.type === 'text') return p.text;
+      if (p.type === 'image_url') {
+        return `<img src="${p.image_url.url}" class="user-attached-img" alt="attachment">`;
+      }
+      return '';
+    })
+    .join('<br>');
+}
+
 function buildMessageNode(msg: ChatMessage, streaming: boolean): HTMLElement {
   const div = document.createElement('div');
   div.className = `message ${msg.role}`;
@@ -137,9 +151,15 @@ function buildMessageNode(msg: ChatMessage, streaming: boolean): HTMLElement {
   const thinking = msg.thinking || '';
 
   if (msg.role === 'user') {
-    div.innerHTML = `<div class="message-content">${msg.content}</div><div class="message-actions"><span class="edit-message-btn" title="Edit">✏️</span><span class="delete-message-btn" title="Delete">🗑️</span></div>`;
-    const contentDiv = div.querySelector('.message-content');
-    if (contentDiv) requestAnimationFrame(() => renderMath(contentDiv));
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = userContentHtml(msg.content);
+    div.appendChild(contentDiv);
+    const actions = document.createElement('div');
+    actions.className = 'message-actions';
+    actions.innerHTML = '<span class="edit-message-btn" title="Edit">✏️</span><span class="delete-message-btn" title="Delete">🗑️</span>';
+    div.appendChild(actions);
+    requestAnimationFrame(() => renderMath(contentDiv));
     return div;
   }
 
@@ -273,6 +293,7 @@ export function newConversation(): Conversation {
   currentConversationId = conv.id;
   saveConversations();
   clearChatView();
+  clearPendingAttachments();
   el.chatTitle.textContent = 'New Conversation';
   el.sendBtn.classList.remove('regenerate-mode');
   el.sendBtn.querySelector('.btn-icon')!.textContent = '➤';

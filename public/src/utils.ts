@@ -40,10 +40,8 @@ interface Els {
   chatTitle: HTMLElement;
   restartBtn: HTMLButtonElement;
   attachmentPreview: HTMLElement;
-  previewImage: HTMLImageElement;
-  attachmentName: HTMLElement;
+  attachmentList: HTMLElement;
   attachBtn: HTMLButtonElement;
-  removeAttachBtn: HTMLButtonElement;
   fileInput: HTMLInputElement;
 }
 
@@ -85,10 +83,8 @@ export const el: Els = {
   chatTitle: $('chatTitle'),
   restartBtn: $('restartBtn') as HTMLButtonElement,
   attachmentPreview: $('attachmentPreview'),
-  previewImage: $('previewImage') as HTMLImageElement,
-  attachmentName: $('attachmentName'),
+  attachmentList: $('attachmentList'),
   attachBtn: $('attachBtn') as HTMLButtonElement,
-  removeAttachBtn: $('removeAttachBtn') as HTMLButtonElement,
   fileInput: $('fileInput') as HTMLInputElement,
 };
 
