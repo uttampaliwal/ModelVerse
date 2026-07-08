@@ -486,6 +486,59 @@ textarea#systemPrompt:focus {
   flex-direction: column;
 }
 
+.chat-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.chat-header.visible {
+  display: flex;
+}
+
+.chat-header .chat-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.restart-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.restart-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+}
+
+.sidebar-overlay.open {
+  display: block;
+}
+
 .welcome-screen {
   flex: 1;
   display: flex;
@@ -536,6 +589,15 @@ textarea#systemPrompt:focus {
   background: var(--bg-hover);
   border-color: var(--accent);
   color: var(--text-primary);
+}
+
+.hidden { display: none !important; }
+
+.send-btn.regenerate-mode {
+  background: var(--warning, #e6a817);
+}
+.send-btn.regenerate-mode:hover {
+  background: var(--warning-hover, #d4980f);
 }
 
 /* Messages */
@@ -705,6 +767,38 @@ textarea#systemPrompt:focus {
   color: var(--text-secondary);
 }
 
+.message-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions span {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
+}
+
+.message-actions span:hover {
+  background: var(--bg-hover);
+}
+
+.edit-message-btn {
+  min-width: 20px;
+  text-align: center;
+}
+
 .message-time {
   font-size: 11px;
   color: var(--text-muted);
@@ -827,6 +921,18 @@ textarea#systemPrompt:focus {
   margin-bottom: 0;
 }
 
+.thinking-container {
+  margin-bottom: 8px;
+}
+
+.response-container {
+  line-height: 1.65;
+}
+
+.response-container p:first-child {
+  margin-top: 0;
+}
+
 /* Input Area */
 .model-badge {
   font-size: 11px;
@@ -896,6 +1002,17 @@ textarea#systemPrompt:focus {
 .send-btn {
   background: var(--accent);
   color: white;
+  width: auto;
+  padding: 0 14px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.send-btn .btn-icon {
+  font-size: 15px;
+  line-height: 1;
 }
 
 .send-btn:hover:not(:disabled) {
