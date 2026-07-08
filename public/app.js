@@ -195,24 +195,40 @@ function setupListeners() {
   $('fileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Only image files are supported', 'error');
-      return;
-    }
+    const isImage = file.type.startsWith('image/');
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-      pendingAttachment = { data: ev.target.result, name: file.name, type: file.type };
-      $('previewImage').src = ev.target.result;
+      const attachType = isImage ? 'image' : 'text';
+      pendingAttachment = {
+        data: ev.target.result,
+        name: file.name,
+        type: file.type,
+        attachType
+      };
+      $('previewImage').style.display = isImage ? '' : 'none';
+      $('attachmentName').style.display = isImage ? 'none' : '';
+      if (isImage) {
+        $('previewImage').src = ev.target.result;
+        $('attachmentName').textContent = '';
+      } else {
+        $('previewImage').src = '';
+        $('attachmentName').textContent = `📄 ${file.name}`;
+      }
       $('attachmentPreview').style.display = 'flex';
       $('attachBtn').classList.add('has-attachment');
       $('userInput').focus();
       const m = modelMap[el.modelSelect.value];
       const caps = m && m.capabilities ? m.capabilities : [];
-      if (!caps.includes('vision')) {
+      if (isImage && !caps.includes('vision')) {
         showToast('Warning: current model does not support vision', 'error');
       }
     };
-    reader.readAsDataURL(file);
+    if (isImage) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
     e.target.value = '';
   });
 
@@ -220,6 +236,9 @@ function setupListeners() {
     pendingAttachment = null;
     $('attachmentPreview').style.display = 'none';
     $('previewImage').src = '';
+    $('previewImage').style.display = '';
+    $('attachmentName').style.display = 'none';
+    $('attachmentName').textContent = '';
     $('attachBtn').classList.remove('has-attachment');
   });
 
@@ -338,7 +357,7 @@ async function sendMessage() {
   const content = el.userInput.value.trim();
   if ((!content && !pendingAttachment) || isGenerating) return;
 
-  if (pendingAttachment) {
+  if (pendingAttachment && pendingAttachment.attachType === 'image') {
     const path = el.modelSelect.value;
     const m = modelMap[path];
     const caps = m && m.capabilities ? m.capabilities : [];
@@ -371,8 +390,12 @@ async function sendMessage() {
   const conv = conversations[currentConversationId];
   const msg = { role: 'user', content, timestamp: Date.now() };
   if (pendingAttachment) {
-    msg.image = pendingAttachment.data;
-    msg.imageName = pendingAttachment.name;
+    if (pendingAttachment.attachType === 'image') {
+      msg.image = pendingAttachment.data;
+      msg.imageName = pendingAttachment.name;
+    } else {
+      msg.content = content ? `${content}\n\n--- ${pendingAttachment.name} ---\n${pendingAttachment.data}` : `--- ${pendingAttachment.name} ---\n${pendingAttachment.data}`;
+    }
   }
   conv.messages.push(msg);
   conv.updatedAt = Date.now();

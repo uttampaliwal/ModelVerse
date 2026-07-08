@@ -55,7 +55,8 @@ let settings = { ...defaultSettings };
 loadSettings();
 
 function getModelCapabilities(modelPath) {
-  const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
+  const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
+  const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3'];
   try {
     const fd = fs.openSync(modelPath, 'r');
     const header = Buffer.alloc(24);
@@ -82,6 +83,8 @@ function getModelCapabilities(modelPath) {
       }
     };
 
+    let hasChatTemplate = false;
+
     for (let i = 0; i < kvCount; i++) {
       const kLen = Number(r8());
       const key = rStr(kLen);
@@ -90,14 +93,18 @@ function getModelCapabilities(modelPath) {
         const sLen = Number(r8());
         const arch = rStr(sLen).toLowerCase();
         if (VISION_ARCHS.some(a => arch.includes(a))) caps.push('vision');
+        if (REASONING_ARCHS.some(a => arch.includes(a))) caps.push('reasoning');
       } else if (key.startsWith('vision.')) {
         if (!caps.includes('vision')) caps.push('vision');
+        skip(vType);
+      } else if (key === 'tokenizer.chat_template') {
+        hasChatTemplate = true;
         skip(vType);
       } else {
         skip(vType);
       }
-      if (caps.includes('vision')) break;
     }
+    if (hasChatTemplate) caps.push('tools');
     fs.closeSync(fd);
     return caps;
   } catch (e) { return []; }
