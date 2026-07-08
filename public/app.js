@@ -394,7 +394,14 @@ async function sendMessage() {
       msg.image = pendingAttachment.data;
       msg.imageName = pendingAttachment.name;
     } else {
-      msg.content = content ? `${content}\n\n--- ${pendingAttachment.name} ---\n${pendingAttachment.data}` : `--- ${pendingAttachment.name} ---\n${pendingAttachment.data}`;
+      const ctx = parseInt($('contextSize').value) || 4096;
+      const maxChars = Math.floor(ctx * 3.5 * 0.7);
+      let fileText = pendingAttachment.data;
+      if (fileText.length > maxChars) {
+        fileText = fileText.slice(0, maxChars) + `\n\n[...truncated to ~${Math.floor(ctx * 0.7)} tokens to fit context]`;
+        showToast('File content truncated to fit context size', 'error');
+      }
+      msg.content = content ? `${content}\n\n--- ${pendingAttachment.name} ---\n${fileText}` : `--- ${pendingAttachment.name} ---\n${fileText}`;
     }
   }
   conv.messages.push(msg);

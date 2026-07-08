@@ -55,8 +55,8 @@ let settings = { ...defaultSettings };
 loadSettings();
 
 function getModelCapabilities(modelPath) {
-  const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
-  const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3'];
+  const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'gemma4vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
+  const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3', 'gemma4'];
   try {
     const fd = fs.openSync(modelPath, 'r');
     const header = Buffer.alloc(24);
