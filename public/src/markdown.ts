@@ -2,7 +2,7 @@ const LATEX_MATH_CMDS = new Set([
   'boxed','frac','dfrac','tfrac','sqrt','binom','overset','underset','substack','genfrac',
   'vec','bar','hat','tilde','dot','ddot','dddot','widetilde','widehat','overline','underline','overbrace','underbrace','overrightarrow','overleftarrow',
   'sum','prod','int','oint','iint','iiint','iiiint','lim','coprod','bigcup','bigcap','bigoplus','bigotimes','bigsqcup','bigvee','bigwedge',
-  'leq','le','geq','ge','ne','neq','approx','approxeq','equiv','sim','simeq','cong','in','notin','subset','subseteq','supset','supseteq','subsetneq','supsetneq','mapsto','implies','impliedby','iff','forall','exists','nexists','pm','mp','times','div','cdot','ast','circ','star','oplus','otimes','langle','rangle','perp','parallel','propto','partial','nabla','infty','emptyset','setminus','cup','cap',
+  'leq','le','ge','geq','ne','neq','approx','approxeq','equiv','sim','simeq','cong','in','notin','subset','subseteq','supset','supseteq','subsetneq','supsetneq','mapsto','implies','impliedby','iff','forall','exists','nexists','pm','mp','times','div','cdot','ast','circ','star','oplus','otimes','langle','rangle','perp','parallel','propto','partial','nabla','infty','emptyset','setminus','cup','cap',
   'alpha','beta','gamma','delta','epsilon','varepsilon','zeta','eta','theta','vartheta','iota','kappa','lambda','mu','nu','xi','pi','varpi','rho','varrho','sigma','varsigma','tau','upsilon','phi','varphi','chi','psi','omega',
   'Gamma','Delta','Theta','Lambda','Xi','Pi','Sigma','Upsilon','Phi','Psi','Omega',
   'log','ln','sin','cos','tan','cot','sec','csc','arcsin','arccos','arctan','exp','det','gcd','min','max','sup','inf','deg','Pr','bmod','pmod','mod',
@@ -107,6 +107,21 @@ const mainThreadHighlight: HighlightFn = (code, lang) => {
   return escapeHtml(code);
 };
 
+// Callout types with icons and colors
+const CALLOUT_TYPES: Record<string, { icon: string; color: string }> = {
+  note: { icon: 'ℹ️', color: '#3b82f6' },
+  tip: { icon: '💡', color: '#10b981' },
+  info: { icon: 'ℹ️', color: '#3b82f6' },
+  warning: { icon: '⚠️', color: '#f59e0b' },
+  danger: { icon: '🚨', color: '#ef4444' },
+  important: { icon: '❗', color: '#8b5cf6' },
+  success: { icon: '✅', color: '#22c55e' },
+  question: { icon: '❓', color: '#06b6d4' },
+  bug: { icon: '🐛', color: '#ef4444' },
+  example: { icon: '📝', color: '#6366f1' },
+  quote: { icon: '💬', color: '#6b7280' },
+};
+
 export function formatMd(text: string, highlight: HighlightFn = mainThreadHighlight): string {
   if (!text) return '';
 
@@ -132,10 +147,66 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     return `@@CODE${codeStore.length - 1}@@`;
   });
 
+  // Extract tables before escaping
+  const tableStore: string[] = [];
+  t = t.replace(/(?:^|\n)((?:\|.+\|\n)+)/g, (match, tableBlock: string) => {
+    const rows = tableBlock.trim().split('\n');
+    if (rows.length < 2) return match;
+
+    // Check if second row is separator
+    const isSeparator = /^\|[\s\-:|]+\|$/.test(rows[1].trim());
+    if (!isSeparator) return match;
+
+    const headerRow = rows[0].trim();
+    const dataRows = rows.slice(2);
+
+    const parseCells = (row: string): string[] =>
+      row.split('|').slice(1, -1).map((c) => c.trim());
+
+    const headers = parseCells(headerRow);
+    const tableHtml = [
+      '<div class="md-table-wrap"><table class="md-table">',
+      '<thead><tr>',
+      ...headers.map((h) => `<th>${h}</th>`),
+      '</tr></thead>',
+      '<tbody>',
+      ...dataRows.map((row) => {
+        const cells = parseCells(row.trim());
+        return `<tr>${cells.map((c) => `<td>${c}</td>`).join('')}</tr>`;
+      }),
+      '</tbody></table></div>',
+    ].join('');
+
+    tableStore.push(tableHtml);
+    return `\n@@TABLE${tableStore.length - 1}@@\n`;
+  });
+
   t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
   t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  t = t.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+  // Task lists
+  t = t.replace(/^[\s]*[-*]\s+\[x\]\s+(.+)$/gm, '<li class="task-item done"><input type="checkbox" checked disabled><span>$1</span></li>');
+  t = t.replace(/^[\s]*[-*]\s+\[\s?\]\s+(.+)$/gm, '<li class="task-item"><input type="checkbox" disabled><span>$1</span></li>');
+
+  // Callout boxes
+  t = t.replace(/^>\s*\[!(note|tip|info|warning|danger|important|success|question|bug|example|quote)\]\s*\n((?:>\s?.*\n?)*)/gm, (_, type: string, content: string) => {
+    const inner = content.split('\n').map((l: string) => l.replace(/^>\s?/, '')).join('\n').trim();
+    return `@@CALLOUT${type}@@${inner}@@ENDCALLOUT@@`;
+  });
+
+  // Spoilers
+  t = t.replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>');
+
+  // Footnotes
+  const footnotes: { id: string; content: string }[] = [];
+  t = t.replace(/\[\^(\w+)\]:\s*(.+)/g, (_, id: string, content: string) => {
+    footnotes.push({ id, content: content.trim() });
+    return `@@FN${footnotes.length - 1}@@`;
+  });
+  t = t.replace(/\[\^(\w+)\]/g, '<sup class="footnote-ref"><a href="#fn-$1" id="fnref-$1">[$1]</a></sup>');
 
   const lines = t.split('\n');
   let result = '';
@@ -147,6 +218,9 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     const bulletMatch = line.match(/^\s*[\*\-]\s+(.*)/);
     const numMatch = line.match(/^\s*\d+\.\s+(.*)/);
 
+    // Check for task items
+    const taskMatch = line.match(/^<li class="task-item/);
+
     if (headingMatch) {
       if (inList) {
         result += `</${listType}>`;
@@ -154,6 +228,14 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
       }
       const level = headingMatch[1].length;
       result += `<h${level}>${headingMatch[2]}</h${level}>`;
+    } else if (taskMatch) {
+      if (!inList || listType !== 'ul') {
+        if (inList) result += `</${listType}>`;
+        result += '<ul class="task-list">';
+        inList = true;
+        listType = 'ul';
+      }
+      result += line;
     } else if (bulletMatch) {
       if (!inList || listType !== 'ul') {
         if (inList) result += `</${listType}>`;
@@ -182,9 +264,14 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
         result += '<hr>';
       } else if (
         trimmed.startsWith('<pre>') ||
-        trimmed.startsWith('<ul>') ||
-        trimmed.startsWith('<ol>') ||
-        /^@@CODE\d+@@$/.test(trimmed)
+        trimmed.startsWith('<ul') ||
+        trimmed.startsWith('<ol') ||
+        trimmed.startsWith('<li') ||
+        /^@@CODE\d+@@$/.test(trimmed) ||
+        /^@@TABLE\d+@@$/.test(trimmed) ||
+        /^@@CALLOUT/.test(trimmed) ||
+        /^@@ENDCALLOUT@@$/.test(trimmed) ||
+        /^@@FN\d+@@$/.test(trimmed)
       ) {
         result += trimmed;
       } else {
@@ -194,12 +281,31 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
   }
   if (inList) result += `</${listType}>`;
 
+  // Replace code blocks
   for (let i = 0; i < codeStore.length; i++) {
     const { lang, code } = codeStore[i];
     const inner = highlight(code, lang);
     const langLabel = lang === 'plaintext' ? 'Code' : lang;
     const escapedCode = escapeHtml(code);
-    result = result.split('@@CODE' + i + '@@').join(`
+
+    // Check if it's a mermaid block
+    if (lang === 'mermaid') {
+      result = result.split('@@CODE' + i + '@@').join(`
+<div class="mermaid-block">
+  <div class="code-block-header">
+    <span class="code-block-lang">Mermaid</span>
+    <div class="code-block-actions">
+      <button class="code-block-btn code-block-copy" title="Copy code" aria-label="Copy code">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copy</span>
+      </button>
+    </div>
+  </div>
+  <div class="mermaid-content" data-mermaid="${escapeHtml(code)}"></div>
+  <textarea class="code-block-raw" style="display:none">${escapedCode}</textarea>
+</div>`);
+    } else {
+      result = result.split('@@CODE' + i + '@@').join(`
 <div class="code-block" data-lang="${lang}">
   <div class="code-block-header">
     <span class="code-block-lang">${langLabel}</span>
@@ -225,6 +331,33 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
   <pre class="code-block-pre"><code class="lang-${lang}">${inner}</code></pre>
   <textarea class="code-block-raw" style="display:none">${escapedCode}</textarea>
 </div>`);
+    }
+  }
+
+  // Replace tables
+  for (let i = 0; i < tableStore.length; i++) {
+    result = result.split('@@TABLE' + i + '@@').join(tableStore[i]);
+  }
+
+  // Replace callouts
+  result = result.replace(/@@CALLOUT(\w+)@@([\s\S]*?)@@ENDCALLOUT@@/g, (_, type: string, content: string) => {
+    const c = CALLOUT_TYPES[type.toLowerCase()] || CALLOUT_TYPES.note;
+    return `<div class="callout callout-${type.toLowerCase()}" style="--callout-color: ${c.color}">
+      <div class="callout-header">
+        <span class="callout-icon">${c.icon}</span>
+        <span class="callout-type">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+      </div>
+      <div class="callout-content">${content.trim()}</div>
+    </div>`;
+  });
+
+  // Replace footnotes
+  if (footnotes.length > 0) {
+    result += '<div class="footnotes"><hr><ol class="footnotes-list">';
+    footnotes.forEach((fn) => {
+      result += `<li id="fn-${fn.id}">${fn.content} <a href="#fnref-${fn.id}" class="footnote-backref">↩</a></li>`;
+    });
+    result += '</ol></div>';
   }
 
   for (let i = 0; i < mathStore.length; i++) {

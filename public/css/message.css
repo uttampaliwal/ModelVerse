@@ -561,3 +561,173 @@
 .message-toolbar .icon-btn.danger:hover {
   color: var(--danger);
 }
+
+/* Tables */
+.md-table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.md-table th,
+.md-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.md-table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.md-table tr:nth-child(even) {
+  background: var(--bg-secondary);
+}
+
+.md-table tr:hover {
+  background: var(--bg-hover);
+}
+
+/* Callout Boxes */
+.callout {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--callout-color);
+  background: var(--bg-secondary);
+}
+
+.callout-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.callout-icon {
+  font-size: 16px;
+}
+
+.callout-type {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--callout-color);
+}
+
+.callout-content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Task Lists */
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.task-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.task-item.done span {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Spoilers */
+.spoiler {
+  background: var(--text-primary);
+  color: transparent;
+  border-radius: 4px;
+  padding: 1px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.spoiler:hover {
+  background: var(--bg-hover);
+}
+
+.spoiler.revealed {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* Footnotes */
+.footnotes {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.footnotes-list {
+  padding-left: 20px;
+}
+
+.footnotes-list li {
+  margin-bottom: 8px;
+}
+
+.footnote-ref a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footnote-ref a:hover {
+  text-decoration: underline;
+}
+
+.footnote-backref {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.footnote-backref:hover {
+  text-decoration: underline;
+}
+
+/* Mermaid Diagrams */
+.mermaid-block {
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.mermaid-content {
+  padding: 20px;
+  text-align: center;
+  background: white;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-content svg {
+  max-width: 100%;
+  height: auto;
+}
