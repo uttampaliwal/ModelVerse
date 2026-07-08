@@ -70,6 +70,16 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-only {
+  display: none;
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -896,10 +906,15 @@ kbd {
     bottom: 0;
     z-index: 50;
     transform: translateX(-100%);
+    box-shadow: var(--shadow);
   }
 
   .sidebar.open {
     transform: translateX(0);
+  }
+
+  .mobile-only {
+    display: flex;
   }
 
   .message {

@@ -15,7 +15,8 @@ const el = {
   conversationList: $('conversationList'),
   shortcutsModal: $('shortcutsModal'),
   toastContainer: $('toastContainer'),
-  systemPrompt: $('systemPrompt'), chatContainer: $('chatContainer')
+  systemPrompt: $('systemPrompt'), chatContainer: $('chatContainer'),
+  sidebar: $('sidebar')
 };
 
 async function api(path, opts) {
@@ -58,6 +59,8 @@ async function loadSettings() {
     $('contextSize').value = s.contextSize;
     $('gpuLayers').value = s.gpuLayers;
     $('threads').value = s.threads;
+    $('repeatPenalty').value = s.repeatPenalty;
+    $('repeatPenaltyVal').textContent = s.repeatPenalty;
     el.systemPrompt.value = s.systemPrompt;
   } catch (e) {}
 }
@@ -106,7 +109,12 @@ function setupListeners() {
 
   $('newChatBtn').addEventListener('click', newConversation);
   $('applySettings').addEventListener('click', applySettings);
-  $('settingsBtn').addEventListener('click', () => el.shortcutsModal.classList.add('active'));
+  $('settingsBtn').addEventListener('click', showShortcuts);
+  $('menuBtn').addEventListener('click', () => el.sidebar.classList.toggle('open'));
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); });
+  });
 
   document.querySelectorAll('.section-header[data-toggle]').forEach(h => {
     h.addEventListener('click', () => {
@@ -117,11 +125,14 @@ function setupListeners() {
     });
   });
 
-  ['temperature', 'topP', 'topK'].forEach(id => {
+  ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach(id => {
     $(id).addEventListener('input', (e) => $(id + 'Val').textContent = e.target.value);
   });
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    }
     if (e.ctrlKey && e.shiftKey) {
       if (e.key === 'C') { e.preventDefault(); clearCurrentChat(); }
       else if (e.key === 'N') { e.preventDefault(); newConversation(); }
@@ -133,6 +144,10 @@ function setupListeners() {
 async function startServer() {
   const modelPath = el.modelSelect.value;
   if (!modelPath) return showToast('Select a model first', 'error');
+
+  const s = collectSettings();
+  if (!s) return;
+  await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
 
   el.statusIndicator.querySelector('.status-dot').className = 'status-dot loading';
   el.statusIndicator.querySelector('.status-text').textContent = 'Starting...';
@@ -210,6 +225,7 @@ async function sendMessage() {
 
   let streamingText = '';
   let extractedThinking = '';
+  let lastUsage = null;
 
   updateLatency();
 
@@ -244,10 +260,11 @@ async function sendMessage() {
         const trimmed = line.trim();
         if (!trimmed || trimmed === 'data: [DONE]') continue;
         if (trimmed.startsWith('data: ')) {
-          try {
-            const parsed = JSON.parse(trimmed.slice(6));
-            const token = parsed.choices?.[0]?.delta?.content;
-            if (token) {
+           try {
+             const parsed = JSON.parse(trimmed.slice(6));
+             if (parsed.usage) lastUsage = parsed.usage;
+             const token = parsed.choices?.[0]?.delta?.content;
+             if (token) {
               streamingText += token;
               const extracted = extractThinking(streamingText);
               extractedThinking = extracted.thinking;
@@ -295,6 +312,12 @@ async function sendMessage() {
 
   const elapsed = Date.now() - startTime;
   el.latency.textContent = `${(elapsed / 1000).toFixed(1)}s`;
+  if (lastUsage) {
+    const tps = lastUsage.completion_tokens && elapsed
+      ? (lastUsage.completion_tokens / (elapsed / 1000)).toFixed(1)
+      : null;
+    el.tokenCount.textContent = `${lastUsage.completion_tokens || 0} tok${tps ? ` · ${tps}/s` : ''}`;
+  }
 }
 
 function stopGeneration() {
@@ -553,6 +576,9 @@ function scrollToBottom() { el.chatContainer.scrollTop = el.chatContainer.scroll
 function hideWelcome() { el.welcomeScreen.style.display = 'none'; }
 function showWelcome() { el.welcomeScreen.style.display = 'flex'; el.messages.innerHTML = ''; }
 
+function showShortcuts() { el.shortcutsModal.classList.add('active'); }
+function closeModal(id) { const m = $(id); if (m) m.classList.remove('active'); }
+
 function newConversation() {
   const id = Date.now().toString();
   conversations[id] = { id, title: 'New Chat', messages: [], createdAt: Date.now(), updatedAt: Date.now() };
@@ -611,7 +637,7 @@ function saveConversations() {
 
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-async function applySettings() {
+function collectSettings() {
   const s = {
     temperature: parseFloat($('temperature').value),
     topP: parseFloat($('topP').value),
@@ -620,8 +646,23 @@ async function applySettings() {
     contextSize: parseInt($('contextSize').value),
     gpuLayers: parseInt($('gpuLayers').value),
     threads: parseInt($('threads').value),
+    repeatPenalty: parseFloat($('repeatPenalty').value),
     systemPrompt: el.systemPrompt.value
   };
+  if ([s.temperature, s.topP, s.topK, s.maxTokens, s.contextSize, s.gpuLayers, s.threads, s.repeatPenalty].some(v => Number.isNaN(v))) {
+    showToast('Please enter valid numbers in all parameters', 'error');
+    return null;
+  }
+  if (s.contextSize < s.maxTokens) {
+    showToast('Context Size should be >= Max Tokens', 'error');
+    return null;
+  }
+  return s;
+}
+
+async function applySettings() {
+  const s = collectSettings();
+  if (!s) return;
   try {
     await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
     showToast('Settings saved. Restart server for context/gpu/thread changes.', 'success');
