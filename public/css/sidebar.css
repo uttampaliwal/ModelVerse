@@ -250,6 +250,7 @@ textarea#systemPrompt:focus {
 .conversation-item {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
@@ -259,6 +260,17 @@ textarea#systemPrompt:focus {
   cursor: pointer;
   transition: all var(--transition);
   border-left: 3px solid transparent;
+}
+
+.conv-snippet {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 .conversation-item:hover {

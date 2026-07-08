@@ -7,9 +7,25 @@ import {
   deleteConversation,
   newConversation,
 } from './conversation.js';
-import type { Conversation } from './types.js';
+import { textOf, type Conversation, type ChatMessage } from './types.js';
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function firstMatchSnippet(conv: Conversation, term: string): string | null {
+  for (const m of conv.messages) {
+    const raw = textOf(m.content);
+    const idx = raw.toLowerCase().indexOf(term);
+    if (idx !== -1) {
+      const start = Math.max(0, idx - 32);
+      const end = Math.min(raw.length, idx + term.length + 60);
+      let snip = raw.slice(start, end).replace(/\s+/g, ' ').trim();
+      if (start > 0) snip = '…' + snip;
+      if (end < raw.length) snip = snip + '…';
+      return snip;
+    }
+  }
+  return null;
+}
 
 export function renderSidebar(): void {
   el.sidebarList.innerHTML = '';
@@ -18,7 +34,11 @@ export function renderSidebar(): void {
 
   let filtered: Conversation[] = convs;
   if (searchTerm) {
-    filtered = convs.filter((c) => c.title.toLowerCase().includes(searchTerm));
+    filtered = convs.filter(
+      (c) =>
+        c.title.toLowerCase().includes(searchTerm) ||
+        c.messages.some((m: ChatMessage) => textOf(m.content).toLowerCase().includes(searchTerm)),
+    );
   }
 
   filtered.forEach((conv) => {
@@ -26,8 +46,13 @@ export function renderSidebar(): void {
     div.className = 'conversation-item';
     const date = new Date(conv.updatedAt || conv.createdAt);
     const dateStr = date.toLocaleDateString();
+    const snippet =
+      searchTerm && !conv.title.toLowerCase().includes(searchTerm)
+        ? firstMatchSnippet(conv, searchTerm)
+        : null;
     div.innerHTML = `
       <div class="conv-title" title="${esc(conv.title)}">${esc(conv.title)}</div>
+      ${snippet ? `<div class="conv-snippet">${esc(snippet)}</div>` : ''}
       <div class="conv-meta">
         <span class="conv-date">${dateStr}</span>
         <span class="conv-msg-count">${conv.messages.length} msgs</span>
