@@ -77,6 +77,10 @@ body {
   gap: 4px;
 }
 
+.mobile-only {
+  display: none;
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -1177,6 +1181,110 @@ kbd {
   outline: none;
 }
 
+/* Resize handle */
+.sidebar-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 3;
+  transition: background 0.15s;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.resizing {
+  background: var(--accent);
+}
+
+.sidebar {
+  position: relative;
+}
+
+/* Settings tabs */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.settings-tab {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.settings-tab:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.settings-tab.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.settings-panel {
+  display: none;
+}
+
+.settings-panel.active {
+  display: block;
+}
+
+.modal-lg {
+  max-width: 520px;
+}
+
+/* Attachment button */
+.attach-btn {
+  flex-shrink: 0;
+}
+
+.attach-btn:hover {
+  color: var(--accent);
+}
+
+/* Futuristic input bar */
+.input-container {
+  position: relative;
+  background: rgba(26, 26, 29, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-container:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), inset 0 0 20px rgba(99, 102, 241, 0.05);
+}
+
+.input-container::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), transparent, rgba(99, 102, 241, 0.3));
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.input-container:focus-within::before {
+  opacity: 1;
+}
+
 /* Sidebar backdrop for mobile */
 .sidebar-backdrop {
   position: fixed;
@@ -1187,6 +1295,10 @@ kbd {
 }
 
 @media (max-width: 768px) {
+  .mobile-only {
+    display: flex;
+  }
+
   .sidebar {
     position: fixed;
     left: 0;
@@ -1203,5 +1315,9 @@ kbd {
 
   .message {
     padding: 12px 16px;
+  }
+
+  .sidebar-resize-handle {
+    display: none;
   }
 }

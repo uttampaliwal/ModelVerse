@@ -127,34 +127,29 @@ function setupListeners() {
 
   $('newChatBtn').addEventListener('click', newConversation);
   $('applySettings').addEventListener('click', applySettings);
-  $('settingsBtn').addEventListener('click', showShortcuts);
-  $('menuBtn').addEventListener('click', toggleSidebar);
+  $('settingsBtn').addEventListener('click', () => $('settingsModal').classList.add('active'));
+
+  $('menuBtn').addEventListener('click', () => {
+    el.sidebar.classList.toggle('open');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (el.sidebar.classList.contains('open')) {
+      if (!backdrop) {
+        const bd = document.createElement('div');
+        bd.id = 'sidebarBackdrop';
+        bd.className = 'sidebar-backdrop';
+        bd.addEventListener('click', () => {
+          el.sidebar.classList.remove('open');
+          bd.remove();
+        });
+        document.body.appendChild(bd);
+      }
+    } else if (backdrop) {
+      backdrop.remove();
+    }
+  });
+
   $('collapseBtn').addEventListener('click', () => el.sidebar.classList.toggle('collapsed'));
   $('sidebarExpandBtn').addEventListener('click', () => el.sidebar.classList.remove('collapsed'));
-
-  function toggleSidebar() {
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-      el.sidebar.classList.toggle('open');
-      const backdrop = document.getElementById('sidebarBackdrop');
-      if (el.sidebar.classList.contains('open')) {
-        if (!backdrop) {
-          const bd = document.createElement('div');
-          bd.id = 'sidebarBackdrop';
-          bd.className = 'sidebar-backdrop';
-          bd.addEventListener('click', () => {
-            el.sidebar.classList.remove('open');
-            bd.remove();
-          });
-          document.body.appendChild(bd);
-        }
-      } else if (backdrop) {
-        backdrop.remove();
-      }
-    } else {
-      el.sidebar.classList.toggle('collapsed');
-    }
-  }
 
   $('refreshModelsBtn').addEventListener('click', async () => {
     $('refreshModelsBtn').classList.add('loading');
@@ -171,6 +166,10 @@ function setupListeners() {
   });
 
   $('exportBtn').addEventListener('click', showExportModal);
+
+  $('attachBtn').addEventListener('click', () => {
+    showToast('File attachment coming soon', 'info');
+  });
 
   el.convSearch = $('convSearch');
   if (el.convSearch) {
@@ -192,14 +191,46 @@ function setupListeners() {
     m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); });
   });
 
-  document.querySelectorAll('.section-header[data-toggle]').forEach(h => {
-    h.addEventListener('click', () => {
-      const t = h.getAttribute('data-toggle');
-      const c = $(t === 'params' ? 'paramsContent' : 'systemContent');
-      h.classList.toggle('collapsed');
-      c.classList.toggle('collapsed');
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = $('settings' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1));
+      if (panel) panel.classList.add('active');
     });
   });
+
+  /* Sidebar resize */
+  const handle = $('sidebarResizeHandle');
+  let isResizing = false;
+  handle.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    handle.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const newWidth = Math.max(200, Math.min(500, e.clientX));
+    el.sidebar.style.width = newWidth + 'px';
+    el.sidebar.style.minWidth = newWidth + 'px';
+    localStorage.setItem('sidebarWidth', newWidth);
+  });
+  document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    handle.classList.remove('resizing');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
+  /* Restore sidebar width */
+  const savedWidth = localStorage.getItem('sidebarWidth');
+  if (savedWidth) {
+    el.sidebar.style.width = savedWidth + 'px';
+    el.sidebar.style.minWidth = savedWidth + 'px';
+  }
 
   ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach(id => {
     $(id).addEventListener('input', (e) => $(id + 'Val').textContent = e.target.value);
