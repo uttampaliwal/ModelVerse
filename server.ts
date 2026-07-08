@@ -1,43 +1,65 @@
-const express = require('express');
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import { spawn, type ChildProcess } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import net from 'net';
 
-const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
+interface ServerSettings {
+  port: number;
+  contextSize: number;
+  threads: number;
+  gpuLayers: number;
+  temperature: number;
+  topP: number;
+  topK: number;
+  repeatPenalty: number;
+  maxTokens: number;
+  systemPrompt: string;
+}
 
-const net = require('net');
+interface ModelInfo {
+  name: string;
+  path: string;
+  size: number;
+  sizeFormatted: string;
+  folder: string;
+  capabilities: string[];
+}
+
+interface ChatMessageDTO {
+  role: string;
+  content: unknown;
+}
 
 const LLAMA_CPP_PATH = path.join(__dirname, '..', 'build', 'bin', 'Release');
 const MODELS_PATH = process.env.LLMODELS_PATH || 'C:\\Users\\uttam\\.lmstudio\\models';
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-let llamaProcess = null;
-let currentModel = null;
+let llamaProcess: ChildProcess | null = null;
+let currentModel: string | null = null;
 let isStarting = false;
-let startPromise = null;
+let startPromise: Promise<{ success: boolean; port: number }> | null = null;
 
-function loadSettings() {
+function loadSettings(): void {
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
-      const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+      const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) as Partial<ServerSettings>;
       settings = { ...settings, ...saved };
     }
   } catch (e) {
-    console.error('Error loading settings:', e.message);
+    console.error('Error loading settings:', (e as Error).message);
   }
 }
 
-function saveSettings() {
+function saveSettings(): void {
   try {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
   } catch (e) {
-    console.error('Error saving settings:', e.message);
+    console.error('Error saving settings:', (e as Error).message);
   }
 }
 
-const defaultSettings = {
+const defaultSettings: ServerSettings = {
   port: 8080,
   contextSize: 4096,
   threads: 4,
@@ -47,39 +69,85 @@ const defaultSettings = {
   topK: 40,
   repeatPenalty: 1.1,
   maxTokens: 4096,
-  systemPrompt: 'You are a helpful assistant.'
+  systemPrompt: 'You are a helpful assistant.',
 };
 
-let settings = { ...defaultSettings };
+let settings: ServerSettings = { ...defaultSettings };
 
 loadSettings();
 
-function getModelCapabilities(modelPath) {
+function getModelCapabilities(modelPath: string): string[] {
   const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'gemma4vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
   const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3', 'gemma4'];
   try {
     const fd = fs.openSync(modelPath, 'r');
     const header = Buffer.alloc(24);
     fs.readSync(fd, header, 0, 24, 0);
-    if (header.readUInt32LE(0) !== 0x46554747) { fs.closeSync(fd); return []; }
+    if (header.readUInt32LE(0) !== 0x46554747) {
+      fs.closeSync(fd);
+      return [];
+    }
     const kvCount = Number(header.readBigUInt64LE(16));
-    const caps = [];
+    const caps: string[] = [];
     let off = 24;
-    const r8 = () => { const b = Buffer.alloc(8); fs.readSync(fd, b, 0, 8, off); off += 8; return b; };
-    const r4 = () => { const b = Buffer.alloc(4); fs.readSync(fd, b, 0, 4, off); off += 4; return b; };
-    const rStr = (len) => { const b = Buffer.alloc(len); fs.readSync(fd, b, 0, len, off); off += len; return b.toString('utf8'); };
+    const r8 = () => {
+      const b = Buffer.alloc(8);
+      fs.readSync(fd, b, 0, 8, off);
+      off += 8;
+      return b;
+    };
+    const r4 = () => {
+      const b = Buffer.alloc(4);
+      fs.readSync(fd, b, 0, 4, off);
+      off += 4;
+      return b;
+    };
+    const rStr = (len: number) => {
+      const b = Buffer.alloc(len);
+      fs.readSync(fd, b, 0, len, off);
+      off += len;
+      return b.toString('utf8');
+    };
 
-    const skip = (type) => {
+    const skip = (type: number) => {
       switch (type) {
-        case 0: case 1: off += 1; break;
-        case 2: case 3: off += 2; break;
-        case 4: case 5: case 6: off += 4; break;
-        case 7: off += 1; break;
-        case 8: { const l = Number(r8()); off += l; break; }
-        case 9: { const at = r4().readUInt32LE(0); const al = Number(r8()); for (let j = 0; j < al; j++) skip(at); break; }
-        case 10: case 11: off += 8; break;
-        case 12: off += 8; break;
-        default: off += 4; break;
+        case 0:
+        case 1:
+          off += 1;
+          break;
+        case 2:
+        case 3:
+          off += 2;
+          break;
+        case 4:
+        case 5:
+        case 6:
+          off += 4;
+          break;
+        case 7:
+          off += 1;
+          break;
+        case 8: {
+          const l = Number(r8());
+          off += l;
+          break;
+        }
+        case 9: {
+          const at = r4().readUInt32LE(0);
+          const al = Number(r8());
+          for (let j = 0; j < al; j++) skip(at);
+          break;
+        }
+        case 10:
+        case 11:
+          off += 8;
+          break;
+        case 12:
+          off += 8;
+          break;
+        default:
+          off += 4;
+          break;
       }
     };
 
@@ -92,8 +160,8 @@ function getModelCapabilities(modelPath) {
       if (key === 'general.architecture') {
         const sLen = Number(r8());
         const arch = rStr(sLen).toLowerCase();
-        if (VISION_ARCHS.some(a => arch.includes(a))) caps.push('vision');
-        if (REASONING_ARCHS.some(a => arch.includes(a))) caps.push('reasoning');
+        if (VISION_ARCHS.some((a) => arch.includes(a))) caps.push('vision');
+        if (REASONING_ARCHS.some((a) => arch.includes(a))) caps.push('reasoning');
       } else if (key.startsWith('vision.')) {
         if (!caps.includes('vision')) caps.push('vision');
         skip(vType);
@@ -107,13 +175,15 @@ function getModelCapabilities(modelPath) {
     if (hasChatTemplate) caps.push('tools');
     fs.closeSync(fd);
     return caps;
-  } catch (e) { return []; }
+  } catch (e) {
+    return [];
+  }
 }
 
-function findGGUFModels() {
-  const models = [];
+function findGGUFModels(): ModelInfo[] {
+  const models: ModelInfo[] = [];
   try {
-    const scanDir = (dir, depth = 0) => {
+    const scanDir = (dir: string, depth = 0): void => {
       if (depth > 4) return;
       const items = fs.readdirSync(dir, { withFileTypes: true });
       for (const item of items) {
@@ -128,19 +198,19 @@ function findGGUFModels() {
             size: stats.size,
             sizeFormatted: formatBytes(stats.size),
             folder: path.basename(path.dirname(fullPath)),
-            capabilities: getModelCapabilities(fullPath)
+            capabilities: getModelCapabilities(fullPath),
           });
         }
       }
     };
     scanDir(MODELS_PATH);
   } catch (e) {
-    console.error('Error scanning models:', e.message);
+    console.error('Error scanning models:', (e as Error).message);
   }
   return models;
 }
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -148,7 +218,7 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function findAvailablePort(startPort) {
+function findAvailablePort(startPort: number): Promise<number> {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.listen(startPort, '127.0.0.1', () => {
@@ -160,14 +230,14 @@ function findAvailablePort(startPort) {
   });
 }
 
-function killLlamaProcess() {
+function killLlamaProcess(): Promise<void> {
   return new Promise((resolve) => {
     if (!llamaProcess) return resolve();
     const proc = llamaProcess;
     llamaProcess = null;
     if (process.platform === 'win32') {
       const child = spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
-        stdio: 'ignore'
+        stdio: 'ignore',
       });
       child.on('exit', () => resolve());
       child.on('error', () => resolve());
@@ -179,7 +249,7 @@ function killLlamaProcess() {
   });
 }
 
-async function startLlamaServer(modelPath) {
+async function startLlamaServer(modelPath: string): Promise<{ success: boolean; port: number }> {
   if (isStarting) {
     if (startPromise) return startPromise;
     throw new Error('Server start already in progress');
@@ -187,8 +257,8 @@ async function startLlamaServer(modelPath) {
   isStarting = true;
 
   startPromise = (async () => {
-    let usedPort;
-    let serverPath;
+    let usedPort: number;
+    let serverPath: string;
 
     try {
       if (llamaProcess) {
@@ -212,17 +282,16 @@ async function startLlamaServer(modelPath) {
       throw e;
     }
 
-    return new Promise((resolve, reject) => {
-
+    return new Promise<{ success: boolean; port: number }>((resolve, reject) => {
       const serverReadyPatterns = ['listening on', 'running on', 'starting the server', 'server started', 'http://'];
 
       const caps = getModelCapabilities(modelPath);
-      let mmprojPath = null;
+      let mmprojPath: string | null = null;
       if (caps.includes('vision')) {
         const dir = path.dirname(modelPath);
         try {
           const files = fs.readdirSync(dir);
-          const mmproj = files.find(f => f.includes('mmproj') && f.endsWith('.gguf'));
+          const mmproj = files.find((f) => f.includes('mmproj') && f.endsWith('.gguf'));
           if (mmproj) mmprojPath = path.join(dir, mmproj);
         } catch (e) {}
       }
@@ -233,7 +302,7 @@ async function startLlamaServer(modelPath) {
         '--port', usedPort.toString(),
         '-c', settings.contextSize.toString(),
         '-ngl', settings.gpuLayers.toString(),
-        '-t', settings.threads.toString()
+        '-t', settings.threads.toString(),
       ];
       if (mmprojPath) args.push('--mmproj', mmprojPath);
 
@@ -242,36 +311,36 @@ async function startLlamaServer(modelPath) {
 
       const proc = spawn(serverPath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
-        windowsHide: true
+        windowsHide: true,
       });
       llamaProcess = proc;
 
       let started = false;
 
-      const onOutput = (data) => {
+      const onOutput = (data: Buffer): void => {
         const output = data.toString();
         process.stdout.write(output);
-        if (!started && serverReadyPatterns.some(p => output.toLowerCase().includes(p))) {
+        if (!started && serverReadyPatterns.some((p) => output.toLowerCase().includes(p))) {
           started = true;
           currentModel = modelPath;
           try {
-            proc.stdout.removeAllListeners('data');
-            proc.stderr.removeAllListeners('data');
-            proc.stdout.on('data', (d) => process.stdout.write(d));
-            proc.stderr.on('data', (d) => process.stderr.write(d));
+            proc.stdout?.removeAllListeners('data');
+            proc.stderr?.removeAllListeners('data');
+            if (proc.stdout) proc.stdout.on('data', (d) => process.stdout.write(d));
+            if (proc.stderr) proc.stderr.on('data', (d) => process.stderr.write(d));
           } catch (e) {}
           console.log('[OK] Server ready');
           resolve({ success: true, port: usedPort });
         }
       };
 
-      proc.stdout.on('data', onOutput);
-      proc.stderr.on('data', onOutput);
+      proc.stdout?.on('data', onOutput);
+      proc.stderr?.on('data', onOutput);
 
-      const cleanup = () => {
+      const cleanup = (): void => {
         try {
-          proc.stdout.removeAllListeners('data');
-          proc.stderr.removeAllListeners('data');
+          proc.stdout?.removeAllListeners('data');
+          proc.stderr?.removeAllListeners('data');
         } catch (e) {}
       };
 
@@ -292,7 +361,9 @@ async function startLlamaServer(modelPath) {
       setTimeout(() => {
         if (!started) {
           cleanup();
-          try { proc.kill(); } catch (e) {}
+          try {
+            proc.kill();
+          } catch (e) {}
           reject(new Error('Timeout waiting for server'));
         }
       }, 60000);
@@ -308,7 +379,7 @@ async function startLlamaServer(modelPath) {
   }
 }
 
-async function stopLlamaServer() {
+async function stopLlamaServer(): Promise<{ success: true }> {
   if (llamaProcess) {
     await killLlamaProcess();
     currentModel = null;
@@ -318,61 +389,70 @@ async function stopLlamaServer() {
 
 // --- API Routes ---
 
-app.get('/api/models', (req, res) => {
+const app = express();
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
+
+app.get('/api/models', (_req: express.Request, res: express.Response) => {
   res.json({ models: findGGUFModels() });
 });
 
-app.get('/api/status', (req, res) => {
+app.get('/api/status', (_req: express.Request, res: express.Response) => {
   res.json({ running: llamaProcess !== null, currentModel, port: settings.port });
 });
 
-app.post('/api/server/start', async (req, res) => {
+app.post('/api/server/start', async (req: express.Request, res: express.Response) => {
   try {
-    const result = await startLlamaServer(req.body.modelPath);
+    const { modelPath } = req.body as { modelPath: string };
+    const result = await startLlamaServer(modelPath);
     res.json(result);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: (e as Error).message });
   }
 });
 
-app.post('/api/server/stop', async (req, res) => {
+app.post('/api/server/stop', async (_req: express.Request, res: express.Response) => {
   res.json(await stopLlamaServer());
 });
 
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', (_req: express.Request, res: express.Response) => {
   res.json(settings);
 });
 
-app.post('/api/settings', (req, res) => {
-  const body = req.body || {};
-  const sanitized = {};
+app.post('/api/settings', (req: express.Request, res: express.Response) => {
+  const body = req.body as Record<string, unknown>;
+  const sanitized: Record<string, string | number> = {};
 
-  const stringFields = ['systemPrompt'];
+  const stringFields: (keyof ServerSettings)[] = ['systemPrompt'];
   for (const f of stringFields) {
-    if (typeof body[f] === 'string') {
-      sanitized[f] = body[f].trim();
+    const v = body[f];
+    if (typeof v === 'string') {
+      sanitized[f] = v.trim();
     }
   }
 
-  const numFields = ['temperature', 'topP', 'topK', 'repeatPenalty', 'maxTokens', 'contextSize', 'gpuLayers', 'threads'];
+  const numFields: (keyof ServerSettings)[] = [
+    'temperature', 'topP', 'topK', 'repeatPenalty', 'maxTokens', 'contextSize', 'gpuLayers', 'threads',
+  ];
   for (const f of numFields) {
-    if (body[f] !== undefined) {
-      const n = Number(body[f]);
+    const v = body[f];
+    if (v !== undefined) {
+      const n = Number(v);
       if (!Number.isNaN(n)) sanitized[f] = n;
     }
   }
 
-  settings = { ...settings, ...sanitized };
+  settings = { ...settings, ...(sanitized as Partial<ServerSettings>) };
   saveSettings();
   res.json({ success: true });
 });
 
 // --- Chat endpoint with SSE streaming ---
 
-function sanitizeMessages(messages) {
+function sanitizeMessages(messages: ChatMessageDTO[]): ChatMessageDTO[] {
   // Merge consecutive same-role messages to satisfy chat template
   // role alternation requirements (user/assistant/user/assistant/...)
-  const result = [];
+  const result: ChatMessageDTO[] = [];
   for (const msg of messages) {
     const last = result[result.length - 1];
     if (last && last.role === msg.role && msg.role !== 'system') {
@@ -384,7 +464,7 @@ function sanitizeMessages(messages) {
       } else if (Array.isArray(msg.content)) {
         last.content = [{ type: 'text', text: String(last.content) }, ...msg.content];
       } else {
-        last.content = (last.content || '') + '\n' + (msg.content || '');
+        last.content = String(last.content) + '\n\n' + String(msg.content);
       }
     } else {
       result.push({ ...msg });
@@ -393,8 +473,8 @@ function sanitizeMessages(messages) {
   return result;
 }
 
-app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+app.post('/api/chat', async (req: express.Request, res: express.Response) => {
+  const { messages } = req.body as { messages: ChatMessageDTO[] };
 
   if (!llamaProcess) {
     return res.status(503).json({ error: 'Server not running' });
@@ -402,10 +482,9 @@ app.post('/api/chat', async (req, res) => {
 
   // Only prepend system prompt if the frontend didn't already include one
   const hasSystem = messages.length > 0 && messages[0].role === 'system';
-  const allMessages = sanitizeMessages(hasSystem ? messages : [
-    { role: 'system', content: settings.systemPrompt },
-    ...messages
-  ]);
+  const allMessages = sanitizeMessages(
+    hasSystem ? messages : [{ role: 'system', content: settings.systemPrompt }, ...messages],
+  );
 
   console.log('[CHAT] Request with', allMessages.length, 'messages');
 
@@ -420,8 +499,8 @@ app.post('/api/chat', async (req, res) => {
         top_k: settings.topK,
         repeat_penalty: settings.repeatPenalty,
         max_tokens: settings.maxTokens,
-        stream: true
-      })
+        stream: true,
+      }),
     });
 
     if (!llmRes.ok) {
@@ -435,6 +514,11 @@ app.post('/api/chat', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
+    if (!llmRes.body) {
+      res.end();
+      return;
+    }
+
     const reader = llmRes.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -443,6 +527,7 @@ app.post('/api/chat', async (req, res) => {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        if (!value) continue;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -455,29 +540,29 @@ app.post('/api/chat', async (req, res) => {
       }
       if (buffer.trim()) res.write(buffer.trim() + '\n\n');
     } catch (e) {
-      console.error('[CHAT] Stream read error:', e.message);
+      console.error('[CHAT] Stream read error:', (e as Error).message);
     }
 
     res.end();
     console.log('[CHAT] Stream complete');
   } catch (e) {
-    console.error('[CHAT] Error:', e.message);
+    console.error('[CHAT] Error:', (e as Error).message);
     if (!res.headersSent) {
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: (e as Error).message });
     }
   }
 });
 
 const PORT = process.env.PORT || 3000;
-server = app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n  Llama.cpp UI  ->  http://localhost:${PORT}\n`);
 });
 
 server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
+  if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
     console.error(`[ERROR] Port ${PORT} is already in use. Another instance may be running.`);
   } else {
-    console.error('[ERROR] Server failed to start:', err.message);
+    console.error('[ERROR] Server failed to start:', (err as Error).message);
   }
   process.exit(1);
 });

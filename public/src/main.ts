@@ -1,19 +1,35 @@
 import { el, $, showShortcuts, closeSidebar } from './utils.js';
 import { showToast } from './toast.js';
 import { loadModels, updateModelInfo } from './models.js';
-import { loadSettings, applySettings, renderPresets, applyPreset, savePreset, deletePreset } from './settings.js';
+import {
+  loadSettings,
+  applySettings,
+  renderPresets,
+  applyPreset,
+  savePreset,
+  deletePreset,
+} from './settings.js';
 import { setupAttachmentListeners } from './attachments.js';
 import { sendMessage, stopGeneration, restartConversation, regenerateFrom } from './chat.js';
-import { getConversations, getCurrentConv, saveConversations, renderConversation, exportConversation, newConversation, selectConversation } from './conversation.js';
+import {
+  getConversations,
+  getCurrentConv,
+  saveConversations,
+  renderConversation,
+  exportConversation,
+  newConversation,
+  selectConversation,
+} from './conversation.js';
 import { checkStatus, startServer, stopServer } from './server.js';
 import { renderSidebar, setupSidebarListeners } from './sidebar.js';
+import { textOf, type ExportFormat } from './types.js';
 
-function init() {
+function init(): void {
   try {
     const savedConvId = localStorage.getItem('currentConversationId');
     const convs = getConversations();
 
-    if (savedConvId && convs.find(c => c.id === savedConvId)) {
+    if (savedConvId && convs.find((c) => c.id === savedConvId)) {
       selectConversation(savedConvId);
     }
   } catch (e) {
@@ -29,12 +45,13 @@ function init() {
   setupSidebarListeners();
 
   // Slider live value display
-  ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach(id => {
+  ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach((id) => {
     const elSlider = $(id);
-    if (elSlider) elSlider.addEventListener('input', (e) => {
-      const valEl = $(id + 'Val');
-      if (valEl) valEl.textContent = e.target.value;
-    });
+    if (elSlider)
+      elSlider.addEventListener('input', (e) => {
+        const valEl = $(id + 'Val');
+        if (valEl) valEl.textContent = (e.target as HTMLInputElement).value;
+      });
   });
 
   // Status polling
@@ -65,12 +82,15 @@ function init() {
 
   el.modelSelect.addEventListener('change', updateModelInfo);
 
-  document.querySelectorAll('.settings-tab').forEach(tab => {
+  document.querySelectorAll('.settings-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      $(tab.dataset.tab === 'params' ? 'settingsParams' : tab.dataset.tab === 'system' ? 'settingsSystem' : 'settingsPresets').classList.add('active');
+      const ht = tab as HTMLElement;
+      document.querySelectorAll('.settings-tab').forEach((t) => t.classList.remove('active'));
+      document.querySelectorAll('.settings-panel').forEach((p) => p.classList.remove('active'));
+      ht.classList.add('active');
+      const tabName = ht.dataset.tab;
+      const panelId = tabName === 'params' ? 'settingsParams' : tabName === 'system' ? 'settingsSystem' : 'settingsPresets';
+      $(panelId).classList.add('active');
     });
   });
 
@@ -85,7 +105,7 @@ function init() {
 
   el.settingsBtn.addEventListener('click', () => el.settingsModal.classList.add('active'));
 
-  document.querySelectorAll('.modal-header .icon-btn').forEach(btn => {
+  document.querySelectorAll('.modal-header .icon-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const modal = btn.closest('.modal-overlay');
       if (modal) modal.classList.remove('active');
@@ -99,9 +119,10 @@ function init() {
 
   const exportModal = $('exportModal');
   if (exportModal) {
-    exportModal.querySelectorAll('.export-option').forEach(opt => {
+    exportModal.querySelectorAll('.export-option').forEach((opt) => {
       opt.addEventListener('click', () => {
-        exportConversation(opt.dataset.format);
+        const format = (opt as HTMLElement).dataset.format as ExportFormat;
+        exportConversation(format);
         exportModal.classList.remove('active');
       });
     });
@@ -133,28 +154,40 @@ function init() {
     if (e.ctrlKey && e.shiftKey) {
       switch (e.key) {
         case 'C':
-        case 'c': e.preventDefault(); restartConversation(); break;
+        case 'c':
+          e.preventDefault();
+          restartConversation();
+          break;
         case 'N':
-        case 'n': e.preventDefault(); newConversation(); renderSidebar(); break;
+        case 'n':
+          e.preventDefault();
+          newConversation();
+          renderSidebar();
+          break;
         case 'S':
-        case 's': e.preventDefault(); el.sidebar.classList.toggle('open'); if (el.sidebarOverlay) el.sidebarOverlay.classList.toggle('open'); break;
+        case 's':
+          e.preventDefault();
+          el.sidebar.classList.toggle('open');
+          if (el.sidebarOverlay) el.sidebarOverlay.classList.toggle('open');
+          break;
       }
     }
     if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      document.querySelectorAll('.modal-overlay.active').forEach((m) => m.classList.remove('active'));
     }
   });
 
   el.chatMessages.addEventListener('click', (e) => {
-    const target = e.target;
-    const msgEl = target.closest('.message');
+    const target = e.target as HTMLElement;
+    const msgEl = target.closest('.message') as HTMLElement | null;
     if (!msgEl) return;
     const msgId = msgEl.dataset.messageId;
+    if (!msgId) return;
 
     if (target.classList.contains('delete-message-btn')) {
       const conv = getCurrentConv();
       if (!conv) return;
-      conv.messages = conv.messages.filter(m => m.id !== msgId);
+      conv.messages = conv.messages.filter((m) => m.id !== msgId);
       saveConversations();
       renderConversation(conv);
       return;
@@ -163,9 +196,9 @@ function init() {
     if (target.classList.contains('copy-message-btn')) {
       const conv = getCurrentConv();
       if (!conv) return;
-      const msg = conv.messages.find(m => m.id === msgId);
+      const msg = conv.messages.find((m) => m.id === msgId);
       if (msg) {
-        navigator.clipboard.writeText(msg.content).then(() => {
+        navigator.clipboard.writeText(textOf(msg.content)).then(() => {
           showToast('Copied to clipboard', 'success');
         });
       }
@@ -175,9 +208,9 @@ function init() {
     if (target.classList.contains('edit-message-btn')) {
       const conv = getCurrentConv();
       if (!conv) return;
-      const msg = conv.messages.find(m => m.id === msgId);
+      const msg = conv.messages.find((m) => m.id === msgId);
       if (msg) {
-        const newContent = prompt('Edit message:', msg.content);
+        const newContent = prompt('Edit message:', textOf(msg.content));
         if (newContent !== null && newContent.trim()) {
           msg.content = newContent;
           saveConversations();
@@ -195,7 +228,8 @@ function init() {
 
   el.chatMessages.addEventListener('scroll', () => {
     const threshold = 100;
-    const atBottom = el.chatMessages.scrollHeight - el.chatMessages.scrollTop - el.chatMessages.clientHeight < threshold;
+    const atBottom =
+      el.chatMessages.scrollHeight - el.chatMessages.scrollTop - el.chatMessages.clientHeight < threshold;
     el.scrollBottomBtn.classList.toggle('visible', !atBottom);
   });
 
@@ -209,7 +243,7 @@ function init() {
   const sidebarResizeHandle = $('sidebarResizeHandle');
   if (sidebarResizeHandle) {
     let isResizing = false;
-    sidebarResizeHandle.addEventListener('mousedown', (e) => {
+    sidebarResizeHandle.addEventListener('mousedown', () => {
       isResizing = true;
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
@@ -225,14 +259,14 @@ function init() {
         isResizing = false;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
-        localStorage.setItem('sidebarWidth', parseInt(el.sidebar.style.width));
+        localStorage.setItem('sidebarWidth', String(parseInt(el.sidebar.style.width)));
       }
     });
   }
 
-  document.querySelectorAll('.quick-action').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (btn.textContent.includes('Keyboard Shortcuts')) {
+  document.querySelectorAll('.quick-action').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.textContent?.includes('Keyboard Shortcuts')) {
         showShortcuts();
       }
     });

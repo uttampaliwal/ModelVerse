@@ -11,7 +11,7 @@ const LATEX_MATH_CMDS = new Set([
   'begin','end','matrix','pmatrix','bmatrix','Bmatrix','vmatrix','Vmatrix','cases','array','aligned','gathered','split','eqnarray','smallmatrix'
 ]);
 
-function readBrace(text, start) {
+function readBrace(text: string, start: number): [string, number] {
   let depth = 0;
   let i = start;
   let result = '';
@@ -25,13 +25,16 @@ function readBrace(text, start) {
       depth++;
     } else if (c === '}') {
       depth--;
-      if (depth === 0) { i++; break; }
+      if (depth === 0) {
+        i++;
+        break;
+      }
     }
   }
   return [result, i];
 }
 
-function stashRawLatex(text, stash) {
+function stashRawLatex(text: string, stash: (m: string) => string): string {
   let out = '';
   let i = 0;
   const n = text.length;
@@ -46,17 +49,28 @@ function stashRawLatex(text, stash) {
         let advanced = true;
         while (k < n && advanced) {
           advanced = false;
-          while (k < n && /\s/.test(text[k])) { expr += text[k]; k++; }
+          while (k < n && /\s/.test(text[k])) {
+            expr += text[k];
+            k++;
+          }
           if (text[k] === '{') {
             const [grp, nk] = readBrace(text, k);
-            expr += grp; k = nk; advanced = true;
+            expr += grp;
+            k = nk;
+            advanced = true;
           } else if ('^_+-=/()[]'.includes(text[k])) {
-            expr += text[k]; k++; advanced = true;
+            expr += text[k];
+            k++;
+            advanced = true;
           } else if (text[k] === '\\' && k + 1 < n && /[a-zA-Z]/.test(text[k + 1])) {
             let m = k + 1;
             while (m < n && /[a-zA-Z]/.test(text[m])) m++;
             const sub = text.slice(k + 1, m);
-            if (LATEX_MATH_CMDS.has(sub)) { expr += text.slice(k, m); k = m; advanced = true; }
+            if (LATEX_MATH_CMDS.has(sub)) {
+              expr += text.slice(k, m);
+              k = m;
+              advanced = true;
+            }
           }
         }
         out += '$' + stash(expr) + '$';
@@ -73,11 +87,11 @@ function stashRawLatex(text, stash) {
   return out;
 }
 
-export function formatMd(text) {
+export function formatMd(text: string): string {
   if (!text) return '';
 
-  const mathStore = [];
-  const stash = (m) => {
+  const mathStore: string[] = [];
+  const stash = (m: string): string => {
     const escaped = m.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     mathStore.push(escaped);
     return `@@MJ${mathStore.length - 1}@@`;
@@ -108,7 +122,10 @@ export function formatMd(text) {
     const numMatch = line.match(/^\s*\d+\.\s+(.*)/);
 
     if (headingMatch) {
-      if (inList) { result += `</${listType}>`; inList = false; }
+      if (inList) {
+        result += `</${listType}>`;
+        inList = false;
+      }
       const level = headingMatch[1].length;
       result += `<h${level}>${headingMatch[2]}</h${level}>`;
     } else if (bulletMatch) {
@@ -128,7 +145,10 @@ export function formatMd(text) {
       }
       result += `<li>${numMatch[1]}</li>`;
     } else {
-      if (inList) { result += `</${listType}>`; inList = false; }
+      if (inList) {
+        result += `</${listType}>`;
+        inList = false;
+      }
       const trimmed = line.trim();
       if (trimmed === '') {
         result += '<br>';
@@ -149,12 +169,12 @@ export function formatMd(text) {
   return result;
 }
 
-export function extractThinking(text) {
+export function extractThinking(text: string): { thinking: string; content: string } {
   let thinking = '';
   let content = text;
 
   const completeRegex = /<think>[\s\S]*?<\/think>/gi;
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = completeRegex.exec(content)) !== null) {
     const inner = match[0].replace(/^<think>/, '').replace(/<\/think>$/, '').trim();
     thinking += inner + '\n';
@@ -170,7 +190,7 @@ export function extractThinking(text) {
   return { thinking: thinking.trim(), content: content.trim() };
 }
 
-export function buildMessageHtml(thinking, answer, timestamp) {
+export function buildMessageHtml(thinking: string, answer: string, timestamp?: number | string): string {
   let html = '';
   if (thinking) {
     html += `<details class="thinking-block"><summary>Thinking...</summary><div class="thinking-content">${formatMd(thinking)}</div></details>`;

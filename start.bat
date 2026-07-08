@@ -25,4 +25,4 @@ if not exist "node_modules" (
 echo [INFO] Starting Llama.cpp Web UI...
 echo [INFO] Open http://localhost:3000 in your browser
 echo.
-node server.js
+npm start

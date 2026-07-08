@@ -2,32 +2,44 @@ import { showToast } from './toast.js';
 import { el, $ } from './utils.js';
 import { modelMap } from './models.js';
 
-export let pendingAttachment = null;
+export interface PendingAttachment {
+  data: string;
+  name: string;
+  type: string;
+  attachType: 'image' | 'text';
+}
 
-export function setupAttachmentListeners() {
-  $('attachBtn').addEventListener('click', () => $('fileInput').click());
+export let pendingAttachment: PendingAttachment | null = null;
 
-  $('fileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
+export function clearPendingAttachment(): void {
+  pendingAttachment = null;
+}
+
+export function setupAttachmentListeners(): void {
+  $('attachBtn').addEventListener('click', () => $<HTMLInputElement>('fileInput').click());
+
+  $<HTMLInputElement>('fileInput').addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const isImage = file.type.startsWith('image/');
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const attachType = isImage ? 'image' : 'text';
+      const result = (ev.target as FileReader).result as string;
+      const attachType: 'image' | 'text' = isImage ? 'image' : 'text';
       pendingAttachment = {
-        data: ev.target.result,
+        data: result,
         name: file.name,
         type: file.type,
-        attachType
+        attachType,
       };
-      $('previewImage').style.display = isImage ? '' : 'none';
+      $<HTMLImageElement>('previewImage').style.display = isImage ? '' : 'none';
       $('attachmentName').style.display = isImage ? 'none' : '';
       if (isImage) {
-        $('previewImage').src = ev.target.result;
+        $<HTMLImageElement>('previewImage').src = result;
         $('attachmentName').textContent = '';
       } else {
-        $('previewImage').src = '';
+        $<HTMLImageElement>('previewImage').src = '';
         $('attachmentName').textContent = `📄 ${file.name}`;
       }
       $('attachmentPreview').style.display = 'flex';
@@ -44,14 +56,14 @@ export function setupAttachmentListeners() {
     } else {
       reader.readAsText(file);
     }
-    e.target.value = '';
+    (e.target as HTMLInputElement).value = '';
   });
 
   $('removeAttachBtn').addEventListener('click', () => {
     pendingAttachment = null;
     $('attachmentPreview').style.display = 'none';
-    $('previewImage').src = '';
-    $('previewImage').style.display = '';
+    $<HTMLImageElement>('previewImage').src = '';
+    $<HTMLImageElement>('previewImage').style.display = '';
     $('attachmentName').style.display = 'none';
     $('attachmentName').textContent = '';
     $('attachBtn').classList.remove('has-attachment');

@@ -1,20 +1,27 @@
 import { el, esc, closeSidebar } from './utils.js';
-import { getConversations, setCurrentConvId, selectConversation, renameConversation, deleteConversation, newConversation } from './conversation.js';
-import { showToast } from './toast.js';
+import {
+  getConversations,
+  setCurrentConvId,
+  selectConversation,
+  renameConversation,
+  deleteConversation,
+  newConversation,
+} from './conversation.js';
+import type { Conversation } from './types.js';
 
-let searchTimeout = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-export function renderSidebar() {
+export function renderSidebar(): void {
   el.sidebarList.innerHTML = '';
   const convs = getConversations();
   const searchTerm = (el.sidebarSearch?.value || '').toLowerCase().trim();
 
-  let filtered = convs;
+  let filtered: Conversation[] = convs;
   if (searchTerm) {
-    filtered = convs.filter(c => c.title.toLowerCase().includes(searchTerm));
+    filtered = convs.filter((c) => c.title.toLowerCase().includes(searchTerm));
   }
 
-  filtered.forEach(conv => {
+  filtered.forEach((conv) => {
     const div = document.createElement('div');
     div.className = 'conversation-item';
     const date = new Date(conv.updatedAt || conv.createdAt);
@@ -30,16 +37,16 @@ export function renderSidebar() {
         <span class="conv-action delete-action" title="Delete">🗑️</span>
       </div>
     `;
-    div.querySelector('.conv-title').addEventListener('click', () => {
+    div.querySelector('.conv-title')!.addEventListener('click', () => {
       setCurrentConvId(conv.id);
       selectConversation(conv.id);
       closeSidebar();
     });
-    div.querySelector('.rename-action').addEventListener('click', (e) => {
+    div.querySelector('.rename-action')!.addEventListener('click', (e) => {
       e.stopPropagation();
       renameConversation(conv.id);
     });
-    div.querySelector('.delete-action').addEventListener('click', (e) => {
+    div.querySelector('.delete-action')!.addEventListener('click', (e) => {
       e.stopPropagation();
       deleteConversation(conv.id);
     });
@@ -47,9 +54,9 @@ export function renderSidebar() {
   });
 }
 
-export function setupSidebarListeners() {
+export function setupSidebarListeners(): void {
   el.sidebarSearch?.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
+    if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(renderSidebar, 150);
   });
 
@@ -58,5 +65,3 @@ export function setupSidebarListeners() {
     closeSidebar();
   });
 }
-
-

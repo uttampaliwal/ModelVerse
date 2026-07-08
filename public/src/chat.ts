@@ -1,47 +1,46 @@
 import { api } from './api.js';
 import { showToast } from './toast.js';
-import { el, $, hideWelcome } from './utils.js';
+import { el, $, hideWelcome, showWelcome } from './utils.js';
 import { extractThinking } from './markdown.js';
-import { pendingAttachment } from './attachments.js';
+import { pendingAttachment, clearPendingAttachment } from './attachments.js';
 import { modelMap, updateModelInfo } from './models.js';
 import {
-  getCurrentConv, saveConversations, renderMessage, renderConversation,
-  newConversation, updateMessageContent, updateStreamingContent, generateTitle
+  getCurrentConv,
+  saveConversations,
+  renderMessage,
+  renderConversation,
+  newConversation,
+  updateMessageContent,
+  updateStreamingContent,
+  generateTitle,
 } from './conversation.js';
+import type { ChatMessage, ChatChunk, ChatCompletionResponse, StatusResponse, PayloadMessage } from './types.js';
 
-let currentAbortController = null;
+let currentAbortController: AbortController | null = null;
 let isGenerating = false;
 
-let editingMessageId = null;
+let editingMessageId: string | null = null;
 
-function getEditingMessageId() {
-  return editingMessageId;
-}
-
-function setEditingMessageId(id) {
-  editingMessageId = id;
-}
-
-export function regenerateFrom(msgId) {
+export function regenerateFrom(msgId: string): void {
   const conv = getCurrentConv();
   if (conv) conv._backup = JSON.parse(JSON.stringify(conv.messages));
   editingMessageId = msgId;
   el.sendBtn.classList.add('regenerate-mode');
-  el.sendBtn.querySelector('.btn-icon').textContent = '🔄';
-  el.sendBtn.querySelector('.btn-label').textContent = 'Regenerate';
+  el.sendBtn.querySelector('.btn-icon')!.textContent = '🔄';
+  el.sendBtn.querySelector('.btn-label')!.textContent = 'Regenerate';
   el.restartBtn.classList.remove('hidden');
   sendMessage();
 }
 
-function resetRegenerateMode() {
+function resetRegenerateMode(): void {
   el.sendBtn.classList.remove('regenerate-mode');
-  el.sendBtn.querySelector('.btn-icon').textContent = '➤';
-  el.sendBtn.querySelector('.btn-label').textContent = 'Send';
+  el.sendBtn.querySelector('.btn-icon')!.textContent = '➤';
+  el.sendBtn.querySelector('.btn-label')!.textContent = 'Send';
   editingMessageId = null;
   el.restartBtn.classList.add('hidden');
 }
 
-export async function sendMessage() {
+export async function sendMessage(): Promise<void> {
   if (isGenerating) return;
 
   const conv = getCurrentConv();
@@ -61,7 +60,7 @@ export async function sendMessage() {
   }
 
   try {
-    const status = await api('/api/status');
+    const status = await api<StatusResponse>('/api/status');
     if (!status.running) {
       resetRegenerateMode();
       showToast('Server is not running. Start the server first.', 'error');
@@ -78,9 +77,10 @@ export async function sendMessage() {
   if (!conv) newConversation();
 
   const currentConv = getCurrentConv();
+  if (!currentConv) return;
 
   if (editingMessageId) {
-    const msgIdx = currentConv.messages.findIndex(m => m.id === editingMessageId);
+    const msgIdx = currentConv.messages.findIndex((m) => m.id === editingMessageId);
     if (msgIdx !== -1) {
       currentConv.messages = currentConv.messages.slice(0, msgIdx);
       saveConversations();
@@ -90,19 +90,20 @@ export async function sendMessage() {
   } else {
     if (fileAttach) {
       if (fileAttach.attachType === 'image') {
-        currentConv.messages.push({
+        const msg: ChatMessage = {
           id: Date.now().toString(),
           role: 'user',
-          createdAt: now,
+          createdAt: new Date().toISOString(),
           content: [
             { type: 'image_url', image_url: { url: fileAttach.data } },
-            { type: 'text', text: userInput || 'Describe this image.' }
-          ]
-        });
+            { type: 'text', text: userInput || 'Describe this image.' },
+          ],
+        };
+        currentConv.messages.push(msg);
         renderMessage(currentConv.messages[currentConv.messages.length - 1]);
       } else {
         // Truncate text attachments based on context size
-        const ctxSize = parseInt($('contextSize').value) || 4096;
+        const ctxSize = parseInt($<HTMLInputElement>('contextSize').value) || 4096;
         const maxChars = Math.floor(ctxSize * 3.5 * 0.7);
         let fileData = fileAttach.data;
         if (fileData.length > maxChars) {
@@ -112,14 +113,14 @@ export async function sendMessage() {
           id: Date.now().toString(),
           role: 'user',
           createdAt: new Date().toISOString(),
-          content: (userInput || '') + '\n\n[File: ' + fileAttach.name + ']\n' + fileData
+          content: (userInput || '') + '\n\n[File: ' + fileAttach.name + ']\n' + fileData,
         });
         renderMessage(currentConv.messages[currentConv.messages.length - 1]);
       }
-      pendingAttachment = null;
+      clearPendingAttachment();
       $('attachmentPreview').style.display = 'none';
-      $('previewImage').src = '';
-      $('previewImage').style.display = '';
+      $<HTMLImageElement>('previewImage').src = '';
+      $<HTMLImageElement>('previewImage').style.display = '';
       $('attachmentName').style.display = 'none';
       $('attachmentName').textContent = '';
       $('attachBtn').classList.remove('has-attachment');
@@ -128,7 +129,7 @@ export async function sendMessage() {
         id: Date.now().toString(),
         role: 'user',
         createdAt: new Date().toISOString(),
-        content: userInput
+        content: userInput,
       });
       renderMessage(currentConv.messages[currentConv.messages.length - 1]);
     }
@@ -144,31 +145,33 @@ export async function sendMessage() {
     currentConv.title = generateTitle(currentConv);
     el.chatTitle.textContent = currentConv.title;
     saveConversations();
-    import('./sidebar.js').then(m => m.renderSidebar());
+    import('./sidebar.js').then((m) => m.renderSidebar());
   }
 
   // Build payload messages, ensuring strict user/assistant alternation
-  const userMsgs = [];
+  const userMsgs: PayloadMessage[] = [];
   for (const m of currentConv.messages) {
     if (m.role === 'user' || m.role === 'assistant') {
       const last = userMsgs[userMsgs.length - 1];
       if (last && last.role === m.role) {
-        // Skip consecutive same-role messages to satisfy Jinja template
         userMsgs[userMsgs.length - 1] = {
           role: m.role,
-          content: last.content + '\n\n' + (Array.isArray(m.content) ? JSON.stringify(m.content) : m.content)
+          content:
+            String(last.content) +
+            '\n\n' +
+            (Array.isArray(m.content) ? JSON.stringify(m.content) : m.content),
         };
       } else {
         userMsgs.push({
           role: m.role,
-          content: Array.isArray(m.content) ? m.content : m.content
+          content: m.content,
         });
       }
     }
   }
 
   const payload = {
-    messages: userMsgs
+    messages: userMsgs,
   };
 
   currentAbortController = new AbortController();
@@ -181,11 +184,11 @@ export async function sendMessage() {
   if (el.latency) el.latency.textContent = '0s';
   if (el.tokenCount) el.tokenCount.textContent = '0 tok';
 
-  const assistantMsg = {
+  const assistantMsg: ChatMessage = {
     id: Date.now().toString(),
     role: 'assistant',
     content: '',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
   currentConv.messages.push(assistantMsg);
   saveConversations();
@@ -198,7 +201,7 @@ export async function sendMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: currentAbortController.signal
+      signal: currentAbortController.signal,
     });
 
     if (!res.ok) {
@@ -228,6 +231,10 @@ export async function sendMessage() {
 
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('text/event-stream') || contentType.includes('text/plain')) {
+      if (!res.body) {
+        showToast('Empty response from server', 'error');
+        return;
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullContent = '';
@@ -245,15 +252,15 @@ export async function sendMessage() {
           if (!trimmed || trimmed === 'data: [DONE]') continue;
           if (trimmed.startsWith('data: ')) {
             try {
-              const json = JSON.parse(trimmed.slice(6));
+              const json = JSON.parse(trimmed.slice(6)) as ChatChunk;
               const delta = json.choices?.[0]?.delta?.content || '';
               if (delta) streamTokenCount++;
               fullContent += delta;
               assistantMsg.content = fullContent;
               const { thinking: t, content: c } = extractThinking(fullContent);
               updateStreamingContent(assistantMsg.id, fullContent, t, c);
-              const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-              if (el.latency) el.latency.textContent = elapsed + 's';
+              const elapsed = (Date.now() - startTime) / 1000;
+              if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
               if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
               saveConversations();
             } catch (e) {}
@@ -265,34 +272,39 @@ export async function sendMessage() {
         try {
           const trimmed = streamBuffer.trim();
           if (trimmed.startsWith('data: ')) {
-            const json = JSON.parse(trimmed.slice(6));
+            const json = JSON.parse(trimmed.slice(6)) as ChatChunk;
             const delta = json.choices?.[0]?.delta?.content || '';
             if (delta) streamTokenCount++;
-            const fullContent = assistantMsg.content + delta;
-            assistantMsg.content = fullContent;
-            const { thinking: t, content: c } = extractThinking(fullContent);
-            updateStreamingContent(assistantMsg.id, fullContent, t, c);
+            const fc = assistantMsg.content + delta;
+            assistantMsg.content = fc;
+            const { thinking: t, content: c } = extractThinking(fc);
+            updateStreamingContent(assistantMsg.id, fc, t, c);
             updateModelInfo();
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            if (el.latency) el.latency.textContent = elapsed + 's';
+            const elapsed = (Date.now() - startTime) / 1000;
+            if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
             if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
             saveConversations();
           }
         } catch (e) {}
       }
 
-      const { thinking } = extractThinking(assistantMsg.content);
+      const { thinking } = extractThinking(assistantMsg.content as string);
       if (thinking) {
         assistantMsg.thinking = thinking;
         saveConversations();
-        const { content: c } = extractThinking(assistantMsg.content);
-        updateStreamingContent(assistantMsg.id, assistantMsg.content, thinking, c || assistantMsg.content);
+        const { content: c } = extractThinking(assistantMsg.content as string);
+        updateStreamingContent(
+          assistantMsg.id,
+          assistantMsg.content as string,
+          thinking,
+          c || (assistantMsg.content as string),
+        );
       }
 
       currentConv.updatedAt = new Date().toISOString();
       saveConversations();
     } else {
-      const json = await res.json();
+      const json = (await res.json()) as ChatCompletionResponse;
       const text = json.choices?.[0]?.message?.content || JSON.stringify(json);
       assistantMsg.content = text;
       updateMessageContent(assistantMsg.id, text);
@@ -300,14 +312,15 @@ export async function sendMessage() {
       saveConversations();
     }
   } catch (e) {
-    if (e.name === 'AbortError') {
+    const err = e as Error;
+    if (err.name === 'AbortError') {
       assistantMsg.content += '\n\n*[Generation stopped]*';
-      updateMessageContent(assistantMsg.id, assistantMsg.content);
+      updateMessageContent(assistantMsg.id, assistantMsg.content as string);
       saveConversations();
     } else {
-      showToast('Connection error: ' + e.message, 'error');
-      assistantMsg.content = '**Error:** ' + e.message;
-      updateMessageContent(assistantMsg.id, assistantMsg.content);
+      showToast('Connection error: ' + err.message, 'error');
+      assistantMsg.content = '**Error:** ' + err.message;
+      updateMessageContent(assistantMsg.id, assistantMsg.content as string);
       saveConversations();
     }
   } finally {
@@ -316,17 +329,17 @@ export async function sendMessage() {
     el.stopGenerateBtn.disabled = true;
     el.stopGenerateBtn.style.display = 'none';
     el.sendBtn.disabled = false;
-    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    const totalTime = (Date.now() - startTime) / 1000;
     if (streamTokenCount > 0) {
-      const tps = (streamTokenCount / parseFloat(totalTime)).toFixed(1);
-      if (el.latency) el.latency.textContent = totalTime + 's';
+      const tps = (streamTokenCount / parseFloat(totalTime.toString())).toFixed(1);
+      if (el.latency) el.latency.textContent = totalTime.toFixed(1) + 's';
       if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok \u00B7 ' + tps + '/s';
     }
     updateModelInfo();
   }
 }
 
-export function stopGeneration() {
+export function stopGeneration(): void {
   if (currentAbortController) {
     currentAbortController.abort();
     currentAbortController = null;
@@ -338,7 +351,7 @@ export function stopGeneration() {
   }
 }
 
-export function restartConversation() {
+export function restartConversation(): void {
   isGenerating = false;
   const conv = getCurrentConv();
   if (!conv) return;
