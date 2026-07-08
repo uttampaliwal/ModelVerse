@@ -49,6 +49,12 @@ async function init(): Promise<void> {
   setupAttachmentListeners();
   setupSidebarListeners();
 
+  // Background warm-up: preload highlight.js so the first message renders fast
+  // @ts-ignore — runtime URL path resolved by the static server
+  import('/vendor/highlight/highlight.esm.js')
+    .then((m) => { (window as any).hljs = m.default; })
+    .catch(() => {});
+
   // Slider live value display
   ['temperature', 'topP', 'topK', 'repeatPenalty'].forEach((id) => {
     const elSlider = $(id);

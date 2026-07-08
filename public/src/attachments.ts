@@ -61,6 +61,26 @@ function kindOf(file: File): AttachKind {
   return 'text';
 }
 
+// ---- Lazy library loading ---------------------------------------------------
+
+const libPromises = new Map<string, Promise<any>>();
+
+function loadLibOnce(src: string, globalName: string): Promise<any> {
+  const w = window as unknown as Record<string, any>;
+  if (w[globalName]) return Promise.resolve(w[globalName]);
+  const cached = libPromises.get(globalName);
+  if (cached) return cached;
+  const p = new Promise<any>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve(w[globalName]);
+    s.onerror = () => reject(new Error('Failed to load ' + globalName));
+    document.head.appendChild(s);
+  });
+  libPromises.set(globalName, p);
+  return p;
+}
+
 function readAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -99,8 +119,7 @@ function htmlToText(html: string): string {
 // ---- Format-specific text extraction ----------------------------------------
 
 async function extractPdf(file: File): Promise<string> {
-  const pdfjsLib = (window as unknown as { pdfjsLib?: any }).pdfjsLib;
-  if (!pdfjsLib) throw new Error('PDF parser unavailable');
+  const pdfjsLib = await loadLibOnce('/vendor/libs/pdf.min.js', 'pdfjsLib');
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/libs/pdf.worker.min.js';
   const buf = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buf }).promise;
@@ -115,16 +134,14 @@ async function extractPdf(file: File): Promise<string> {
 }
 
 async function extractDocx(file: File): Promise<string> {
-  const mammoth = (window as unknown as { mammoth?: any }).mammoth;
-  if (!mammoth) throw new Error('DOCX parser unavailable');
+  const mammoth = await loadLibOnce('/vendor/libs/mammoth.min.js', 'mammoth');
   const ab = await file.arrayBuffer();
   const res = await mammoth.convertToHtml({ arrayBuffer: ab });
   return htmlToText(res.value);
 }
 
 async function extractXlsx(file: File): Promise<string> {
-  const XLSX = (window as unknown as { XLSX?: any }).XLSX;
-  if (!XLSX) throw new Error('Excel parser unavailable');
+  const XLSX = await loadLibOnce('/vendor/libs/xlsx.full.min.js', 'XLSX');
   const ab = await file.arrayBuffer();
   const wb = XLSX.read(ab, { type: 'array' });
   let text = '';
@@ -136,8 +153,7 @@ async function extractXlsx(file: File): Promise<string> {
 }
 
 async function extractZip(file: File): Promise<{ text: string; entries: { name: string; size: number }[] }> {
-  const JSZip = (window as unknown as { JSZip?: any }).JSZip;
-  if (!JSZip) throw new Error('ZIP parser unavailable');
+  const JSZip = await loadLibOnce('/vendor/libs/jszip.min.js', 'JSZip');
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const textExt = /\.(txt|md|markdown|csv|tsv|json|xml|html|htm|yaml|yml|py|js|ts|jsx|tsx|java|c|cpp|h|hpp|go|rs|rb|php|sql|log|toml|ini|cfg|sh|bat|ps1?)$/i;
   const entries: { name: string; size: number }[] = [];
