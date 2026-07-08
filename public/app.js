@@ -10,7 +10,7 @@ let pendingAttachment = null;
 
 const $ = (id) => document.getElementById(id);
 const el = {
-  modelSelect: $('modelSelect'), modelInfo: $('modelInfo'),
+  modelSelect: $('modelSelect'), modelInfo: $('modelInfo'), modelBadge: $('modelBadge'),
   startBtn: $('startBtn'), stopBtn: $('stopBtn'),
   statusIndicator: $('statusIndicator'), messages: $('messages'),
   welcomeScreen: $('welcomeScreen'), userInput: $('userInput'),
@@ -52,7 +52,8 @@ async function loadModels() {
       modelMap[m.path] = m;
       const o = document.createElement('option');
       o.value = m.path;
-      o.textContent = `${m.name} (${m.sizeFormatted})`;
+      const caps = m.capabilities && m.capabilities.length ? ` [${m.capabilities.join(', ')}]` : '';
+      o.textContent = `${m.name} (${m.sizeFormatted})${caps}`;
       el.modelSelect.appendChild(o);
     });
   } catch (e) { showToast('Failed to load models', 'error'); }
@@ -61,11 +62,13 @@ async function loadModels() {
 function updateModelInfo() {
   const path = el.modelSelect.value;
   const m = modelMap[path];
-  if (!m) { el.modelInfo.textContent = ''; return; }
+  if (!m) { el.modelInfo.textContent = ''; el.modelBadge.textContent = ''; return; }
   const ctx = parseInt($('contextSize').value) || '-';
   const gpu = parseInt($('gpuLayers').value) || '-';
   const thr = parseInt($('threads').value) || '-';
+  const caps = m.capabilities && m.capabilities.length ? m.capabilities.join(', ') : 'text';
   el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ctx ${ctx} · GPU ${gpu} · ${thr}T`;
+  el.modelBadge.textContent = `${m.name} · ${caps}`;
 }
 
 async function loadSettings() {
@@ -203,6 +206,11 @@ function setupListeners() {
       $('attachmentPreview').style.display = 'flex';
       $('attachBtn').classList.add('has-attachment');
       $('userInput').focus();
+      const m = modelMap[el.modelSelect.value];
+      const caps = m && m.capabilities ? m.capabilities : [];
+      if (!caps.includes('vision')) {
+        showToast('Warning: current model does not support vision', 'error');
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -329,6 +337,17 @@ async function stopServer() {
 async function sendMessage() {
   const content = el.userInput.value.trim();
   if ((!content && !pendingAttachment) || isGenerating) return;
+
+  if (pendingAttachment) {
+    const path = el.modelSelect.value;
+    const m = modelMap[path];
+    const caps = m && m.capabilities ? m.capabilities : [];
+    if (!caps.includes('vision')) {
+      showToast('Selected model does not support image input', 'error');
+      isGenerating = false;
+      return;
+    }
+  }
 
   isGenerating = true;
   startTime = Date.now();

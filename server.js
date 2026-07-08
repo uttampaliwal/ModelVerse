@@ -54,6 +54,55 @@ let settings = { ...defaultSettings };
 
 loadSettings();
 
+function getModelCapabilities(modelPath) {
+  const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
+  try {
+    const fd = fs.openSync(modelPath, 'r');
+    const header = Buffer.alloc(24);
+    fs.readSync(fd, header, 0, 24, 0);
+    if (header.readUInt32LE(0) !== 0x46554747) { fs.closeSync(fd); return []; }
+    const kvCount = Number(header.readBigUInt64LE(16));
+    const caps = [];
+    let off = 24;
+    const r8 = () => { const b = Buffer.alloc(8); fs.readSync(fd, b, 0, 8, off); off += 8; return b; };
+    const r4 = () => { const b = Buffer.alloc(4); fs.readSync(fd, b, 0, 4, off); off += 4; return b; };
+    const rStr = (len) => { const b = Buffer.alloc(len); fs.readSync(fd, b, 0, len, off); off += len; return b.toString('utf8'); };
+
+    const skip = (type) => {
+      switch (type) {
+        case 0: case 1: off += 1; break;
+        case 2: case 3: off += 2; break;
+        case 4: case 5: case 6: off += 4; break;
+        case 7: off += 1; break;
+        case 8: { const l = Number(r8()); off += l; break; }
+        case 9: { const at = r4().readUInt32LE(0); const al = Number(r8()); for (let j = 0; j < al; j++) skip(at); break; }
+        case 10: case 11: off += 8; break;
+        case 12: off += 8; break;
+        default: off += 4; break;
+      }
+    };
+
+    for (let i = 0; i < kvCount; i++) {
+      const kLen = Number(r8());
+      const key = rStr(kLen);
+      const vType = r4().readUInt32LE(0);
+      if (key === 'general.architecture') {
+        const sLen = Number(r8());
+        const arch = rStr(sLen).toLowerCase();
+        if (VISION_ARCHS.some(a => arch.includes(a))) caps.push('vision');
+      } else if (key.startsWith('vision.')) {
+        if (!caps.includes('vision')) caps.push('vision');
+        skip(vType);
+      } else {
+        skip(vType);
+      }
+      if (caps.includes('vision')) break;
+    }
+    fs.closeSync(fd);
+    return caps;
+  } catch (e) { return []; }
+}
+
 function findGGUFModels() {
   const models = [];
   try {
@@ -71,7 +120,8 @@ function findGGUFModels() {
             path: fullPath,
             size: stats.size,
             sizeFormatted: formatBytes(stats.size),
-            folder: path.basename(path.dirname(fullPath))
+            folder: path.basename(path.dirname(fullPath)),
+            capabilities: getModelCapabilities(fullPath)
           });
         }
       }
@@ -159,6 +209,17 @@ async function startLlamaServer(modelPath) {
 
       const serverReadyPatterns = ['listening on', 'running on', 'starting the server', 'server started', 'http://'];
 
+      const caps = getModelCapabilities(modelPath);
+      let mmprojPath = null;
+      if (caps.includes('vision')) {
+        const dir = path.dirname(modelPath);
+        try {
+          const files = fs.readdirSync(dir);
+          const mmproj = files.find(f => f.includes('mmproj') && f.endsWith('.gguf'));
+          if (mmproj) mmprojPath = path.join(dir, mmproj);
+        } catch (e) {}
+      }
+
       const args = [
         '-m', modelPath,
         '--host', '0.0.0.0',
@@ -167,6 +228,7 @@ async function startLlamaServer(modelPath) {
         '-ngl', settings.gpuLayers.toString(),
         '-t', settings.threads.toString()
       ];
+      if (mmprojPath) args.push('--mmproj', mmprojPath);
 
       console.log('Starting:', serverPath);
       console.log('Args:', args.join(' '));

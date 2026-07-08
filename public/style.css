@@ -807,6 +807,16 @@ textarea#systemPrompt:focus {
 }
 
 /* Input Area */
+.model-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 .input-area {
   flex-shrink: 0;
   position: relative;
