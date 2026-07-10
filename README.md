@@ -199,6 +199,7 @@ ModelVerse/
 ├── profiles/              # Built-in profiles (JSON)
 ├── scripts/               # Build/utility scripts
 ├── tests/                 # Vitest tests
+├── docs/                  # Architecture, Plugin API, contributing guides
 └── .github/workflows/     # CI/CD
 ```
 
