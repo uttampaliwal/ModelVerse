@@ -74,7 +74,7 @@
   cursor: pointer;
   padding: 6px;
   border-radius: var(--radius);
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   flex-shrink: 0;
 }
 
@@ -159,7 +159,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -202,7 +202,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   font-size: 14px;
   color: var(--text-secondary);
   text-align: left;

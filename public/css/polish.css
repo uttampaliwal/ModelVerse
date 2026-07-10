@@ -119,13 +119,21 @@ main {
   height: var(--icon-lg);
 }
 
-/* Smooth transitions on interactive elements */
+/* Smooth transitions on interactive elements.
+   Explicit properties only — `transition: all` forces the browser to
+   watch every animatable property and hurts paint perf during streaming. */
 button,
 a,
 input,
 textarea,
 select {
-  transition: all var(--transition);
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition),
+    opacity var(--transition);
 }
 
 /* Better button interactions */
@@ -222,5 +230,26 @@ li {
   ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
+  }
+}
+
+/* Respect users who prefer reduced motion.
+   Near-instant (not fully 0s) so JS transitionend listeners still fire. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  button:active:not(:disabled) {
+    transform: none;
+  }
+
+  .model-card:hover {
+    transform: none;
   }
 }

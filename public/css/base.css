@@ -31,7 +31,7 @@ body {
 
 /* Global transitions for interactive elements */
 button, a, input, textarea, select {
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
 }
 
 /* Focus visible for accessibility */

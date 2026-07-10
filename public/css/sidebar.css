@@ -134,7 +134,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
 }
 
 .model-card:hover {
@@ -193,7 +193,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
 }
 
 .model-card.selected .model-card-check {
@@ -551,7 +551,7 @@ textarea#systemPrompt:focus {
   border-radius: var(--radius);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
 }
 
 .conv-filter-btn:hover {
@@ -646,7 +646,7 @@ textarea#systemPrompt:focus {
   color: var(--text-muted);
   cursor: pointer;
   font-size: 12px;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
 }
 
 .folder-action-btn:hover {
@@ -674,7 +674,7 @@ textarea#systemPrompt:focus {
   background: transparent;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   border-left: 3px solid transparent;
   border: 1px solid transparent;
 }
@@ -871,7 +871,7 @@ textarea#systemPrompt:focus {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   background: transparent;
 }
 
@@ -944,6 +944,11 @@ textarea#systemPrompt:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.section-label-actions {
+  display: flex;
+  gap: var(--space-xs);
 }
 
 .icon-btn-sm {

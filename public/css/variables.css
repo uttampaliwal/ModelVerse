@@ -1,3 +1,39 @@
+/* ============================================================
+   Base design tokens (theme-independent).
+   Colors + per-theme shadow depth are defined in the theme
+   blocks below; everything here is shared across all themes.
+   ============================================================ */
+:root {
+  --radius: 8px;
+  --radius-lg: 12px;
+  --transition: 0.15s ease;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* 8px spacing system */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Icon sizes */
+  --icon-sm: 14px;
+  --icon-md: 18px;
+  --icon-lg: 24px;
+
+  /* Focus ring — resolves --accent / --bg-primary at use-time,
+     so it automatically adapts to the active theme. */
+  --focus-ring: 0 0 0 2px var(--accent);
+  --focus-ring-offset: 0 0 0 4px var(--bg-primary);
+
+  /* Default elevation (dark-appropriate). Themes may override. */
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
 /* Default Dark Theme */
 :root,
 [data-theme="dark"] {
@@ -18,34 +54,7 @@
   --danger: #ef4444;
   --user-bubble: #6366f1;
   --assistant-bubble: #1a1a1d;
-  --radius: 8px;
-  --radius-lg: 12px;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --transition: 0.15s ease;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-
-  /* 8px spacing system */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-
-  /* Elevation levels */
-  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.25);
-  --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.35);
-
-  /* Focus ring */
-  --focus-ring: 0 0 0 2px var(--accent);
-  --focus-ring-offset: 0 0 0 4px var(--bg-primary);
-
-  /* Icon sizes */
-  --icon-sm: 14px;
-  --icon-md: 18px;
-  --icon-lg: 24px;
 }
 
 /* Light Theme */
@@ -74,10 +83,6 @@
   --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08);
   --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1);
   --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12);
-
-  /* Focus ring */
-  --focus-ring: 0 0 0 2px var(--accent);
-  --focus-ring-offset: 0 0 0 4px var(--bg-primary);
 }
 
 /* OLED Theme */
@@ -106,10 +111,6 @@
   --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.5);
   --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.6);
   --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.7);
-
-  /* Focus ring */
-  --focus-ring: 0 0 0 2px var(--accent);
-  --focus-ring-offset: 0 0 0 4px var(--bg-primary);
 }
 
 /* Dracula Theme */
@@ -198,4 +199,35 @@
   --user-bubble: #d65d0e;
   --assistant-bubble: #2e2e2e;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* First-paint fallback: if the OS prefers light and JS hasn't yet
+   applied a stored theme (no data-theme attribute), use light tokens
+   to avoid a dark flash for light-mode users. Once theme.ts sets
+   [data-theme], the explicit theme above wins. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-hover: #dee2e6;
+    --bg-active: #ced4da;
+    --border: #dee2e6;
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #868e96;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-dim: rgba(99, 102, 241, 0.1);
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --user-bubble: #6366f1;
+    --assistant-bubble: #f1f3f5;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12);
+  }
 }

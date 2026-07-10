@@ -10,6 +10,10 @@ function getSavedTheme(): Theme {
   if (saved && THEMES.includes(saved as Theme)) {
     return saved as Theme;
   }
+  // No saved preference: honor the OS color-scheme on first run.
+  if (window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+    return 'light';
+  }
   return 'dark';
 }
 

@@ -37,7 +37,7 @@
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   text-align: left;
   font-family: inherit;
 }
@@ -257,7 +257,7 @@
   border: 2px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
   font-family: inherit;
 }
 
