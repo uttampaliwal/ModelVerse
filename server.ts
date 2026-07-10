@@ -15,7 +15,6 @@ import { PythonPlugin } from './src/plugins/python';
 import { VisionPlugin } from './src/plugins/vision';
 import {
   listProfiles,
-  getProfile,
   getActiveProfile,
   setActiveProfile,
   saveProfile,
@@ -26,7 +25,6 @@ import {
   getAllMetadata,
   updateMetadata,
   deleteMetadata,
-  searchMetadata,
   filterMetadata,
 } from './src/model-metadata';
 import {
@@ -251,7 +249,7 @@ function loadSettings(): void {
   settings = loadAndValidate(serverSettingsSchema, SETTINGS_FILE, getDefaultSettings(), 'Settings');
   engines.setActive(settings.activeEngine);
   for (const [id, config] of Object.entries(settings.engineConfigs || {})) {
-    engines.configure(id, config).catch(() => {});
+    engines.configure(id, config).catch((e) => log.error('Engine configure error', e as Error));
   }
 }
 

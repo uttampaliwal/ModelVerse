@@ -14,7 +14,7 @@ import {
   batchDelete,
   batchExport,
 } from './conversation.js';
-import { getAllFolders, putFolders, deleteFolderById } from './db.js';
+import { getAllFolders, putFolders, putConversations, deleteFolderById } from './db.js';
 import { textOf, type Conversation, type ChatMessage } from './types.js';
 import { AppState } from './state.js';
 import { logError } from './logger.js';
@@ -231,8 +231,7 @@ export function renderSidebar(): void {
       }
       AppState.ui.folders = AppState.ui.folders.filter((f) => f.id !== folder.id);
       deleteFolderById(folder.id).catch((e) => logError('deleteFolder', e));
-      const { putConversations } = require('./conversation.js');
-      putConversations(AppState.conversations.list).catch(() => {});
+      putConversations(AppState.conversations.list).catch((e) => logError('putConversations', e));
       renderSidebar();
     });
 

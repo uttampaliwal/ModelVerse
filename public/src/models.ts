@@ -110,7 +110,7 @@ async function selectModel(modelId: string): Promise<void> {
   updateModelInfo();
 
   try {
-    const { ensureServerRunning } = await import('./server.js');
+    const { ensureServerRunning } = await import('./connection.js');
     await ensureServerRunning(modelId);
   } catch (e) {
     showToast('Failed to load model: ' + (e as Error).message, 'error');

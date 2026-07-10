@@ -25,7 +25,7 @@ import {
   loadConversations,
   setupVirtualScroll,
 } from './conversation.js';
-import { checkStatus, stopServer } from './server.js';
+import { checkStatus, stopServer } from './connection.js';
 import { renderSidebar, setupSidebarListeners } from './sidebar.js';
 import { initMobileGestures } from './mobile.js';
 import { initStatusBar } from './status.js';
@@ -271,7 +271,7 @@ async function init(): Promise<void> {
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      import('./search.js').then((m) => m.openSearch()).catch(() => {});
+      import('./search.js').then((m) => m.openSearch()).catch((e) => logError('openSearch', e));
       return;
     }
     if (e.ctrlKey && e.shiftKey) {
@@ -312,7 +312,9 @@ async function init(): Promise<void> {
       (img.classList.contains('message-image') || img.classList.contains('user-attached-img'))
     ) {
       e.preventDefault();
-      import('./image-viewer.js').then((m) => m.openViewer(img.src, img.alt)).catch(() => {});
+      import('./image-viewer.js')
+        .then((m) => m.openViewer(img.src, img.alt))
+        .catch((e) => logError('openViewer', e));
       return;
     }
 
@@ -370,7 +372,7 @@ async function init(): Promise<void> {
       if (msg) {
         const text = textOf(msg.content);
         if (navigator.share) {
-          navigator.share({ text }).catch(() => {});
+          navigator.share({ text }).catch((e) => logError('share', e));
         } else {
           navigator.clipboard.writeText(text).then(() => {
             showToast('Copied to clipboard', 'success');

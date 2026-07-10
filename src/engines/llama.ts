@@ -13,6 +13,7 @@ import {
 } from './base';
 import { openaiStreamToGenerator } from './stream-utils';
 import { log } from '../logger';
+import { getOrCreateMetadata } from '../model-metadata';
 
 export interface LlamaCppConfig extends EngineConfig {
   binPath: string;
@@ -348,7 +349,6 @@ export class LlamaCppEngine extends LLMEngine {
             const caps = getModelCapabilities(fullPath);
 
             // Auto-generate metadata
-            const { getOrCreateMetadata } = require('../model-metadata');
             const metadata = getOrCreateMetadata(fullPath, this.id, {
               vision: caps.includes('vision'),
               reasoning: caps.includes('reasoning'),
