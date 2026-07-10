@@ -2,8 +2,9 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import crypto from 'crypto';
 import { engines, type EngineId } from './src/engines/index';
-import type { ChatMessage } from './src/engines/base';
+import type { ChatMessage, GenerateOptions } from './src/engines/base';
 import { plugins } from './src/plugins/index';
 import { ImageGenerationPlugin } from './src/plugins/image-generation';
 import { SpeechPlugin } from './src/plugins/speech';
@@ -53,6 +54,180 @@ interface ChatMessageDTO {
   role: string;
   content: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Request Queue – serializes generation requests so only one runs at a time
+// ---------------------------------------------------------------------------
+interface QueueEntry {
+  id: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  messages: ChatMessage[];
+  options: GenerateOptions;
+  res: express.Response;
+  createdAt: Date;
+  error?: string;
+}
+
+function sendSSE(res: express.Response, data: object): void {
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+class RequestQueue {
+  private entries: QueueEntry[] = [];
+  private currentId: string | null = null;
+  private processing = false;
+
+  enqueue(messages: ChatMessage[], options: GenerateOptions, res: express.Response): QueueEntry {
+    const isBusy = this.currentId !== null;
+    const entry: QueueEntry = {
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+      status: isBusy ? 'queued' : 'running',
+      messages,
+      options,
+      res,
+      createdAt: new Date(),
+    };
+    this.entries.push(entry);
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    // Clean up on client disconnect
+    res.on('close', () => {
+      const idx = this.entries.indexOf(entry);
+      if (idx !== -1) {
+        const e = this.entries[idx];
+        if (e.status === 'queued') {
+          this.entries.splice(idx, 1);
+          console.log('[QUEUE] Client disconnected, removed queued request', entry.id);
+        } else if (e.status === 'running') {
+          // Don't remove running entry; the stream error handler will clean up
+        }
+      }
+    });
+
+    if (isBusy) {
+      const pos = this.entries.filter(e => e.status === 'queued').length;
+      sendSSE(res, { queue: { status: 'queued', position: pos } });
+      console.log('[QUEUE] Request queued at position', pos, `(${entry.id})`);
+    } else {
+      this.currentId = entry.id;
+      sendSSE(res, { queue: { status: 'running' } });
+      setImmediate(() => this.processEntry(entry));
+    }
+
+    return entry;
+  }
+
+  private async processEntry(entry: QueueEntry): Promise<void> {
+    if (this.processing) return;
+    this.processing = true;
+
+    const engine = engines.getActive();
+    if (!engine.running) {
+      if (!entry.res.headersSent) {
+        entry.res.setHeader('Content-Type', 'text/event-stream');
+        entry.res.setHeader('Cache-Control', 'no-cache');
+        entry.res.setHeader('Connection', 'keep-alive');
+        entry.res.setHeader('X-Accel-Buffering', 'no');
+      }
+      sendSSE(entry.res, { queue: { status: 'error', message: 'Engine not running' } });
+      entry.res.end();
+      entry.status = 'failed';
+      entry.error = 'Engine not running';
+      this.currentId = null;
+      this.processing = false;
+      this.entries = this.entries.filter(e => e.id !== entry.id);
+      this.dequeueNext();
+      return;
+    }
+
+    // "running" event already sent by enqueue() or dequeueNext()
+
+    try {
+      const result = await engine.generate(entry.messages, entry.options);
+
+      result.stream.on('data', (chunk: Buffer) => {
+        entry.res.write(chunk);
+      });
+
+      result.stream.on('end', () => {
+        entry.res.end();
+        entry.status = 'completed';
+        console.log('[CHAT] Stream complete');
+        this.currentId = null;
+        this.processing = false;
+        this.entries = this.entries.filter(e => e.id !== entry.id);
+        this.dequeueNext();
+      });
+
+      result.stream.on('error', (err: Error) => {
+        console.error('[CHAT] Stream error:', err.message);
+        if (!entry.res.headersSent) {
+          entry.res.status(500).json({ error: err.message });
+        } else {
+          sendSSE(entry.res, { error: err.message });
+          entry.res.end();
+        }
+        entry.status = 'failed';
+        entry.error = err.message;
+        this.currentId = null;
+        this.processing = false;
+        this.entries = this.entries.filter(e => e.id !== entry.id);
+        this.dequeueNext();
+      });
+    } catch (e) {
+      console.error('[CHAT] Error:', (e as Error).message);
+      if (!entry.res.headersSent) {
+        entry.res.status(500).json({ error: (e as Error).message });
+      } else {
+        sendSSE(entry.res, { error: (e as Error).message });
+        entry.res.end();
+      }
+      entry.status = 'failed';
+      entry.error = (e as Error).message;
+      this.currentId = null;
+      this.processing = false;
+      this.entries = this.entries.filter(e => e.id !== entry.id);
+      this.dequeueNext();
+    }
+  }
+
+  private dequeueNext(): void {
+    const next = this.entries.find(e => e.status === 'queued');
+    if (next) {
+      next.status = 'running';
+      this.currentId = next.id;
+      sendSSE(next.res, { queue: { status: 'running' } });
+      setImmediate(() => this.processEntry(next));
+    }
+  }
+
+  getStatus(): { current: string | null; entries: { id: string; status: string; createdAt: Date; position?: number }[] } {
+    const entries = this.entries.map((e, i) => ({
+      id: e.id,
+      status: e.status,
+      createdAt: e.createdAt,
+      position: e.status === 'queued' ? this.entries.filter(x => x.status === 'queued' && this.entries.indexOf(x) < i).length + 1 : undefined,
+    }));
+    return { current: this.currentId, entries };
+  }
+
+  cancel(id: string): boolean {
+    const entry = this.entries.find(e => e.id === id && e.status === 'queued');
+    if (!entry) return false;
+    entry.status = 'cancelled';
+    entry.res.end();
+    const idx = this.entries.indexOf(entry);
+    if (idx !== -1) this.entries.splice(idx, 1);
+    return true;
+  }
+}
+
+const requestQueue = new RequestQueue();
 
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
@@ -410,6 +585,18 @@ app.post('/api/plugins/tools/execute', async (req: express.Request, res: express
   }
 });
 
+// --- Queue API ---
+
+app.get('/api/queue', (_req: express.Request, res: express.Response) => {
+  res.json(requestQueue.getStatus());
+});
+
+app.delete('/api/queue/:id', (req: express.Request, res: express.Response) => {
+  const ok = requestQueue.cancel(req.params.id as string);
+  if (!ok) return res.status(404).json({ error: 'Queued request not found' });
+  res.json({ success: true });
+});
+
 app.post('/api/chat', async (req: express.Request, res: express.Response) => {
   const { messages } = req.body as { messages: ChatMessageDTO[] };
   const engine = engines.getActive();
@@ -423,45 +610,15 @@ app.post('/api/chat', async (req: express.Request, res: express.Response) => {
     hasSystem ? messages : [{ role: 'system', content: settings.systemPrompt }, ...messages],
   );
 
-  console.log('[CHAT] Request with', allMessages.length, 'messages via', engines.getActiveId());
+  const opts: GenerateOptions = {
+    temperature: settings.temperature,
+    topP: settings.topP,
+    topK: settings.topK,
+    repeatPenalty: settings.repeatPenalty,
+    maxTokens: settings.maxTokens,
+  };
 
-  try {
-    const result = await engine.generate(allMessages, {
-      temperature: settings.temperature,
-      topP: settings.topP,
-      topK: settings.topK,
-      repeatPenalty: settings.repeatPenalty,
-      maxTokens: settings.maxTokens,
-    });
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-
-    result.stream.on('data', (chunk: Buffer) => {
-      res.write(chunk);
-    });
-
-    result.stream.on('end', () => {
-      res.end();
-      console.log('[CHAT] Stream complete');
-    });
-
-    result.stream.on('error', (err: Error) => {
-      console.error('[CHAT] Stream error:', err.message);
-      if (!res.headersSent) {
-        res.status(500).json({ error: err.message });
-      } else {
-        res.end();
-      }
-    });
-  } catch (e) {
-    console.error('[CHAT] Error:', (e as Error).message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: (e as Error).message });
-    }
-  }
+  requestQueue.enqueue(allMessages, opts, res);
 });
 
 const PORT = process.env.PORT || settings.port;

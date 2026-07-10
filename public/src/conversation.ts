@@ -167,6 +167,42 @@ function assistantActionsHtml(): string {
   `;
 }
 
+export function showQueueStatus(msgId: string, position: number): void {
+  const msgEl = document.querySelector(`.message[data-message-id="${msgId}"]`);
+  if (!msgEl) return;
+  const container = msgEl.querySelector('.response-container') as HTMLElement | null;
+  if (!container) return;
+  let indicator = container.querySelector('.queue-indicator') as HTMLElement | null;
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'queue-indicator';
+    indicator.innerHTML = `
+      <div class="queue-indicator-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="13" y2="13"/>
+          <line x1="9" y1="17" x2="11" y2="17"/>
+        </svg>
+      </div>
+      <div class="queue-indicator-text">
+        <span class="queue-indicator-title">Request queued</span>
+        <span class="queue-indicator-pos">Position #<span class="queue-pos">${position}</span></span>
+      </div>
+    `;
+    container.prepend(indicator);
+  } else {
+    const posEl = indicator.querySelector('.queue-pos');
+    if (posEl) posEl.textContent = String(position);
+  }
+}
+
+export function hideQueueStatus(msgId: string): void {
+  const msgEl = document.querySelector(`.message[data-message-id="${msgId}"]`);
+  if (!msgEl) return;
+  const el = msgEl.querySelector('.queue-indicator');
+  if (el) el.remove();
+}
+
 function buildMessageNode(msg: ChatMessage, streaming: boolean): HTMLElement {
   const div = document.createElement('div');
   div.className = `message ${msg.role}`;

@@ -13,6 +13,8 @@ import {
   newConversation,
   updateMessageContent,
   updateStreamingContent,
+  showQueueStatus,
+  hideQueueStatus,
   generateTitle,
   clearChatView,
 } from './conversation.js';
@@ -253,8 +255,32 @@ export async function sendMessage(): Promise<void> {
           if (!trimmed || trimmed === 'data: [DONE]') continue;
           if (trimmed.startsWith('data: ')) {
             try {
-              const json = JSON.parse(trimmed.slice(6)) as ChatChunk;
-              const delta = json.choices?.[0]?.delta?.content || '';
+              const data = JSON.parse(trimmed.slice(6));
+
+              // Handle queue status events
+              if (data.queue) {
+                if (data.queue.status === 'queued') {
+                  showQueueStatus(assistantMsg.id, data.queue.position);
+                } else if (data.queue.status === 'running') {
+                  hideQueueStatus(assistantMsg.id);
+                } else if (data.queue.status === 'error') {
+                  hideQueueStatus(assistantMsg.id);
+                  showToast(data.queue.message || 'Queue error', 'error');
+                  assistantMsg.content = '**Error:** ' + (data.queue.message || 'Queue processing failed');
+                  updateMessageContent(assistantMsg.id, assistantMsg.content as string);
+                  saveConversations();
+                }
+                continue;
+              }
+
+              // Handle queue status updates for non-running state (legacy queue polling)
+              if (data.status === 'queued') {
+                showQueueStatus(assistantMsg.id, data.position || 1);
+                continue;
+              }
+
+              const chunk = data as ChatChunk;
+              const delta = chunk.choices?.[0]?.delta?.content || '';
               if (delta) streamTokenCount++;
               fullContent += delta;
               assistantMsg.content = fullContent;
