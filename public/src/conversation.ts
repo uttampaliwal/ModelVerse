@@ -130,12 +130,12 @@ function fillContent(
 }
 
 function userContentHtml(content: string | ContentPart[]): string {
-  if (typeof content === 'string') return content;
+  if (typeof content === 'string') return escapeHtml(content);
   return content
     .map((p) => {
-      if (p.type === 'text') return p.text;
+      if (p.type === 'text') return escapeHtml(p.text);
       if (p.type === 'image_url') {
-        return `<img src="${p.image_url.url}" class="user-attached-img" alt="attachment">`;
+        return `<img src="${escapeHtml(p.image_url.url)}" class="user-attached-img" alt="attachment">`;
       }
       return '';
     })

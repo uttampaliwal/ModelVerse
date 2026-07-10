@@ -199,12 +199,12 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     const tableHtml = [
       '<div class="md-table-wrap"><table class="md-table">',
       '<thead><tr>',
-      ...headers.map((h) => `<th>${h}</th>`),
+      ...headers.map((h) => `<th>${escapeHtml(h)}</th>`),
       '</tr></thead>',
       '<tbody>',
       ...dataRows.map((row) => {
         const cells = parseCells(row.trim());
-        return `<tr>${cells.map((c) => `<td>${c}</td>`).join('')}</tr>`;
+        return `<tr>${cells.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`;
       }),
       '</tbody></table></div>',
     ].join('');

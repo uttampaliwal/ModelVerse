@@ -16,7 +16,7 @@ class ExecuteCodeTool {
         code: { type: 'string', description: 'Python code to execute', required: true },
         timeout: { type: 'number', description: 'Timeout in seconds (default: 30)' },
     };
-    async execute(params) {
+    async execute(params, stdinData) {
         const code = params.code;
         const timeout = params.timeout || 30;
         const tmpFile = path_1.default.join(os_1.default.tmpdir(), `modelverse_py_${Date.now()}.py`);
@@ -24,11 +24,15 @@ class ExecuteCodeTool {
         try {
             const result = await new Promise((resolve, reject) => {
                 const proc = (0, child_process_1.spawn)('python', [tmpFile], {
-                    stdio: ['pipe', 'pipe', 'pipe'],
+                    stdio: [stdinData ? 'pipe' : 'ignore', 'pipe', 'pipe'],
                     timeout: timeout * 1000,
                 });
                 let stdout = '';
                 let stderr = '';
+                if (stdinData) {
+                    proc.stdin?.write(stdinData);
+                    proc.stdin?.end();
+                }
                 proc.stdout?.on('data', (d) => { stdout += d.toString(); });
                 proc.stderr?.on('data', (d) => { stderr += d.toString(); });
                 proc.on('close', (code) => {
@@ -70,13 +74,19 @@ class RunNotebookTool {
         if (!fs_1.default.existsSync(notebookPath)) {
             return { success: false, error: `Notebook not found: ${notebookPath}` };
         }
+        let notebookContent;
+        try {
+            notebookContent = fs_1.default.readFileSync(notebookPath, 'utf-8');
+        }
+        catch {
+            return { success: false, error: `Cannot read notebook: ${notebookPath}` };
+        }
+        // Pass notebook data via stdin instead of string interpolation
         const code = `
 import json
 import sys
 
-with open("${notebookPath.replace(/\\/g, '\\\\')}") as f:
-    nb = json.load(f)
-
+nb = json.loads(sys.stdin.read())
 results = []
 for i, cell in enumerate(nb.get("cells", [])):
     if cell["cell_type"] == "code":
@@ -85,7 +95,7 @@ for i, cell in enumerate(nb.get("cells", [])):
 print(json.dumps(results[:10], indent=2))
 `;
         const tool = new ExecuteCodeTool();
-        return tool.execute({ code, timeout: 60 });
+        return tool.execute({ code, timeout: 60 }, notebookContent);
     }
 }
 class PythonPlugin extends base_1.Plugin {

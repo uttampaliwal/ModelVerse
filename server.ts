@@ -285,7 +285,7 @@ function sanitizeMessages(messages: ChatMessageDTO[]): ChatMessage[] {
 // --- API Routes ---
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
 
 app.get('/api/version', (_req: express.Request, res: express.Response) => {
@@ -346,6 +346,19 @@ app.get('/api/system', (_req: express.Request, res: express.Response) => {
 app.post('/api/server/start', async (req: express.Request, res: express.Response) => {
   try {
     const { modelPath } = req.body as { modelPath: string };
+    if (typeof modelPath !== 'string' || !modelPath.trim()) {
+      return res.status(400).json({ error: 'modelPath must be a non-empty string' });
+    }
+    if (modelPath.includes('..')) {
+      return res.status(400).json({ error: 'Invalid model path' });
+    }
+    if (!fs.existsSync(modelPath)) {
+      return res.status(400).json({ error: 'Model file not found' });
+    }
+    const ext = path.extname(modelPath).toLowerCase();
+    if (ext !== '.gguf' && ext !== '.gguf_split') {
+      return res.status(400).json({ error: 'Model must be a .gguf file' });
+    }
     const engine = engines.getActive();
     const result = await engine.start(modelPath);
     res.json(result);
