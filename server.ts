@@ -4,6 +4,13 @@ import fs from 'fs';
 import os from 'os';
 import { engines, type EngineId } from './src/engines/index';
 import type { ChatMessage } from './src/engines/base';
+import { plugins } from './src/plugins/index';
+import { ImageGenerationPlugin } from './src/plugins/image-generation';
+import { SpeechPlugin } from './src/plugins/speech';
+import { WebSearchPlugin } from './src/plugins/web-search';
+import { RAGPlugin } from './src/plugins/rag';
+import { PythonPlugin } from './src/plugins/python';
+import { VisionPlugin } from './src/plugins/vision';
 
 interface ServerSettings {
   port: number;
@@ -202,6 +209,51 @@ app.post('/api/settings', (req: express.Request, res: express.Response) => {
   settings = { ...settings, ...(sanitized as Partial<ServerSettings>) };
   saveSettings();
   res.json({ success: true });
+});
+
+// --- Plugin API ---
+
+plugins.register(ImageGenerationPlugin);
+plugins.register(SpeechPlugin);
+plugins.register(WebSearchPlugin);
+plugins.register(RAGPlugin);
+plugins.register(PythonPlugin);
+plugins.register(VisionPlugin);
+
+plugins.activateAll().catch((e) => console.error('[Plugins] Activation error:', e.message));
+
+app.get('/api/plugins', (_req: express.Request, res: express.Response) => {
+  res.json({ plugins: plugins.listAvailable() });
+});
+
+app.post('/api/plugins/toggle', async (req: express.Request, res: express.Response) => {
+  const { pluginId } = req.body as { pluginId: string };
+  try {
+    const enabled = await plugins.toggle(pluginId);
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
+  }
+});
+
+app.get('/api/plugins/tools', (_req: express.Request, res: express.Response) => {
+  const tools = plugins.getAllTools().map(({ pluginId, tool }) => ({
+    pluginId,
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+  }));
+  res.json({ tools });
+});
+
+app.post('/api/plugins/tools/execute', async (req: express.Request, res: express.Response) => {
+  const { tool, params } = req.body as { tool: string; params: Record<string, unknown> };
+  try {
+    const result = await plugins.executeTool(tool, params || {});
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
 });
 
 app.post('/api/chat', async (req: express.Request, res: express.Response) => {
