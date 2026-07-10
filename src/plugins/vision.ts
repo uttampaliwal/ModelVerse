@@ -18,11 +18,11 @@ class AnalyzeImageTool implements ToolDefinition {
     model: { type: 'string', description: 'Vision model to use' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
     const image = params.image as string;
     const prompt = (params.prompt as string) || 'Describe this image in detail';
 
-    return {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'analysis',
@@ -30,7 +30,7 @@ class AnalyzeImageTool implements ToolDefinition {
         prompt,
         imageProvided: !!image,
       },
-    };
+    });
   }
 }
 
@@ -42,16 +42,16 @@ class OCRExtractTool implements ToolDefinition {
     language: { type: 'string', description: 'Language for OCR (default: eng)' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
     const image = params.image as string;
-    return {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'text',
         note: 'OCR requires Tesseract or similar OCR engine configured',
         imageProvided: !!image,
       },
-    };
+    });
   }
 }
 
@@ -66,14 +66,14 @@ class DescribeChartTool implements ToolDefinition {
     },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
-    return {
+  execute(_params: Record<string, unknown>): Promise<ToolResult> {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'chart_analysis',
         note: 'Chart analysis requires a vision-capable model',
       },
-    };
+    });
   }
 }
 
@@ -114,15 +114,17 @@ export class VisionPlugin extends Plugin {
     ],
   };
 
-  async activate(ctx: PluginContext): Promise<void> {
+  activate(ctx: PluginContext): Promise<void> {
     this.ctx = ctx;
     this.registerTool(new AnalyzeImageTool());
     this.registerTool(new OCRExtractTool());
     this.registerTool(new DescribeChartTool());
     ctx.log('Vision plugin activated');
+    return Promise.resolve();
   }
 
-  async deactivate(): Promise<void> {
+  deactivate(): Promise<void> {
     this.tools = [];
+    return Promise.resolve();
   }
 }

@@ -123,14 +123,16 @@ export class WebSearchPlugin extends Plugin {
     ],
   };
 
-  async activate(ctx: PluginContext): Promise<void> {
+  activate(ctx: PluginContext): Promise<void> {
     this.ctx = ctx;
     this.registerTool(new WebSearchTool());
     this.registerTool(new FetchUrlTool());
     ctx.log('Web Search plugin activated');
+    return Promise.resolve();
   }
 
-  async deactivate(): Promise<void> {
+  deactivate(): Promise<void> {
     this.tools = [];
+    return Promise.resolve();
   }
 }

@@ -18,6 +18,7 @@ import {
   generateTitle,
   clearChatView,
 } from './conversation.js';
+import { textOf } from './types.js';
 import type { ContentPart } from './types.js';
 import type {
   ChatMessage,
@@ -38,8 +39,8 @@ export function regenerateFrom(msgId: string): void {
   el.sendBtn.classList.add('regenerate-mode');
   el.sendBtn.querySelector('.btn-icon')!.textContent = '🔄';
   el.sendBtn.querySelector('.btn-label')!.textContent = 'Regenerate';
-  el.restartBtn.classList.remove('hidden');
-  sendMessage();
+  el.restartBtn.classList.add('hidden');
+  void sendMessage();
 }
 
 function resetRegenerateMode(): void {
@@ -78,7 +79,7 @@ export async function sendMessage(): Promise<void> {
       showToast('Server is not running. Select a model to start.', 'error');
       return;
     }
-  } catch (e) {
+  } catch {
     resetRegenerateMode();
     showToast('Cannot reach server', 'error');
     return;
@@ -95,7 +96,7 @@ export async function sendMessage(): Promise<void> {
     const msgIdx = currentConv.messages.findIndex((m) => m.id === chatState.editingMessageId);
     if (msgIdx !== -1) {
       currentConv.messages = currentConv.messages.slice(0, msgIdx);
-      saveConversations();
+      void saveConversations();
       renderConversation(currentConv);
       resetRegenerateMode();
     }
@@ -147,12 +148,12 @@ export async function sendMessage(): Promise<void> {
   hideWelcome();
   el.restartBtn.classList.remove('hidden');
 
-  saveConversations();
+  void saveConversations();
   if (!currentConv.title || currentConv.title === 'New Conversation') {
     currentConv.title = generateTitle(currentConv);
     el.chatTitle.textContent = currentConv.title;
-    saveConversations();
-    import('./sidebar.js').then((m) => m.renderSidebar());
+    void saveConversations();
+    void import('./sidebar.js').then((m) => m.renderSidebar());
   }
 
   // Build payload messages, ensuring strict user/assistant alternation
@@ -163,10 +164,7 @@ export async function sendMessage(): Promise<void> {
       if (last && last.role === m.role) {
         userMsgs[userMsgs.length - 1] = {
           role: m.role,
-          content:
-            String(last.content) +
-            '\n\n' +
-            (Array.isArray(m.content) ? JSON.stringify(m.content) : m.content),
+          content: textOf(last.content) + '\n\n' + textOf(m.content),
         };
       } else {
         userMsgs.push({
@@ -200,7 +198,7 @@ export async function sendMessage(): Promise<void> {
     createdAt: new Date().toISOString(),
   };
   currentConv.messages.push(assistantMsg);
-  saveConversations();
+  void saveConversations();
   renderMessage(assistantMsg, true, true);
 
   let streamBuffer = '';
@@ -220,19 +218,19 @@ export async function sendMessage(): Promise<void> {
         const errJson = JSON.parse(errText);
         errMsg = errJson.error?.message || errJson.error || errText;
         if (errJson.error?.code === 400) errMsg = 'Server error: ' + errJson.error.message;
-      } catch (e) {
+      } catch {
         errMsg = errText || 'Chat request failed';
       }
       showToast(errMsg, 'error');
       if (currentConv._backup) {
         currentConv.messages = currentConv._backup;
         delete currentConv._backup;
-        saveConversations();
+        void saveConversations();
         renderConversation(currentConv);
       } else {
         assistantMsg.content = '**Error:** ' + errMsg;
         updateMessageContent(assistantMsg.id, assistantMsg.content);
-        saveConversations();
+        void saveConversations();
       }
       if (!navigator.onLine) showToast('No internet connection', 'error');
       return;
@@ -275,7 +273,7 @@ export async function sendMessage(): Promise<void> {
                   assistantMsg.content =
                     '**Error:** ' + (data.queue.message || 'Queue processing failed');
                   updateMessageContent(assistantMsg.id, assistantMsg.content);
-                  saveConversations();
+                  void saveConversations();
                 }
                 continue;
               }
@@ -305,8 +303,8 @@ export async function sendMessage(): Promise<void> {
               const elapsed = (Date.now() - startTime) / 1000;
               if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
               if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
-              saveConversations();
-            } catch (e) {
+              void saveConversations();
+            } catch {
               logWarn('stream', 'Failed to parse SSE chunk', { raw: trimmed });
             }
           }
@@ -320,7 +318,7 @@ export async function sendMessage(): Promise<void> {
             const json = JSON.parse(trimmed.slice(6)) as ChatChunk;
             const delta = json.choices?.[0]?.delta?.content || '';
             if (delta) streamTokenCount++;
-            const fc = assistantMsg.content + delta;
+            const fc = textOf(assistantMsg.content) + delta;
             assistantMsg.content = fc;
             const { thinking: t, content: c } = extractThinking(fc);
             updateStreamingContent(assistantMsg.id, fc, t, c);
@@ -328,9 +326,9 @@ export async function sendMessage(): Promise<void> {
             const elapsed = (Date.now() - startTime) / 1000;
             if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
             if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok';
-            saveConversations();
+            void saveConversations();
           }
-        } catch (e) {
+        } catch {
           logWarn('stream', 'Failed to parse final SSE chunk', { raw: streamBuffer.trim() });
         }
       }
@@ -345,7 +343,7 @@ export async function sendMessage(): Promise<void> {
         if (thinkingDuration) {
           assistantMsg.thinkingDuration = thinkingDuration;
         }
-        saveConversations();
+        void saveConversations();
         const { content: c } = extractThinking(assistantMsg.content as string);
         updateStreamingContent(
           assistantMsg.id,
@@ -356,26 +354,27 @@ export async function sendMessage(): Promise<void> {
       }
 
       currentConv.updatedAt = new Date().toISOString();
-      saveConversations();
+      void saveConversations();
     } else {
       const json = (await res.json()) as ChatCompletionResponse;
       const text = json.choices?.[0]?.message?.content || JSON.stringify(json);
       assistantMsg.content = text;
       updateMessageContent(assistantMsg.id, text);
       currentConv.updatedAt = new Date().toISOString();
-      saveConversations();
+      void saveConversations();
     }
   } catch (e) {
     const err = e as Error;
     if (err.name === 'AbortError') {
-      assistantMsg.content += '\n\n*[Generation stopped]*';
-      updateMessageContent(assistantMsg.id, assistantMsg.content as string);
-      saveConversations();
+      const stopped = textOf(assistantMsg.content) + '\n\n*[Generation stopped]*';
+      assistantMsg.content = stopped;
+      updateMessageContent(assistantMsg.id, stopped);
+      void saveConversations();
     } else {
       showToast('Connection error: ' + err.message, 'error');
       assistantMsg.content = '**Error:** ' + err.message;
       updateMessageContent(assistantMsg.id, assistantMsg.content);
-      saveConversations();
+      void saveConversations();
     }
   } finally {
     chatState.abortController = null;
@@ -405,7 +404,7 @@ export function stopGeneration(): void {
     const conv = getCurrentConv();
     if (conv) {
       conv.updatedAt = new Date().toISOString();
-      saveConversations();
+      void saveConversations();
     }
   }
 }
@@ -420,7 +419,7 @@ export function restartConversation(): void {
     chatState.abortController.abort();
     chatState.abortController = null;
   }
-  saveConversations();
+  void saveConversations();
   clearChatView();
   clearPendingAttachments();
   showWelcome();

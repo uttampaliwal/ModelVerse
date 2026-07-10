@@ -5,9 +5,6 @@ import {
   type ToolDefinition,
   type ToolResult,
 } from './base';
-import { spawn } from 'child_process';
-import fs from 'fs';
-import path from 'path';
 
 class TextToSpeechTool implements ToolDefinition {
   name = 'text_to_speech';
@@ -18,16 +15,16 @@ class TextToSpeechTool implements ToolDefinition {
     speed: { type: 'number', description: 'Speech speed multiplier (default: 1.0)' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
     const text = params.text as string;
-    return {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'audio',
         text,
         note: 'TTS requires piper, espeak, or OpenAI TTS API configured',
       },
-    };
+    });
   }
 }
 
@@ -43,16 +40,16 @@ class SpeechToTextTool implements ToolDefinition {
     language: { type: 'string', description: 'Language code (e.g., en, es, fr)' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
     const audioPath = params.audio_path as string;
-    return {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'text',
         audioPath,
         note: 'STT requires whisper.cpp or OpenAI Whisper API configured',
       },
-    };
+    });
   }
 }
 
@@ -107,14 +104,16 @@ export class SpeechPlugin extends Plugin {
     ],
   };
 
-  async activate(ctx: PluginContext): Promise<void> {
+  activate(ctx: PluginContext): Promise<void> {
     this.ctx = ctx;
     this.registerTool(new TextToSpeechTool());
     this.registerTool(new SpeechToTextTool());
     ctx.log('Speech plugin activated');
+    return Promise.resolve();
   }
 
-  async deactivate(): Promise<void> {
+  deactivate(): Promise<void> {
     this.tools = [];
+    return Promise.resolve();
   }
 }

@@ -26,7 +26,9 @@ function loadActiveProfileName(): string {
 function saveActiveProfileName(name: string): void {
   try {
     fs.writeFileSync(ACTIVE_PROFILE_FILE, JSON.stringify({ profile: name }, null, 2));
-  } catch {}
+  } catch {
+    /* ignore: best-effort write, active profile persistence is non-critical */
+  }
 }
 
 export function listProfiles(): Array<{ name: string; description: string; active: boolean }> {

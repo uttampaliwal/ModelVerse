@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
