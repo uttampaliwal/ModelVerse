@@ -994,6 +994,17 @@ textarea#systemPrompt:focus {
   color: var(--text-primary);
 }
 
+.sidebar-footer .version-badge {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-right: auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  font-family: monospace;
+  cursor: default;
+}
+
 /* Resize handle */
 .sidebar-resize-handle {
   position: absolute;

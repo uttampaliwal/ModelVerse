@@ -1,8 +1,8 @@
 @echo off
-title Llama.cpp Web UI
+title ModelVerse
 echo.
 echo ===================================
-echo    Llama.cpp Web UI Launcher
+echo    ModelVerse Launcher
 echo ===================================
 echo.
 
@@ -19,10 +19,20 @@ if %ERRORLEVEL% neq 0 (
 if not exist "node_modules" (
     echo [INFO] Installing dependencies...
     npm install
-    echo.
 )
 
-echo [INFO] Starting Llama.cpp Web UI...
+if not exist "bin\llama-server.exe" (
+    echo [INFO] Downloading llama.cpp...
+    node scripts\update-llama.mjs
+)
+
+if not exist "server.js" (
+    echo [INFO] Building...
+    npm run build
+)
+
+echo.
+echo [INFO] Starting ModelVerse...
 echo [INFO] Open http://localhost:3000 in your browser
 echo.
-npm start
+node server.js

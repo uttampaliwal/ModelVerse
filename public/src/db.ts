@@ -2,7 +2,7 @@ import type { Conversation, Preset, Folder } from './types.js';
 
 type StoredPreset = Preset & { name: string };
 
-const DB_NAME = 'llama-ui';
+const DB_NAME = 'modelverse';
 const DB_VERSION = 2;
 const STORE_CONVERSATIONS = 'conversations';
 const STORE_PRESETS = 'presets';

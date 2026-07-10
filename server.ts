@@ -31,7 +31,7 @@ interface ChatMessageDTO {
   content: unknown;
 }
 
-const LLAMA_CPP_PATH = path.join(__dirname, '..', 'build', 'bin', 'Release');
+const LLAMA_CPP_PATH = path.join(__dirname, 'bin');
 const MODELS_PATH = process.env.LLMODELS_PATH || 'C:\\Users\\uttam\\.lmstudio\\models';
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
@@ -181,13 +181,17 @@ function getModelCapabilities(modelPath: string): string[] {
   }
 }
 
-function getGpuInfo(): { used: number; total: number } | null {
+function getGpuInfo(): { name: string; used: number; total: number; utilization: number } | null {
   try {
-    const os = require('os');
-    const cpus = os.cpus();
-    // Approximate GPU usage from memory (not real GPU monitoring)
-    // Real GPU monitoring would require nvidia-smi or similar
-    return null;
+    const { execSync } = require('child_process');
+    const out = execSync('nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits', { encoding: 'utf-8', timeout: 3000 }).trim();
+    const [name, used, total, utilization] = out.split(',').map((s: string) => s.trim());
+    return {
+      name,
+      used: parseInt(used) * 1024 * 1024,
+      total: parseInt(total) * 1024 * 1024,
+      utilization: parseInt(utilization),
+    };
   } catch (e) {
     return null;
   }
@@ -327,6 +331,7 @@ async function startLlamaServer(modelPath: string): Promise<{ success: boolean; 
       const proc = spawn(serverPath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true,
+        cwd: LLAMA_CPP_PATH,
       });
       llamaProcess = proc;
 
@@ -425,6 +430,11 @@ app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModifi
 
 app.get('/api/models', (_req: express.Request, res: express.Response) => {
   res.json({ models: findGGUFModels() });
+});
+
+app.get('/api/version', (_req: express.Request, res: express.Response) => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+  res.json({ version: pkg.version });
 });
 
 app.get('/api/status', (_req: express.Request, res: express.Response) => {
@@ -599,7 +609,7 @@ app.post('/api/chat', async (req: express.Request, res: express.Response) => {
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`\n  Llama.cpp UI  ->  http://localhost:${PORT}\n`);
+  console.log(`\n  ModelVerse  ->  http://localhost:${PORT}\n`);
 });
 
 server.on('error', (err) => {

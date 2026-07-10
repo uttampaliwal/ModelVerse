@@ -59,17 +59,17 @@ function updateStatusBar(): void {
 async function fetchSystemStatus(): Promise<void> {
   try {
     // Try to get GPU and RAM info from the server
-    const data = await api<{ gpu?: { used: number; total: number }; ram?: { used: number; total: number } }>('/api/system');
+    const data = await api<{ gpu?: { used: number; total: number; utilization: number }; ram?: { used: number; total: number } }>('/api/system');
     
     if (data.gpu) {
       const gpuEl = $('statusGpu');
       if (gpuEl) {
         const span = gpuEl.querySelector('span');
         if (span) {
-          span.textContent = `GPU: ${formatGB(data.gpu.used)} / ${formatGB(data.gpu.total)}`;
-          const percent = data.gpu.total > 0 ? (data.gpu.used / data.gpu.total) * 100 : 0;
-          gpuEl.classList.toggle('warning', percent > 80);
-          gpuEl.classList.toggle('error', percent > 95);
+          const pct = data.gpu.utilization ?? (data.gpu.total > 0 ? Math.round((data.gpu.used / data.gpu.total) * 100) : 0);
+          span.textContent = `GPU: ${pct}%`;
+          gpuEl.classList.toggle('warning', pct > 80);
+          gpuEl.classList.toggle('error', pct > 95);
         }
       }
     }
@@ -122,4 +122,22 @@ export function stopStatusUpdates(): void {
 // Initialize
 export function initStatusBar(): void {
   updateStatusBar();
+  fetchVersion();
+}
+
+async function fetchVersion(): Promise<void> {
+  try {
+    const data = await api<{ version: string }>('/api/version');
+    const el = $('versionBadge');
+    if (el) {
+      el.textContent = `v${data.version}`;
+      el.title = `ModelVerse v${data.version}`;
+    }
+    const settingsVer = $('settingsVersion');
+    if (settingsVer) {
+      settingsVer.textContent = data.version;
+    }
+  } catch (e) {
+    logError('Failed to fetch version', e);
+  }
 }

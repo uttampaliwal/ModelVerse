@@ -1,7 +1,7 @@
 {
-  "name": "llama-ui",
+  "name": "modelverse",
   "version": "0.0.1",
-  "description": "Modern Web UI for llama.cpp",
+  "description": "Modern Web UI for local LLM inference",
   "main": "server.js",
   "scripts": {
     "vendor": "node scripts/vendor.mjs",
@@ -10,7 +10,8 @@
     "dev": "npm run build && node server.js",
     "build": "tsc && tsc -p tsconfig.server.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "update-llama": "node scripts/update-llama.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
