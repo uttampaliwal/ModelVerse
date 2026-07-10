@@ -18,7 +18,7 @@ let initialized = false;
 
 function init(): void {
   viewer.overlay = $('imageViewer');
-  viewer.img = $('imageViewerImg');
+  viewer.img = $<HTMLImageElement>('imageViewerImg');
   viewer.container = $('imageViewerContainer');
   viewer.caption = $('imageViewerCaption');
 

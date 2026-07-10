@@ -426,8 +426,8 @@ export function updateStreamingContent(
 ): void {
   const msgEl = el.chatMessages.querySelector(`.message[data-message-id="${msgId}"]`);
   if (!msgEl) return;
-  const thinkingContainer = msgEl.querySelector('.thinking-container');
-  const responseContainer = msgEl.querySelector('.response-container');
+  const thinkingContainer = msgEl.querySelector<HTMLElement>('.thinking-container');
+  const responseContainer = msgEl.querySelector<HTMLElement>('.response-container');
   if (!thinkingContainer && !responseContainer) {
     updateMessageContent(msgId, fullContent);
     return;
@@ -447,7 +447,7 @@ export function updateStreamingContent(
 export function updateMessageContent(msgId: string, content: string): void {
   const msgEl = el.chatMessages.querySelector(`.message[data-message-id="${msgId}"]`);
   if (!msgEl) return;
-  const contentDiv = msgEl.querySelector('.message-content');
+  const contentDiv = msgEl.querySelector<HTMLElement>('.message-content');
   if (contentDiv) {
     const msg = AppState.conversations.list.flatMap((c) => c.messages).find((m) => m.id === msgId);
     const thinking = msg?.thinking ?? '';

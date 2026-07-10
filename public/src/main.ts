@@ -335,7 +335,7 @@ async function init(): Promise<void> {
     }
 
     const btn = target.closest('.action-btn');
-    const msgEl = target.closest('.message');
+    const msgEl = target.closest<HTMLElement>('.message');
     if (!msgEl) return;
     const msgId = msgEl.dataset.messageId;
     if (!msgId) return;
