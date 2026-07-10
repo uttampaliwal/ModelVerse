@@ -10,6 +10,7 @@ const fs_1 = __importDefault(require("fs"));
 const net_1 = __importDefault(require("net"));
 const base_1 = require("./base");
 const stream_utils_1 = require("./stream-utils");
+const logger_1 = require("../logger");
 const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'gemma4vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
 const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3', 'gemma4'];
 function getModelCapabilities(modelPath) {
@@ -203,7 +204,7 @@ class LlamaCppEngine extends base_1.LLMEngine {
                 ];
                 if (mmprojPath)
                     args.push('--mmproj', mmprojPath);
-                console.log('[llama.cpp] Starting:', serverPath);
+                logger_1.log.engine('Starting: ' + serverPath);
                 const proc = (0, child_process_1.spawn)(serverPath, args, {
                     stdio: ['pipe', 'pipe', 'pipe'],
                     windowsHide: true,
@@ -228,7 +229,7 @@ class LlamaCppEngine extends base_1.LLMEngine {
                                 proc.stderr.on('data', (d) => process.stderr.write(d));
                         }
                         catch { }
-                        console.log('[llama.cpp] Server ready');
+                        logger_1.log.engine('Server ready on port ' + usedPort);
                         resolve({ success: true, port: usedPort });
                     }
                 };
@@ -337,7 +338,7 @@ class LlamaCppEngine extends base_1.LLMEngine {
             scanDir(this.engineConfig.modelsPath);
         }
         catch (e) {
-            console.error('[llama.cpp] Error scanning models:', e.message);
+            logger_1.log.error('Error scanning models', e);
         }
         return models;
     }

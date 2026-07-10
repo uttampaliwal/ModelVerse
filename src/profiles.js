@@ -11,6 +11,7 @@ exports.saveProfile = saveProfile;
 exports.deleteProfile = deleteProfile;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const config_schemas_1 = require("./config-schemas");
 const PROFILES_DIR = path_1.default.join(process.cwd(), 'profiles');
 const ACTIVE_PROFILE_FILE = path_1.default.join(process.cwd(), 'active-profile.json');
 function ensureDir() {
@@ -19,14 +20,8 @@ function ensureDir() {
     }
 }
 function loadActiveProfileName() {
-    try {
-        if (fs_1.default.existsSync(ACTIVE_PROFILE_FILE)) {
-            const data = JSON.parse(fs_1.default.readFileSync(ACTIVE_PROFILE_FILE, 'utf-8'));
-            return data.profile || 'Balanced';
-        }
-    }
-    catch { }
-    return 'Balanced';
+    const data = (0, config_schemas_1.loadAndValidate)(config_schemas_1.activeProfileSchema, ACTIVE_PROFILE_FILE, { profile: 'Balanced' }, 'ActiveProfile');
+    return data.profile;
 }
 function saveActiveProfileName(name) {
     try {
@@ -39,7 +34,19 @@ function listProfiles() {
     const activeName = loadActiveProfileName();
     const files = fs_1.default.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
     return files.map((f) => {
-        const content = JSON.parse(fs_1.default.readFileSync(path_1.default.join(PROFILES_DIR, f), 'utf-8'));
+        const content = (0, config_schemas_1.loadAndValidate)(config_schemas_1.profileSchema, path_1.default.join(PROFILES_DIR, f), {
+            name: f.replace('.json', ''),
+            description: '',
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
+            repeatPenalty: 1.1,
+            maxTokens: 4096,
+            contextSize: 8192,
+            threads: 4,
+            gpuLayers: 99,
+            systemPrompt: 'You are a helpful assistant.',
+        }, 'Profiles');
         return {
             name: content.name || f.replace('.json', ''),
             description: content.description || '',
@@ -51,7 +58,19 @@ function getProfile(name) {
     ensureDir();
     const files = fs_1.default.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
     for (const f of files) {
-        const content = JSON.parse(fs_1.default.readFileSync(path_1.default.join(PROFILES_DIR, f), 'utf-8'));
+        const content = (0, config_schemas_1.loadAndValidate)(config_schemas_1.profileSchema, path_1.default.join(PROFILES_DIR, f), {
+            name: f.replace('.json', ''),
+            description: '',
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
+            repeatPenalty: 1.1,
+            maxTokens: 4096,
+            contextSize: 8192,
+            threads: 4,
+            gpuLayers: 99,
+            systemPrompt: 'You are a helpful assistant.',
+        }, 'Profiles');
         if (content.name === name || f.replace('.json', '') === name) {
             return content;
         }

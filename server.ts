@@ -35,21 +35,9 @@ import {
   getAvailableSources,
 } from './src/model-scanner';
 import { log } from './src/logger';
+import { serverSettingsSchema, packageJsonSchema, loadAndValidate } from './src/config-schemas';
 
-interface ServerSettings {
-  port: number;
-  activeEngine: EngineId;
-  engineConfigs: Record<string, Record<string, unknown>>;
-  temperature: number;
-  topP: number;
-  topK: number;
-  repeatPenalty: number;
-  maxTokens: number;
-  contextSize: number;
-  threads: number;
-  gpuLayers: number;
-  systemPrompt: string;
-}
+export type ServerSettings = import('./src/config-schemas').ServerSettings;
 
 interface ChatMessageDTO {
   role: string;
@@ -248,17 +236,10 @@ function getDefaultSettings(): ServerSettings {
 let settings: ServerSettings = getDefaultSettings();
 
 function loadSettings(): void {
-  try {
-    if (fs.existsSync(SETTINGS_FILE)) {
-      const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) as Partial<ServerSettings>;
-      settings = { ...settings, ...saved };
-      engines.setActive(settings.activeEngine);
-      for (const [id, config] of Object.entries(settings.engineConfigs || {})) {
-        engines.configure(id, config).catch(() => {});
-      }
-    }
-  } catch (e) {
-    log.error('Error loading settings', e as Error);
+  settings = loadAndValidate(serverSettingsSchema, SETTINGS_FILE, getDefaultSettings(), 'Settings');
+  engines.setActive(settings.activeEngine);
+  for (const [id, config] of Object.entries(settings.engineConfigs || {})) {
+    engines.configure(id, config).catch(() => {});
   }
 }
 
@@ -308,7 +289,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
 
 app.get('/api/version', (_req: express.Request, res: express.Response) => {
-  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+  const pkg = loadAndValidate(packageJsonSchema, path.join(__dirname, 'package.json'), { version: '0.0.0' }, 'Package');
   res.json({ version: pkg.version });
 });
 

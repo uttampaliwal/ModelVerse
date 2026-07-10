@@ -1,57 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 import { log } from './logger';
+import { modelMetadataArraySchema, loadAndValidate } from './config-schemas';
 
-export interface ModelMetadata {
-  id: string;
-  name: string;
-  path: string;
-  provider: string;
-
-  // Model info
-  parameters?: string;
-  quantization?: string;
-  architecture?: string;
-  contextLength?: number;
-
-  // Capabilities
-  vision: boolean;
-  embedding: boolean;
-  reasoning: boolean;
-  tools: boolean;
-  code: boolean;
-
-  // Requirements
-  memoryRequired?: string;
-  recommendedGpu?: string;
-  recommendedRam?: string;
-
-  // Metadata
-  languages?: string[];
-  license?: string;
-  tags?: string[];
-  description?: string;
-
-  // Source
-  source?: string;
-  family?: string;
-
-  // Timestamps
-  addedAt: string;
-  updatedAt: string;
-}
+export type ModelMetadata = import('./config-schemas').ModelMetadata;
 
 const METADATA_FILE = path.join(process.cwd(), 'model-metadata.json');
 
 let metadataStore: Map<string, ModelMetadata> = new Map();
 
 function loadStore(): void {
-  try {
-    if (fs.existsSync(METADATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(METADATA_FILE, 'utf-8')) as ModelMetadata[];
-      metadataStore = new Map(data.map((m) => [m.id, m]));
-    }
-  } catch {}
+  const data = loadAndValidate(modelMetadataArraySchema, METADATA_FILE, [], 'ModelMetadata');
+  metadataStore = new Map(data.map((m) => [m.id, m]));
 }
 
 function saveStore(): void {

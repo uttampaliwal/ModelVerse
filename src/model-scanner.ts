@@ -4,6 +4,9 @@ import os from 'os';
 import { execSync } from 'child_process';
 import { getOrCreateMetadata, type ModelMetadata } from './model-metadata';
 import { log } from './logger';
+import { scannerConfigSchema, loadAndValidate } from './config-schemas';
+
+export type ScannerConfig = import('./config-schemas').ScannerConfig;
 
 export interface ScannedModel {
   id: string;
@@ -13,7 +16,7 @@ export interface ScannedModel {
   size: number;
   sizeFormatted: string;
   format: string;
-  metadata: Partial<ModelMetadata>;
+  metadata: Partial<import('./model-metadata').ModelMetadata>;
 }
 
 export type ModelSource =
@@ -26,23 +29,13 @@ export type ModelSource =
   | 'transformers'
   | 'custom';
 
-export interface ScannerConfig {
-  customPaths: string[];
-  enabledSources: ModelSource[];
-}
-
 const CONFIG_FILE = path.join(process.cwd(), 'scanner-config.json');
 
 function loadConfig(): ScannerConfig {
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
-    }
-  } catch {}
-  return {
+  return loadAndValidate(scannerConfigSchema, CONFIG_FILE, {
     customPaths: [],
     enabledSources: ['lmstudio', 'ollama', 'llamacpp', 'gpt4all', 'jan', 'openwebui', 'transformers'],
-  };
+  }, 'Scanner');
 }
 
 function saveConfig(config: ScannerConfig): void {

@@ -6,22 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugins = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const logger_1 = require("../logger");
+const config_schemas_1 = require("../config-schemas");
 const SETTINGS_FILE = path_1.default.join(process.cwd(), 'plugins.json');
 function loadPluginSettings() {
-    try {
-        if (fs_1.default.existsSync(SETTINGS_FILE)) {
-            return JSON.parse(fs_1.default.readFileSync(SETTINGS_FILE, 'utf-8'));
-        }
-    }
-    catch { }
-    return {};
+    return (0, config_schemas_1.loadAndValidate)(config_schemas_1.pluginSettingsSchema, SETTINGS_FILE, {}, 'Plugins');
 }
 function savePluginSettings(settings) {
     try {
         fs_1.default.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
     }
     catch (e) {
-        console.error('[PluginManager] Failed to save settings:', e.message);
+        logger_1.log.error('Failed to save settings', e);
     }
 }
 class PluginManager {
@@ -72,11 +68,11 @@ class PluginManager {
                 this.settings[pluginId].config = { ...config, ...newConfig };
                 savePluginSettings(this.settings);
             },
-            log: (msg) => console.log(`[${instance.manifest.name}] ${msg}`),
+            log: (msg) => logger_1.log.server(`[${instance.manifest.name}] ${msg}`),
         };
         await instance.activate(ctx);
         this.plugins.set(pluginId, entry);
-        console.log(`[PluginManager] Activated: ${instance.manifest.name}`);
+        logger_1.log.server('Activated: ' + instance.manifest.name);
     }
     async deactivate(pluginId) {
         const entry = this.plugins.get(pluginId);
@@ -96,7 +92,7 @@ class PluginManager {
         this.settings[pluginId] = { enabled: false, config: this.settings[pluginId]?.config || {} };
         savePluginSettings(this.settings);
         this.plugins.delete(pluginId);
-        console.log(`[PluginManager] Deactivated: ${entry.manifest.name}`);
+        logger_1.log.server('Deactivated: ' + entry.manifest.name);
     }
     async toggle(pluginId) {
         if (this.plugins.has(pluginId)) {
@@ -115,7 +111,7 @@ class PluginManager {
                     await this.activate(id);
                 }
                 catch (e) {
-                    console.error(`[PluginManager] Failed to activate ${id}:`, e.message);
+                    logger_1.log.error('Failed to activate ' + id, e);
                 }
             }
         }

@@ -11,18 +11,14 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const os_1 = __importDefault(require("os"));
 const model_metadata_1 = require("./model-metadata");
+const logger_1 = require("./logger");
+const config_schemas_1 = require("./config-schemas");
 const CONFIG_FILE = path_1.default.join(process.cwd(), 'scanner-config.json');
 function loadConfig() {
-    try {
-        if (fs_1.default.existsSync(CONFIG_FILE)) {
-            return JSON.parse(fs_1.default.readFileSync(CONFIG_FILE, 'utf-8'));
-        }
-    }
-    catch { }
-    return {
+    return (0, config_schemas_1.loadAndValidate)(config_schemas_1.scannerConfigSchema, CONFIG_FILE, {
         customPaths: [],
         enabledSources: ['lmstudio', 'ollama', 'llamacpp', 'gpt4all', 'jan', 'openwebui', 'transformers'],
-    };
+    }, 'Scanner');
 }
 function saveConfig(config) {
     try {
@@ -347,7 +343,7 @@ function scanAllModels(config) {
                 allModels.push(...scanner());
             }
             catch (e) {
-                console.error(`[Scanner] Error scanning ${source}:`, e.message);
+                logger_1.log.error('Error scanning ' + source, e);
             }
         }
     }

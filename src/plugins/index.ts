@@ -11,6 +11,7 @@ import {
   type ToolResult,
 } from './base';
 import { log } from '../logger';
+import { pluginSettingsSchema, loadAndValidate } from '../config-schemas';
 
 interface PluginEntry {
   manifest: PluginManifest;
@@ -23,12 +24,7 @@ interface PluginEntry {
 const SETTINGS_FILE = path.join(process.cwd(), 'plugins.json');
 
 function loadPluginSettings(): Record<string, { enabled: boolean; config: Record<string, unknown> }> {
-  try {
-    if (fs.existsSync(SETTINGS_FILE)) {
-      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
-    }
-  } catch {}
-  return {};
+  return loadAndValidate(pluginSettingsSchema, SETTINGS_FILE, {}, 'Plugins');
 }
 
 function savePluginSettings(settings: Record<string, { enabled: boolean; config: Record<string, unknown> }>): void {

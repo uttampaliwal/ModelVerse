@@ -7,6 +7,7 @@ exports.RAGPlugin = void 0;
 const base_1 = require("./base");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const config_schemas_1 = require("../config-schemas");
 class RAGStore {
     chunks = [];
     storePath;
@@ -15,12 +16,7 @@ class RAGStore {
         this.load();
     }
     load() {
-        try {
-            if (fs_1.default.existsSync(this.storePath)) {
-                this.chunks = JSON.parse(fs_1.default.readFileSync(this.storePath, 'utf-8'));
-            }
-        }
-        catch { }
+        this.chunks = (0, config_schemas_1.loadAndValidate)(config_schemas_1.documentChunkArraySchema, this.storePath, [], 'RAG');
     }
     save() {
         try {

@@ -1,20 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { activeProfileSchema, profileSchema, loadAndValidate } from './config-schemas';
 
-export interface Profile {
-  name: string;
-  description: string;
-  temperature: number;
-  topP: number;
-  topK: number;
-  repeatPenalty: number;
-  maxTokens: number;
-  contextSize: number;
-  threads: number;
-  gpuLayers: number;
-  systemPrompt: string;
-  [key: string]: unknown;
-}
+export type Profile = import('./config-schemas').Profile;
 
 const PROFILES_DIR = path.join(process.cwd(), 'profiles');
 const ACTIVE_PROFILE_FILE = path.join(process.cwd(), 'active-profile.json');
@@ -26,13 +14,8 @@ function ensureDir(): void {
 }
 
 function loadActiveProfileName(): string {
-  try {
-    if (fs.existsSync(ACTIVE_PROFILE_FILE)) {
-      const data = JSON.parse(fs.readFileSync(ACTIVE_PROFILE_FILE, 'utf-8'));
-      return data.profile || 'Balanced';
-    }
-  } catch {}
-  return 'Balanced';
+  const data = loadAndValidate(activeProfileSchema, ACTIVE_PROFILE_FILE, { profile: 'Balanced' }, 'ActiveProfile');
+  return data.profile;
 }
 
 function saveActiveProfileName(name: string): void {
@@ -47,7 +30,19 @@ export function listProfiles(): Array<{ name: string; description: string; activ
   const files = fs.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
 
   return files.map((f) => {
-    const content = JSON.parse(fs.readFileSync(path.join(PROFILES_DIR, f), 'utf-8'));
+    const content = loadAndValidate(profileSchema, path.join(PROFILES_DIR, f), {
+      name: f.replace('.json', ''),
+      description: '',
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      repeatPenalty: 1.1,
+      maxTokens: 4096,
+      contextSize: 8192,
+      threads: 4,
+      gpuLayers: 99,
+      systemPrompt: 'You are a helpful assistant.',
+    }, 'Profiles');
     return {
       name: content.name || f.replace('.json', ''),
       description: content.description || '',
@@ -61,9 +56,21 @@ export function getProfile(name: string): Profile | null {
   const files = fs.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
 
   for (const f of files) {
-    const content = JSON.parse(fs.readFileSync(path.join(PROFILES_DIR, f), 'utf-8'));
+    const content = loadAndValidate(profileSchema, path.join(PROFILES_DIR, f), {
+      name: f.replace('.json', ''),
+      description: '',
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      repeatPenalty: 1.1,
+      maxTokens: 4096,
+      contextSize: 8192,
+      threads: 4,
+      gpuLayers: 99,
+      systemPrompt: 'You are a helpful assistant.',
+    } as Profile, 'Profiles');
     if (content.name === name || f.replace('.json', '') === name) {
-      return content as Profile;
+      return content;
     }
   }
   return null;

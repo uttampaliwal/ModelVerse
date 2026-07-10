@@ -1,6 +1,7 @@
 import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
 import fs from 'fs';
 import path from 'path';
+import { documentChunkArraySchema, loadAndValidate } from '../config-schemas';
 
 interface DocumentChunk {
   id: string;
@@ -18,11 +19,7 @@ class RAGStore {
   }
 
   private load(): void {
-    try {
-      if (fs.existsSync(this.storePath)) {
-        this.chunks = JSON.parse(fs.readFileSync(this.storePath, 'utf-8'));
-      }
-    } catch {}
+    this.chunks = loadAndValidate(documentChunkArraySchema, this.storePath, [], 'RAG');
   }
 
   private save(): void {

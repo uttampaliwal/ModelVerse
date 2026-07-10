@@ -12,16 +12,13 @@ exports.filterMetadata = filterMetadata;
 exports.deleteMetadata = deleteMetadata;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const logger_1 = require("./logger");
+const config_schemas_1 = require("./config-schemas");
 const METADATA_FILE = path_1.default.join(process.cwd(), 'model-metadata.json');
 let metadataStore = new Map();
 function loadStore() {
-    try {
-        if (fs_1.default.existsSync(METADATA_FILE)) {
-            const data = JSON.parse(fs_1.default.readFileSync(METADATA_FILE, 'utf-8'));
-            metadataStore = new Map(data.map((m) => [m.id, m]));
-        }
-    }
-    catch { }
+    const data = (0, config_schemas_1.loadAndValidate)(config_schemas_1.modelMetadataArraySchema, METADATA_FILE, [], 'ModelMetadata');
+    metadataStore = new Map(data.map((m) => [m.id, m]));
 }
 function saveStore() {
     try {
@@ -29,7 +26,7 @@ function saveStore() {
         fs_1.default.writeFileSync(METADATA_FILE, JSON.stringify(data, null, 2));
     }
     catch (e) {
-        console.error('[ModelMetadata] Failed to save:', e.message);
+        logger_1.log.error('Failed to save metadata', e);
     }
 }
 loadStore();
