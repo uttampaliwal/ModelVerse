@@ -167,13 +167,15 @@
 
 .message-content code:not(pre code) {
   background: var(--bg-tertiary);
+}
 
 /* Code Block */
-.code-block {
+.code-block, .mermaid-block {
+  position: relative;
   margin: 10px 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: visible;
   background: var(--bg-primary);
 }
 
@@ -187,15 +189,37 @@
 }
 
 .code-block-lang {
+  display: flex;
+  align-items: center;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
-.code-block-actions {
+.code-block-toolbar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
   display: flex;
   gap: 4px;
+  padding: 4px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.code-block:hover .code-block-toolbar,
+.mermaid-block:hover .code-block-toolbar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .code-block-btn {
@@ -205,18 +229,17 @@
   padding: 4px 8px;
   font-size: 11px;
   font-family: inherit;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.15s ease;
 }
 
 .code-block-btn:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
-  border-color: var(--border);
 }
 
 .code-block-btn.active {
@@ -225,11 +248,21 @@
 }
 
 .code-block-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
+}
+
+.code-block-toolbar .code-block-run {
+  color: #22c55e;
+}
+
+.code-block-toolbar .code-block-run:hover {
+  background: #22c55e20;
+  color: #22c55e;
 }
 
 .code-block-pre {
+  flex: 1;
   margin: 0;
   padding: 14px 16px;
   background: var(--bg-primary);
@@ -250,9 +283,80 @@
   word-break: break-all;
 }
 
-.code-block.collapsed .code-block-pre {
+.code-block.collapsed .code-block-body,
+.code-block.collapsed .code-block-output {
   display: none;
 }
+
+.code-block-body {
+  display: flex;
+  overflow-x: auto;
+}
+
+.code-line-numbers {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 0;
+  background: var(--bg-tertiary);
+  border-right: 1px solid var(--border);
+  user-select: none;
+  min-width: 40px;
+}
+
+.code-line-numbers .line-number {
+  display: block;
+  padding: 0 8px;
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.lang-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  background: var(--lang-color, #6b7280);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.code-block-output {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  background: #0d1117;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.code-block-output .output-label {
+  color: #8b949e;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.code-block-output .output-success {
+  color: #3fb950;
+}
+
+.code-block-output .output-error {
+  color: #f85149;
+}
+
+.message-content code {
+  background: var(--bg-tertiary);
   border: 1px solid var(--border);
   padding: 1px 6px;
   border-radius: 4px;
@@ -272,6 +376,43 @@
 
 .message-content em {
   color: var(--text-secondary);
+}
+
+/* Shared action button styles for message and code block toolbars */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.action-btn.danger:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.action-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 4px 2px;
 }
 
 .message-actions {
@@ -303,42 +444,6 @@
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
-}
-
-.message-actions .action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
-}
-
-.message-actions .action-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.message-actions .action-btn.danger:hover {
-  color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.message-actions .action-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.message-actions .action-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-  margin: 4px 2px;
 }
 
 .edit-message-btn {

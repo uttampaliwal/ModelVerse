@@ -11,6 +11,38 @@ const LATEX_MATH_CMDS = new Set([
   'begin','end','matrix','pmatrix','bmatrix','Bmatrix','vmatrix','Vmatrix','cases','array','aligned','gathered','split','eqnarray','smallmatrix'
 ]);
 
+const LANG_ICONS: Record<string, string> = {
+  javascript: 'js', typescript: 'ts', python: 'py', rust: 'rs',
+  html: 'html', css: 'css', json: 'json', yaml: 'yml',
+  bash: 'sh', shell: 'sh', sh: 'sh', zsh: 'sh',
+  cpp: 'c++', c: 'c', csharp: 'cs', java: 'java',
+  go: 'go', ruby: 'rb', php: 'php', swift: 'swift',
+  kotlin: 'kt', scala: 'scala', r: 'r', lua: 'lua',
+  sql: 'sql', xml: 'xml', markdown: 'md', dockerfile: 'docker',
+  makefile: 'make', cmake: 'cmake', vim: 'vim',
+  plaintext: 'txt', text: 'txt', txt: 'txt',
+};
+
+const LANG_COLORS: Record<string, string> = {
+  javascript: '#f7df1e', typescript: '#3178c6', python: '#3776ab',
+  rust: '#dea584', html: '#e34f26', css: '#1572b6', json: '#292929',
+  bash: '#4eaa25', shell: '#4eaa25', sh: '#4eaa25',
+  cpp: '#00599c', c: '#555555', java: '#ed8b00', go: '#00add8',
+  ruby: '#cc342d', php: '#777bb4', swift: '#f05138', kotlin: '#7f52ff',
+  r: '#276dc3', sql: '#e38c00', markdown: '#083fa1',
+  dockerfile: '#2496ed', makefile: '#427819',
+};
+
+function getLangIcon(lang: string): string {
+  const key = lang.toLowerCase();
+  return LANG_ICONS[key] || lang.substring(0, 3);
+}
+
+function getLangColor(lang: string): string {
+  const key = lang.toLowerCase();
+  return LANG_COLORS[key] || '#6b7280';
+}
+
 function readBrace(text: string, start: number): [string, number] {
   let depth = 0;
   let i = start;
@@ -287,13 +319,23 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     const inner = highlight(code, lang);
     const langLabel = lang === 'plaintext' ? 'Code' : lang;
     const escapedCode = escapeHtml(code);
+    const langIcon = getLangIcon(lang);
+    const langColor = getLangColor(lang);
+    const lineCount = code.split('\n').length;
+    const runLanguages = ['python', 'javascript', 'typescript', 'bash', 'sh', 'shell', 'js', 'ts', 'py'];
+    const canRun = runLanguages.includes(lang.toLowerCase());
+
+    // Generate line numbers
+    const lineNumbers = Array.from({ length: lineCount }, (_, i) =>
+      `<span class="line-number">${i + 1}</span>`
+    ).join('');
 
     // Check if it's a mermaid block
     if (lang === 'mermaid') {
       result = result.split('@@CODE' + i + '@@').join(`
 <div class="mermaid-block">
   <div class="code-block-header">
-    <span class="code-block-lang">Mermaid</span>
+    <span class="code-block-lang"><span class="lang-icon" style="--lang-color: ${langColor}">${langIcon}</span>Mermaid</span>
     <div class="code-block-actions">
       <button class="code-block-btn code-block-copy" title="Copy code" aria-label="Copy code">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -308,7 +350,7 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
       result = result.split('@@CODE' + i + '@@').join(`
 <div class="code-block" data-lang="${lang}">
   <div class="code-block-header">
-    <span class="code-block-lang">${langLabel}</span>
+    <span class="code-block-lang"><span class="lang-icon" style="--lang-color: ${langColor}">${langIcon}</span>${langLabel}</span>
     <div class="code-block-actions">
       <button class="code-block-btn code-block-copy" title="Copy code" aria-label="Copy code">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -318,17 +360,20 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>Download</span>
       </button>
-      <button class="code-block-btn code-block-wrap" title="Toggle word wrap" aria-label="Toggle word wrap">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h15a3 3 0 1 1 0 6h-4M3 18h10a3 3 0 1 0 0-6h-3"/></svg>
-        <span>Wrap</span>
-      </button>
+      ${canRun ? `<button class="code-block-btn code-block-run" title="Run code" aria-label="Run code" data-lang="${lang}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>Run</span>
+      </button>` : ''}
       <button class="code-block-btn code-block-collapse" title="Collapse code" aria-label="Collapse code block">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         <span>Collapse</span>
       </button>
     </div>
   </div>
-  <pre class="code-block-pre"><code class="lang-${lang}">${inner}</code></pre>
+  <div class="code-block-body">
+    <div class="code-line-numbers" aria-hidden="true">${lineNumbers}</div>
+    <pre class="code-block-pre"><code class="lang-${lang}">${inner}</code></pre>
+  </div>
   <textarea class="code-block-raw" style="display:none">${escapedCode}</textarea>
 </div>`);
     }

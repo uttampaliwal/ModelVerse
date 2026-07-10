@@ -1,6 +1,7 @@
 import { el, $, showShortcuts, closeSidebar } from './utils.js';
 import { showToast } from './toast.js';
 import { loadModels, updateModelInfo } from './models.js';
+import { escapeHtml } from './markdown.js';
 import {
   loadSettings,
   applySettings,
@@ -355,25 +356,53 @@ async function init(): Promise<void> {
   });
 
   // Code block actions (event delegation)
+  async function runCode(codeBlock: HTMLElement, code: string, lang: string): Promise<void> {
+    let outputEl = codeBlock.querySelector('.code-block-output');
+    if (!outputEl) {
+      outputEl = document.createElement('div');
+      outputEl.className = 'code-block-output';
+      codeBlock.appendChild(outputEl);
+    }
+
+    outputEl.innerHTML = '<div class="output-label">Running...</div>';
+
+    try {
+      const res = await fetch('/api/plugins/tools/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tool: lang === 'python' ? 'python:execute_python' : `${lang}:execute_${lang}`,
+          params: { code, timeout: 30 },
+        }),
+      });
+
+      const result = await res.json() as { success: boolean; output?: { stdout?: string; stderr?: string }; error?: string };
+
+      if (result.success && result.output) {
+        const stdout = result.output.stdout || '';
+        const stderr = result.output.stderr || '';
+        outputEl.innerHTML = `<div class="output-label">Output</div><div class="output-success">${escapeHtml(stdout) || '(no output)'}</div>${stderr ? `<div class="output-error">${escapeHtml(stderr)}</div>` : ''}`;
+      } else {
+        outputEl.innerHTML = `<div class="output-label">Error</div><div class="output-error">${escapeHtml(result.error || 'Execution failed')}</div>`;
+      }
+    } catch (err) {
+      outputEl.innerHTML = `<div class="output-label">Error</div><div class="output-error">${escapeHtml((err as Error).message)}</div>`;
+    }
+  }
+
   el.chatMessages.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.code-block-btn');
     if (!btn) return;
 
-    const codeBlock = btn.closest('.code-block');
+    const codeBlock = btn.closest('.code-block') || btn.closest('.mermaid-block');
     if (!codeBlock) return;
 
     const rawTextarea = codeBlock.querySelector('.code-block-raw') as HTMLTextAreaElement;
     const rawCode = rawTextarea?.value || '';
 
     if (btn.classList.contains('code-block-copy')) {
-      navigator.clipboard.writeText(rawCode).then(() => {
-        const span = btn.querySelector('span');
-        if (span) {
-          span.textContent = 'Copied!';
-          setTimeout(() => { span.textContent = 'Copy'; }, 2000);
-        }
-      });
+      navigator.clipboard.writeText(rawCode);
     } else if (btn.classList.contains('code-block-download')) {
       const lang = codeBlock.getAttribute('data-lang') || 'txt';
       const ext = lang === 'plaintext' ? 'txt' : lang;
@@ -384,15 +413,11 @@ async function init(): Promise<void> {
       a.download = `code.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
-    } else if (btn.classList.contains('code-block-wrap')) {
-      codeBlock.classList.toggle('wrapped');
-      btn.classList.toggle('active');
     } else if (btn.classList.contains('code-block-collapse')) {
       codeBlock.classList.toggle('collapsed');
-      const span = btn.querySelector('span');
-      if (span) {
-        span.textContent = codeBlock.classList.contains('collapsed') ? 'Expand' : 'Collapse';
-      }
+    } else if (btn.classList.contains('code-block-run')) {
+      const lang = btn.getAttribute('data-lang') || '';
+      runCode(codeBlock as HTMLElement, rawCode, lang);
     }
   });
 

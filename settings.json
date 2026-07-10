@@ -7,8 +7,8 @@
   "topK": 40,
   "repeatPenalty": 1.1,
   "maxTokens": 5000,
-  "systemPrompt": "You are a helpful assistant.",
   "contextSize": 8192,
   "threads": 4,
-  "gpuLayers": 99
+  "gpuLayers": 99,
+  "systemPrompt": "You are a helpful assistant."
 }
