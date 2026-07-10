@@ -5,8 +5,6 @@ import type { ModelInfo } from './types.js';
 import { AppState } from './state.js';
 import { logError } from './logger.js';
 
-// ---- Helpers ----------------------------------------------------------------
-
 function capClass(cap: string): string {
   const lower = cap.toLowerCase();
   if (lower === 'vision') return 'cap-vision';
@@ -21,8 +19,6 @@ function esc(s: string): string {
   return d.innerHTML;
 }
 
-// ---- Public -----------------------------------------------------------------
-
 export async function loadModels(): Promise<void> {
   const list = $('modelList') as HTMLElement;
   if (!list) return;
@@ -34,16 +30,15 @@ export async function loadModels(): Promise<void> {
     AppState.models = {};
     el.modelSelect.innerHTML = '';
 
-    // Group by folder
     const groups = new Map<string, ModelInfo[]>();
     for (const m of models) {
-      const folder = m.folder || 'Root';
+      const folder = m.folder || m.provider || 'Available Models';
       if (!groups.has(folder)) groups.set(folder, []);
       groups.get(folder)!.push(m);
-      AppState.models[m.path] = m;
+      AppState.models[m.id || m.path || m.name] = m;
 
       const opt = document.createElement('option');
-      opt.value = m.path;
+      opt.value = m.id || m.path || m.name;
       opt.textContent = m.name;
       el.modelSelect.appendChild(opt);
     }
@@ -60,7 +55,7 @@ export async function loadModels(): Promise<void> {
 
         const card = document.createElement('div');
         card.className = 'model-card';
-        card.dataset.path = m.path;
+        card.dataset.path = m.id || m.path || m.name;
         card.tabIndex = 0;
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Load ${m.name}`);
@@ -73,11 +68,11 @@ export async function loadModels(): Promise<void> {
             ${caps ? `<span class="model-card-caps">${caps}</span>` : ''}
           </div>`;
 
-        card.addEventListener('click', () => selectModel(m.path));
+        card.addEventListener('click', () => selectModel(m.id || m.path || m.name));
         card.addEventListener('keydown', (e: Event) => {
           if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
             e.preventDefault();
-            selectModel(m.path);
+            selectModel(m.id || m.path || m.name);
           }
         });
 
@@ -85,52 +80,48 @@ export async function loadModels(): Promise<void> {
       }
       list.appendChild(groupEl);
     }
+
+    if (models.length === 0) {
+      list.innerHTML = '<div class="model-empty">No models found. Check your engine settings.</div>';
+    }
   } catch (e) {
     logError('loadModels', e);
     list.innerHTML = '<div class="model-empty">Failed to load models</div>';
   }
 }
 
-async function selectModel(path: string): Promise<void> {
-  // Update hidden select for compatibility
-  el.modelSelect.value = path;
+async function selectModel(modelId: string): Promise<void> {
+  el.modelSelect.value = modelId;
 
-  // Update card UI
   const list = $('modelList') as HTMLElement;
   if (list) {
     list.querySelectorAll('.model-card').forEach((card) => {
       const c = card as HTMLElement;
-      c.classList.toggle('selected', c.dataset.path === path);
+      c.classList.toggle('selected', c.dataset.path === modelId);
     });
   }
 
   updateModelInfo();
 
-  // Auto-start/restart server with this model
   try {
     const { ensureServerRunning } = await import('./server.js');
-    await ensureServerRunning(path);
+    await ensureServerRunning(modelId);
   } catch (e) {
     showToast('Failed to load model: ' + (e as Error).message, 'error');
   }
 }
 
 export function updateModelInfo(): void {
-  const path = el.modelSelect.value;
-  const m = AppState.models[path];
+  const modelId = el.modelSelect.value;
+  const m = AppState.models[modelId];
   if (!m) {
     el.modelInfo.textContent = '';
     el.modelBadge.textContent = '';
     return;
   }
-  const ctx = parseInt($<HTMLInputElement>('contextSize').value) || '-';
-  const gpu = parseInt($<HTMLInputElement>('gpuLayers').value) || '-';
-  const thr = parseInt($<HTMLInputElement>('threads').value) || '-';
   const caps = m.capabilities && m.capabilities.length ? m.capabilities.join(', ') : 'text';
-  el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ctx ${ctx} · GPU ${gpu} · ${thr}T`;
+  el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ${m.provider || 'local'}`;
   el.modelBadge.textContent = `${m.name} · ${caps}`;
 
-  // Update status bar
-  const contextSize = parseInt($<HTMLInputElement>('contextSize').value) || 0;
-  import('./status.js').then(mod => mod.setModelInfo(m.name, contextSize));
+  import('./status.js').then(mod => mod.setModelInfo(m.name, 0));
 }

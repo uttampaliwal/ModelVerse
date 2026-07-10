@@ -1,0 +1,127 @@
+import { Readable } from 'stream';
+import { LLMEngine, type ModelInfo, type ChatMessage, type GenerateOptions, type GenerateResult, type HealthStatus, type EngineConfig } from './base';
+
+export interface OllamaConfig extends EngineConfig {
+  baseUrl: string;
+}
+
+export class OllamaEngine extends LLMEngine {
+  readonly id = 'ollama';
+  readonly name = 'Ollama';
+
+  protected engineConfig: OllamaConfig = {
+    baseUrl: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434',
+  };
+
+  configure(config: EngineConfig): void {
+    this.engineConfig = { ...this.engineConfig, ...config };
+  }
+
+  async start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
+    this._running = true;
+    return { success: true };
+  }
+
+  async stop(): Promise<{ success: boolean }> {
+    this._running = false;
+    return { success: true };
+  }
+
+  async listModels(): Promise<ModelInfo[]> {
+    try {
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`);
+      if (!res.ok) return [];
+      const data = await res.json() as { models: Array<{ name: string; size: number }> };
+      return data.models.map((m) => ({
+        name: m.name,
+        id: m.name,
+        size: m.size,
+        sizeFormatted: formatBytes(m.size),
+        provider: this.id,
+        capabilities: [],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
+    const res = await fetch(`${this.engineConfig.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: messages[0]?.role === 'system' ? 'llama3' : 'llama3',
+        messages,
+        stream: true,
+        options: {
+          temperature: options?.temperature,
+          top_p: options?.topP,
+          top_k: options?.topK,
+          repeat_penalty: options?.repeatPenalty,
+          num_predict: options?.maxTokens,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Ollama error ${res.status}`);
+    }
+
+    if (!res.body) {
+      throw new Error('No response body');
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    const stream = new Readable({ read() {} });
+
+    (async () => {
+      try {
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const json = JSON.parse(line);
+              if (json.message?.content) {
+                stream.push(`data: ${JSON.stringify({ choices: [{ delta: { content: json.message.content } }] })}\n\n`);
+              }
+            } catch {}
+          }
+        }
+        stream.push('data: [DONE]\n\n');
+        stream.push(null);
+      } catch (e) {
+        stream.destroy(e as Error);
+      }
+    })();
+
+    return { stream };
+  }
+
+  async health(): Promise<HealthStatus> {
+    try {
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`);
+      if (res.ok) {
+        return { status: 'ok', engine: this.id };
+      }
+      return { status: 'error', engine: this.id, detail: `HTTP ${res.status}` };
+    } catch {
+      return { status: 'error', engine: this.id, detail: 'Cannot reach Ollama' };
+    }
+  }
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}

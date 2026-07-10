@@ -54,10 +54,12 @@ export interface Folder {
 
 export interface ModelInfo {
   name: string;
-  path: string;
+  id: string;
+  path?: string;
   size: number;
   sizeFormatted: string;
-  folder: string;
+  folder?: string;
+  provider?: string;
   capabilities: string[];
 }
 
@@ -94,8 +96,20 @@ export interface ChatCompletionResponse {
 
 export interface StatusResponse {
   running: boolean;
-  currentModel: string | null;
+  engine: string;
+  currentModel?: string | null;
+  health?: { status: string; engine: string; detail?: string };
   port: number;
+}
+
+export interface EngineInfo {
+  id: string;
+  name: string;
+}
+
+export interface EnginesResponse {
+  engines: EngineInfo[];
+  active: string;
 }
 
 export interface StartServerResponse {
