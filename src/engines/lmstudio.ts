@@ -6,6 +6,7 @@ import {
   type GenerateResult,
   type HealthStatus,
   type EngineConfig,
+  detectCapabilitiesFromName,
 } from './base';
 import { openaiStreamToGenerator } from './stream-utils';
 
@@ -46,7 +47,7 @@ export class LMStudioEngine extends LLMEngine {
         size: 0,
         sizeFormatted: 'Unknown',
         provider: this.id,
-        capabilities: [],
+        capabilities: detectCapabilitiesFromName(m.id),
       }));
     } catch {
       return [];

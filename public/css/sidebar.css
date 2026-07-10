@@ -213,6 +213,16 @@
   flex-wrap: wrap;
 }
 
+.model-card-ctx {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
 .model-cap-badge {
   font-size: 10px;
   font-weight: 500;
@@ -223,16 +233,46 @@
   border: 1px solid var(--border);
 }
 
-.model-cap-badge.vision {
+.model-cap-badge.cap-vision {
   background: rgba(139, 92, 246, 0.15);
   color: #a78bfa;
   border-color: rgba(139, 92, 246, 0.3);
 }
 
-.model-cap-badge.tool {
+.model-cap-badge.cap-tools {
   background: rgba(59, 130, 246, 0.15);
   color: #60a5fa;
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+.model-cap-badge.cap-embed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.model-cap-badge.cap-reasoning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.model-cap-badge.cap-code {
+  background: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+  border-color: rgba(236, 72, 153, 0.3);
+}
+
+.model-cap-badge.cap-fncall {
+  background: rgba(34, 211, 238, 0.15);
+  color: #22d3ee;
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.model-cap-badge.cap-text {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border-color: var(--border);
 }
 
 /* Bottom row: metadata */

@@ -60,6 +60,7 @@ export const modelMetadataSchema = z.object({
   embedding: z.boolean().default(false),
   reasoning: z.boolean().default(false),
   tools: z.boolean().default(false),
+  functionCalling: z.boolean().default(false),
   code: z.boolean().default(false),
   memoryRequired: z.string().optional(),
   recommendedGpu: z.string().optional(),

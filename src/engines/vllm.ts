@@ -6,6 +6,7 @@ import {
   type GenerateResult,
   type HealthStatus,
   type EngineConfig,
+  detectCapabilitiesFromName,
 } from './base';
 import { openaiStreamToGenerator } from './stream-utils';
 
@@ -48,7 +49,7 @@ export class VLLMEngine extends LLMEngine {
         size: 0,
         sizeFormatted: 'Served',
         provider: this.id,
-        capabilities: [],
+        capabilities: detectCapabilitiesFromName(m.id),
       }));
     } catch {
       return [];

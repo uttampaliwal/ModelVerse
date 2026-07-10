@@ -119,6 +119,7 @@ function estimateFromFilename(filename: string): Partial<ModelMetadata> {
     lower.includes('starcoder') ||
     lower.includes('deepseek-coder');
   meta.tools = lower.includes('tool') || lower.includes('function');
+  meta.functionCalling = meta.tools;
 
   // Detect languages
   const langs: string[] = [];
@@ -187,6 +188,7 @@ export function getOrCreateMetadata(
     embedding: false,
     reasoning: false,
     tools: false,
+    functionCalling: false,
     code: false,
     ...fromFilename,
     ...autoDetected,
@@ -202,6 +204,7 @@ export function getOrCreateMetadata(
           ...(fromFilename.vision ? ['vision'] : []),
           ...(fromFilename.reasoning ? ['reasoning'] : []),
           ...(fromFilename.code ? ['code'] : []),
+          ...(fromFilename.functionCalling ? ['functionCalling'] : []),
         ].filter(Boolean),
       ),
     ],

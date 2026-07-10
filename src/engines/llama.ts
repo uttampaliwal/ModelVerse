@@ -38,17 +38,23 @@ const VISION_ARCHS = [
 ];
 const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3', 'gemma4'];
 
-function getModelCapabilities(modelPath: string): string[] {
+interface GgufMetadata {
+  caps: string[];
+  contextLength?: number;
+}
+
+function getGgufMetadata(modelPath: string): GgufMetadata {
+  const result: GgufMetadata = { caps: [] };
   try {
     const fd = fs.openSync(modelPath, 'r');
     const header = Buffer.alloc(24);
     fs.readSync(fd, header, 0, 24, 0);
     if (header.readUInt32LE(0) !== 0x46554747) {
       fs.closeSync(fd);
-      return [];
+      return result;
     }
     const kvCount = Number(header.readBigUInt64LE(16));
-    const caps: string[] = [];
+    const caps = result.caps;
     let off = 24;
     const r8 = () => {
       const b = Buffer.alloc(8);
@@ -68,6 +74,8 @@ function getModelCapabilities(modelPath: string): string[] {
       off += len;
       return b.toString('utf8');
     };
+    const readUint64 = () => Number(r8().readBigUInt64LE(0));
+    const readBool32 = () => r4().readUInt32LE(0) !== 0;
     const skip = (type: number) => {
       switch (type) {
         case 0:
@@ -123,15 +131,22 @@ function getModelCapabilities(modelPath: string): string[] {
       } else if (key === 'tokenizer.chat_template') {
         hasChatTemplate = true;
         skip(vType);
+      } else if (key === 'llama.context_length' && vType === 10) {
+        result.contextLength = readUint64();
+      } else if (key === 'llama.embedding' && vType <= 1) {
+        if (readBool32()) caps.push('embedding');
       } else {
         skip(vType);
       }
     }
-    if (hasChatTemplate) caps.push('tools');
+    if (hasChatTemplate) {
+      caps.push('tools');
+      caps.push('functionCalling');
+    }
     fs.closeSync(fd);
-    return caps;
+    return result;
   } catch {
-    return [];
+    return result;
   }
 }
 
@@ -346,13 +361,17 @@ export class LlamaCppEngine extends LLMEngine {
             scanDir(fullPath, depth + 1);
           } else if (item.name.endsWith('.gguf') && !item.name.toLowerCase().includes('mmproj')) {
             const stats = fs.statSync(fullPath);
-            const caps = getModelCapabilities(fullPath);
+            const gguf = getGgufMetadata(fullPath);
+            const caps = gguf.caps;
 
             // Auto-generate metadata
             const metadata = getOrCreateMetadata(fullPath, this.id, {
+              contextLength: gguf.contextLength,
               vision: caps.includes('vision'),
+              embedding: caps.includes('embedding'),
               reasoning: caps.includes('reasoning'),
               tools: caps.includes('tools'),
+              functionCalling: caps.includes('functionCalling'),
             });
 
             models.push({

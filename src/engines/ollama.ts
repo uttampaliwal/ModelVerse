@@ -6,6 +6,7 @@ import {
   type GenerateResult,
   type HealthStatus,
   type EngineConfig,
+  detectCapabilitiesFromName,
 } from './base';
 import { ollamaStreamToGenerator } from './stream-utils';
 
@@ -46,7 +47,7 @@ export class OllamaEngine extends LLMEngine {
         size: m.size,
         sizeFormatted: formatBytes(m.size),
         provider: this.id,
-        capabilities: [],
+        capabilities: detectCapabilitiesFromName(m.name),
       }));
     } catch {
       return [];

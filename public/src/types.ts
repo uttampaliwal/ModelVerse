@@ -61,6 +61,7 @@ export interface ModelInfo {
   folder?: string;
   provider?: string;
   capabilities: string[];
+  contextLength?: number;
 }
 
 export interface Settings {

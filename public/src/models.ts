@@ -10,6 +10,9 @@ function capClass(cap: string): string {
   if (lower === 'vision') return 'cap-vision';
   if (lower === 'tools') return 'cap-tools';
   if (lower === 'embedding') return 'cap-embed';
+  if (lower === 'reasoning') return 'cap-reasoning';
+  if (lower === 'code') return 'cap-code';
+  if (lower === 'functioncalling') return 'cap-fncall';
   return 'cap-text';
 }
 
@@ -58,6 +61,7 @@ export async function loadModels(): Promise<void> {
                 .join('')
             : '';
 
+        const ctxLen = m.contextLength ? esc(String(m.contextLength)) : '';
         const card = document.createElement('div');
         card.className = 'model-card';
         card.dataset.path = m.id || m.path || m.name;
@@ -70,6 +74,7 @@ export async function loadModels(): Promise<void> {
           </div>
           <div class="model-card-meta">
             <span class="model-card-size">${esc(m.sizeFormatted)}</span>
+            ${ctxLen ? `<span class="model-card-ctx">${ctxLen} ctx</span>` : ''}
             ${caps ? `<span class="model-card-caps">${caps}</span>` : ''}
           </div>`;
 
