@@ -1,11 +1,20 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 
 class AnalyzeImageTool implements ToolDefinition {
   name = 'analyze_image';
   description = 'Analyze an image using vision-capable models (GPT-4V, LLaVA, etc.)';
   parameters = {
     image: { type: 'string', description: 'Base64 image data or image URL', required: true },
-    prompt: { type: 'string', description: 'What to analyze about the image (default: "Describe this image")' },
+    prompt: {
+      type: 'string',
+      description: 'What to analyze about the image (default: "Describe this image")',
+    },
     model: { type: 'string', description: 'Vision model to use' },
   };
 
@@ -51,7 +60,10 @@ class DescribeChartTool implements ToolDefinition {
   description = 'Extract and describe data from charts, graphs, and diagrams';
   parameters = {
     image: { type: 'string', description: 'Base64 image data of the chart', required: true },
-    format: { type: 'string', description: 'Output format: text, json, or markdown (default: text)' },
+    format: {
+      type: 'string',
+      description: 'Output format: text, json, or markdown (default: text)',
+    },
   };
 
   async execute(params: Record<string, unknown>): Promise<ToolResult> {
@@ -70,21 +82,34 @@ export class VisionPlugin extends Plugin {
     id: 'vision',
     name: 'Vision',
     version: '1.0.0',
-    description: 'Analyze images, extract text via OCR, and interpret charts using vision-capable models',
+    description:
+      'Analyze images, extract text via OCR, and interpret charts using vision-capable models',
     author: 'ModelVerse',
     icon: 'eye',
     category: 'vision',
     enabled: false,
     settings: [
-      { key: 'provider', label: 'Vision Provider', type: 'select', default: 'llava', options: [
-        { label: 'LLaVA (Local)', value: 'llava' },
-        { label: 'GPT-4V (OpenAI)', value: 'gpt4v' },
-        { label: 'Qwen-VL', value: 'qwen-vl' },
-      ]},
-      { key: 'ocr_engine', label: 'OCR Engine', type: 'select', default: 'tesseract', options: [
-        { label: 'Tesseract', value: 'tesseract' },
-        { label: 'EasyOCR', value: 'easyocr' },
-      ]},
+      {
+        key: 'provider',
+        label: 'Vision Provider',
+        type: 'select',
+        default: 'llava',
+        options: [
+          { label: 'LLaVA (Local)', value: 'llava' },
+          { label: 'GPT-4V (OpenAI)', value: 'gpt4v' },
+          { label: 'Qwen-VL', value: 'qwen-vl' },
+        ],
+      },
+      {
+        key: 'ocr_engine',
+        label: 'OCR Engine',
+        type: 'select',
+        default: 'tesseract',
+        options: [
+          { label: 'Tesseract', value: 'tesseract' },
+          { label: 'EasyOCR', value: 'easyocr' },
+        ],
+      },
     ],
   };
 

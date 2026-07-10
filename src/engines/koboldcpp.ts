@@ -1,4 +1,12 @@
-import { LLMEngine, type ModelInfo, type ChatMessage, type GenerateOptions, type GenerateResult, type HealthStatus, type EngineConfig } from './base';
+import {
+  LLMEngine,
+  type ModelInfo,
+  type ChatMessage,
+  type GenerateOptions,
+  type GenerateResult,
+  type HealthStatus,
+  type EngineConfig,
+} from './base';
 import { toGenerator } from './stream-utils';
 
 export interface KoboldCppConfig extends EngineConfig {
@@ -49,7 +57,7 @@ export class KoboldCppEngine extends LLMEngine {
       throw new Error(`KoboldCpp error ${res.status}`);
     }
 
-    const data = await res.json() as { results: Array<{ text: string }> };
+    const data = (await res.json()) as { results: Array<{ text: string }> };
     const text = data.results?.[0]?.text || '';
 
     return { stream: toGenerator(text) };

@@ -24,7 +24,9 @@ export async function* openaiStreamToGenerator(res: Response): AsyncGenerator<st
           const json = JSON.parse(trimmed.slice(6));
           const content = json.choices?.[0]?.delta?.content;
           if (content) yield content;
-        } catch { /* skip malformed lines */ }
+        } catch {
+          /* skip malformed lines */
+        }
       }
     }
   }
@@ -50,7 +52,9 @@ export async function* ollamaStreamToGenerator(res: Response): AsyncGenerator<st
         const json = JSON.parse(trimmed);
         const content = json.message?.content;
         if (content) yield content;
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
   }
 }

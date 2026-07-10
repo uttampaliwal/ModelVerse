@@ -69,7 +69,9 @@ class RequestQueue {
   enqueue(messages: ChatMessage[], options: GenerateOptions, res: express.Response): QueueEntry {
     const isBusy = this.currentId !== null;
     const entry: QueueEntry = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+      id: crypto.randomUUID
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2),
       status: isBusy ? 'queued' : 'running',
       messages,
       options,
@@ -91,7 +93,7 @@ class RequestQueue {
         const e = this.entries[idx];
         if (e.status === 'queued') {
           this.entries.splice(idx, 1);
-                log.server('Client disconnected, removed queued request ' + entry.id);
+          log.server('Client disconnected, removed queued request ' + entry.id);
         } else if (e.status === 'running') {
           // Don't remove running entry; the stream error handler will clean up
         }
@@ -99,9 +101,9 @@ class RequestQueue {
     });
 
     if (isBusy) {
-      const pos = this.entries.filter(e => e.status === 'queued').length;
+      const pos = this.entries.filter((e) => e.status === 'queued').length;
       sendSSE(res, { queue: { status: 'queued', position: pos } });
-            log.server('Request queued at position ' + pos + ' (' + entry.id + ')');
+      log.server('Request queued at position ' + pos + ' (' + entry.id + ')');
     } else {
       this.currentId = entry.id;
       sendSSE(res, { queue: { status: 'running' } });
@@ -129,7 +131,7 @@ class RequestQueue {
       entry.error = 'Engine not running';
       this.currentId = null;
       this.processing = false;
-      this.entries = this.entries.filter(e => e.id !== entry.id);
+      this.entries = this.entries.filter((e) => e.id !== entry.id);
       this.dequeueNext();
       return;
     }
@@ -140,7 +142,9 @@ class RequestQueue {
       try {
         for await (const token of result.stream) {
           if (token) {
-            entry.res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: token } }] })}\n\n`);
+            entry.res.write(
+              `data: ${JSON.stringify({ choices: [{ delta: { content: token } }] })}\n\n`,
+            );
           }
         }
         entry.res.write('data: [DONE]\n\n');
@@ -161,10 +165,10 @@ class RequestQueue {
 
       this.currentId = null;
       this.processing = false;
-      this.entries = this.entries.filter(e => e.id !== entry.id);
+      this.entries = this.entries.filter((e) => e.id !== entry.id);
       this.dequeueNext();
     } catch (e) {
-            log.error('Chat generate error', e as Error);
+      log.error('Chat generate error', e as Error);
       if (!entry.res.headersSent) {
         entry.res.status(500).json({ error: (e as Error).message });
       } else {
@@ -175,13 +179,13 @@ class RequestQueue {
       entry.error = (e as Error).message;
       this.currentId = null;
       this.processing = false;
-      this.entries = this.entries.filter(e => e.id !== entry.id);
+      this.entries = this.entries.filter((e) => e.id !== entry.id);
       this.dequeueNext();
     }
   }
 
   private dequeueNext(): void {
-    const next = this.entries.find(e => e.status === 'queued');
+    const next = this.entries.find((e) => e.status === 'queued');
     if (next) {
       next.status = 'running';
       this.currentId = next.id;
@@ -190,18 +194,25 @@ class RequestQueue {
     }
   }
 
-  getStatus(): { current: string | null; entries: { id: string; status: string; createdAt: Date; position?: number }[] } {
+  getStatus(): {
+    current: string | null;
+    entries: { id: string; status: string; createdAt: Date; position?: number }[];
+  } {
     const entries = this.entries.map((e, i) => ({
       id: e.id,
       status: e.status,
       createdAt: e.createdAt,
-      position: e.status === 'queued' ? this.entries.filter(x => x.status === 'queued' && this.entries.indexOf(x) < i).length + 1 : undefined,
+      position:
+        e.status === 'queued'
+          ? this.entries.filter((x) => x.status === 'queued' && this.entries.indexOf(x) < i)
+              .length + 1
+          : undefined,
     }));
     return { current: this.currentId, entries };
   }
 
   cancel(id: string): boolean {
-    const entry = this.entries.find(e => e.id === id && e.status === 'queued');
+    const entry = this.entries.find((e) => e.id === id && e.status === 'queued');
     if (!entry) return false;
     entry.status = 'cancelled';
     entry.res.end();
@@ -256,7 +267,10 @@ loadSettings();
 function getGpuInfo(): { name: string; used: number; total: number; utilization: number } | null {
   try {
     const { execSync } = require('child_process');
-    const out = execSync('nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits', { encoding: 'utf-8', timeout: 3000 }).trim();
+    const out = execSync(
+      'nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits',
+      { encoding: 'utf-8', timeout: 3000 },
+    ).trim();
     const [name, used, total, utilization] = out.split(',').map((s: string) => s.trim());
     return {
       name,
@@ -286,10 +300,17 @@ function sanitizeMessages(messages: ChatMessageDTO[]): ChatMessage[] {
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }));
+app.use(
+  express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }),
+);
 
 app.get('/api/version', (_req: express.Request, res: express.Response) => {
-  const pkg = loadAndValidate(packageJsonSchema, path.join(__dirname, 'package.json'), { version: '0.0.0' }, 'Package');
+  const pkg = loadAndValidate(
+    packageJsonSchema,
+    path.join(__dirname, 'package.json'),
+    { version: '0.0.0' },
+    'Package',
+  );
   res.json({ version: pkg.version });
 });
 
@@ -393,7 +414,13 @@ app.post('/api/settings', (req: express.Request, res: express.Response) => {
     }
   }
 
-  const numFields: (keyof ServerSettings)[] = ['temperature', 'topP', 'topK', 'repeatPenalty', 'maxTokens'];
+  const numFields: (keyof ServerSettings)[] = [
+    'temperature',
+    'topP',
+    'topK',
+    'repeatPenalty',
+    'maxTokens',
+  ];
   for (const f of numFields) {
     const v = body[f];
     if (v !== undefined) {
@@ -465,7 +492,8 @@ app.get('/api/metadata', (_req: express.Request, res: express.Response) => {
 });
 
 app.get('/api/metadata/search', (req: express.Request, res: express.Response) => {
-  const { q, architecture, quantization, vision, reasoning, code, tools, tags, languages } = req.query;
+  const { q, architecture, quantization, vision, reasoning, code, tools, tags, languages } =
+    req.query;
 
   const results = filterMetadata({
     query: q as string,
@@ -621,7 +649,7 @@ server.on('error', (err) => {
   if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
     log.error(`Port ${PORT} is already in use. Another instance may be running.`);
   } else {
-    log.error('Server failed to start', err as Error);
+    log.error('Server failed to start', err);
   }
   process.exit(1);
 });

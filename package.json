@@ -11,7 +11,15 @@
     "build": "tsc && tsc -p tsconfig.server.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
     "watch": "tsc --watch",
-    "update-llama": "node scripts/update-llama.mjs"
+    "update-llama": "node scripts/update-llama.mjs",
+    "lint": "eslint . --max-warnings 250",
+    "lint:fix": "eslint . --fix --max-warnings 250",
+    "format": "prettier --check \"public/src/*.ts\" \"src/**/*.ts\" \"server.ts\" \"tests/*.ts\"",
+    "format:fix": "prettier --write \"public/src/*.ts\" \"src/**/*.ts\" \"server.ts\" \"tests/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "benchmark": "node scripts/benchmark.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -22,8 +30,17 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@eslint/js": "^9.24.0",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.1",
-    "typescript": "^5.9.3"
+    "eslint": "^9.24.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.30.1",
+    "vitest": "^3.1.1"
   }
 }

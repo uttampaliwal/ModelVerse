@@ -14,7 +14,12 @@ function ensureDir(): void {
 }
 
 function loadActiveProfileName(): string {
-  const data = loadAndValidate(activeProfileSchema, ACTIVE_PROFILE_FILE, { profile: 'Balanced' }, 'ActiveProfile');
+  const data = loadAndValidate(
+    activeProfileSchema,
+    ACTIVE_PROFILE_FILE,
+    { profile: 'Balanced' },
+    'ActiveProfile',
+  );
   return data.profile;
 }
 
@@ -30,19 +35,24 @@ export function listProfiles(): Array<{ name: string; description: string; activ
   const files = fs.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
 
   return files.map((f) => {
-    const content = loadAndValidate(profileSchema, path.join(PROFILES_DIR, f), {
-      name: f.replace('.json', ''),
-      description: '',
-      temperature: 0.7,
-      topP: 0.9,
-      topK: 40,
-      repeatPenalty: 1.1,
-      maxTokens: 4096,
-      contextSize: 8192,
-      threads: 4,
-      gpuLayers: 99,
-      systemPrompt: 'You are a helpful assistant.',
-    }, 'Profiles');
+    const content = loadAndValidate(
+      profileSchema,
+      path.join(PROFILES_DIR, f),
+      {
+        name: f.replace('.json', ''),
+        description: '',
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
+        repeatPenalty: 1.1,
+        maxTokens: 4096,
+        contextSize: 8192,
+        threads: 4,
+        gpuLayers: 99,
+        systemPrompt: 'You are a helpful assistant.',
+      },
+      'Profiles',
+    );
     return {
       name: content.name || f.replace('.json', ''),
       description: content.description || '',
@@ -56,19 +66,24 @@ export function getProfile(name: string): Profile | null {
   const files = fs.readdirSync(PROFILES_DIR).filter((f) => f.endsWith('.json'));
 
   for (const f of files) {
-    const content = loadAndValidate(profileSchema, path.join(PROFILES_DIR, f), {
-      name: f.replace('.json', ''),
-      description: '',
-      temperature: 0.7,
-      topP: 0.9,
-      topK: 40,
-      repeatPenalty: 1.1,
-      maxTokens: 4096,
-      contextSize: 8192,
-      threads: 4,
-      gpuLayers: 99,
-      systemPrompt: 'You are a helpful assistant.',
-    } as Profile, 'Profiles');
+    const content = loadAndValidate(
+      profileSchema,
+      path.join(PROFILES_DIR, f),
+      {
+        name: f.replace('.json', ''),
+        description: '',
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
+        repeatPenalty: 1.1,
+        maxTokens: 4096,
+        contextSize: 8192,
+        threads: 4,
+        gpuLayers: 99,
+        systemPrompt: 'You are a helpful assistant.',
+      },
+      'Profiles',
+    );
     if (content.name === name || f.replace('.json', '') === name) {
       return content;
     }

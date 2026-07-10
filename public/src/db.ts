@@ -33,10 +33,7 @@ export function getDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-function tx(
-  db: IDBDatabase,
-  mode: IDBTransactionMode,
-): IDBObjectStore {
+function tx(db: IDBDatabase, mode: IDBTransactionMode): IDBObjectStore {
   return db.transaction(STORE_CONVERSATIONS, mode).objectStore(STORE_CONVERSATIONS);
 }
 
@@ -103,7 +100,7 @@ export async function putPresets(presets: Record<string, Preset>): Promise<void>
   const db = await getDB();
   const store = tx(db, 'readwrite');
   for (const name of Object.keys(presets)) {
-    store.put({ name, ...presets[name] } as StoredPreset);
+    store.put({ name, ...presets[name] });
   }
   await txDone(store);
 }
@@ -111,7 +108,7 @@ export async function putPresets(presets: Record<string, Preset>): Promise<void>
 export async function savePreset(name: string, preset: Preset): Promise<void> {
   const db = await getDB();
   const store = tx(db, 'readwrite');
-  store.put({ name, ...preset } as StoredPreset);
+  store.put({ name, ...preset });
   await txDone(store);
 }
 

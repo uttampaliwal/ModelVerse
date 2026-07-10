@@ -20,22 +20,28 @@ export interface ScannedModel {
 }
 
 export type ModelSource =
-  | 'lmstudio'
-  | 'ollama'
-  | 'llamacpp'
-  | 'gpt4all'
-  | 'jan'
-  | 'openwebui'
-  | 'transformers'
-  | 'custom';
+  'lmstudio' | 'ollama' | 'llamacpp' | 'gpt4all' | 'jan' | 'openwebui' | 'transformers' | 'custom';
 
 const CONFIG_FILE = path.join(process.cwd(), 'scanner-config.json');
 
 function loadConfig(): ScannerConfig {
-  return loadAndValidate(scannerConfigSchema, CONFIG_FILE, {
-    customPaths: [],
-    enabledSources: ['lmstudio', 'ollama', 'llamacpp', 'gpt4all', 'jan', 'openwebui', 'transformers'],
-  }, 'Scanner');
+  return loadAndValidate(
+    scannerConfigSchema,
+    CONFIG_FILE,
+    {
+      customPaths: [],
+      enabledSources: [
+        'lmstudio',
+        'ollama',
+        'llamacpp',
+        'gpt4all',
+        'jan',
+        'openwebui',
+        'transformers',
+      ],
+    },
+    'Scanner',
+  );
 }
 
 function saveConfig(config: ScannerConfig): void {
@@ -120,10 +126,9 @@ function scanLMStudio(): ScannedModel[] {
 function scanOllama(): ScannedModel[] {
   const models: ScannedModel[] = [];
   const home = getHomeDir();
-  const paths = [
-    path.join(home, '.ollama', 'models'),
-    process.env.OLLAMA_MODELS || '',
-  ].filter(Boolean);
+  const paths = [path.join(home, '.ollama', 'models'), process.env.OLLAMA_MODELS || ''].filter(
+    Boolean,
+  );
 
   for (const modelsDir of paths) {
     if (!fs.existsSync(modelsDir)) continue;
@@ -165,7 +170,10 @@ function scanOllama(): ScannedModel[] {
           try {
             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
             const layers = manifest.layers || [];
-            const totalSize = layers.reduce((sum: number, l: { size?: number }) => sum + (l.size || 0), 0);
+            const totalSize = layers.reduce(
+              (sum: number, l: { size?: number }) => sum + (l.size || 0),
+              0,
+            );
 
             models.push({
               id: `ollama:${modelDir.name}:${tag}`,

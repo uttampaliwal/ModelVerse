@@ -1,4 +1,10 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -29,7 +35,11 @@ class SpeechToTextTool implements ToolDefinition {
   name = 'speech_to_text';
   description = 'Transcribe speech audio to text using Whisper';
   parameters = {
-    audio_path: { type: 'string', description: 'Path to audio file or base64 audio data', required: true },
+    audio_path: {
+      type: 'string',
+      description: 'Path to audio file or base64 audio data',
+      required: true,
+    },
     language: { type: 'string', description: 'Language code (e.g., en, es, fr)' },
   };
 
@@ -51,23 +61,48 @@ export class SpeechPlugin extends Plugin {
     id: 'speech',
     name: 'Speech',
     version: '1.0.0',
-    description: 'Text-to-speech and speech-to-text capabilities using Whisper, Piper, or cloud APIs',
+    description:
+      'Text-to-speech and speech-to-text capabilities using Whisper, Piper, or cloud APIs',
     author: 'ModelVerse',
     icon: 'mic',
     category: 'speech',
     enabled: false,
     settings: [
-      { key: 'tts_provider', label: 'TTS Provider', type: 'select', default: 'piper', options: [
-        { label: 'Piper (Local)', value: 'piper' },
-        { label: 'OpenAI TTS', value: 'openai' },
-        { label: 'eSpeak', value: 'espeak' },
-      ]},
-      { key: 'stt_provider', label: 'STT Provider', type: 'select', default: 'whisper', options: [
-        { label: 'Whisper.cpp (Local)', value: 'whisper' },
-        { label: 'OpenAI Whisper', value: 'openai' },
-      ]},
-      { key: 'whisper_path', label: 'Whisper Path', type: 'string', default: '', description: 'Path to whisper binary' },
-      { key: 'piper_path', label: 'Piper Path', type: 'string', default: '', description: 'Path to piper binary' },
+      {
+        key: 'tts_provider',
+        label: 'TTS Provider',
+        type: 'select',
+        default: 'piper',
+        options: [
+          { label: 'Piper (Local)', value: 'piper' },
+          { label: 'OpenAI TTS', value: 'openai' },
+          { label: 'eSpeak', value: 'espeak' },
+        ],
+      },
+      {
+        key: 'stt_provider',
+        label: 'STT Provider',
+        type: 'select',
+        default: 'whisper',
+        options: [
+          { label: 'Whisper.cpp (Local)', value: 'whisper' },
+          { label: 'OpenAI Whisper', value: 'openai' },
+        ],
+      },
+      {
+        key: 'whisper_path',
+        label: 'Whisper Path',
+        type: 'string',
+        default: '',
+        description: 'Path to whisper binary',
+      },
+      {
+        key: 'piper_path',
+        label: 'Piper Path',
+        type: 'string',
+        default: '',
+        description: 'Path to piper binary',
+      },
     ],
   };
 

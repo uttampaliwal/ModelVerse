@@ -23,68 +23,88 @@ function initSidebarSwipe(): void {
   const sidebar = $('.sidebar');
   const chatArea = document.querySelector('.chat-area') as HTMLElement;
   const menuBtn = $('.menuBtn');
-  const backdrop = $('.sidebar-backdrop') as HTMLElement;
+  const backdrop = $('.sidebar-backdrop');
 
   if (!sidebar || !chatArea) return;
 
   // Swipe from left edge to open sidebar
-  chatArea.addEventListener('touchstart', (e) => {
-    const touch = e.touches[0];
-    if (touch.clientX < 20) {
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      isSwiping = true;
-    }
-  }, { passive: true });
+  chatArea.addEventListener(
+    'touchstart',
+    (e) => {
+      const touch = e.touches[0];
+      if (touch.clientX < 20) {
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        isSwiping = true;
+      }
+    },
+    { passive: true },
+  );
 
-  chatArea.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = Math.abs(touch.clientY - touchStartY);
+  chatArea.addEventListener(
+    'touchmove',
+    (e) => {
+      if (!isSwiping) return;
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = Math.abs(touch.clientY - touchStartY);
 
-    // Only horizontal swipe
-    if (deltaY > 30) {
+      // Only horizontal swipe
+      if (deltaY > 30) {
+        isSwiping = false;
+        return;
+      }
+
+      if (deltaX > 0 && deltaX < 300) {
+        sidebar.style.transform = `translateX(${deltaX - 300}px)`;
+      }
+    },
+    { passive: true },
+  );
+
+  chatArea.addEventListener(
+    'touchend',
+    (e) => {
+      if (!isSwiping) return;
       isSwiping = false;
-      return;
-    }
 
-    if (deltaX > 0 && deltaX < 300) {
-      sidebar.style.transform = `translateX(${deltaX - 300}px)`;
-    }
-  }, { passive: true });
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX;
 
-  chatArea.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    isSwiping = false;
+      sidebar.style.transform = '';
 
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartX;
-
-    sidebar.style.transform = '';
-
-    if (deltaX > SWIPE_THRESHOLD) {
-      openSidebar();
-    } else {
-      closeSidebar();
-    }
-  }, { passive: true });
+      if (deltaX > SWIPE_THRESHOLD) {
+        openSidebar();
+      } else {
+        closeSidebar();
+      }
+    },
+    { passive: true },
+  );
 
   // Swipe from sidebar to close
-  sidebar.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    isSwiping = true;
-  }, { passive: true });
+  sidebar.addEventListener(
+    'touchstart',
+    (e) => {
+      touchStartX = e.touches[0].clientX;
+      isSwiping = true;
+    },
+    { passive: true },
+  );
 
-  sidebar.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    isSwiping = false;
+  sidebar.addEventListener(
+    'touchend',
+    (e) => {
+      if (!isSwiping) return;
+      isSwiping = false;
 
-    const deltaX = e.changedTouches[0].clientX - touchStartX;
-    if (deltaX < -SWIPE_THRESHOLD) {
-      closeSidebar();
-    }
-  }, { passive: true });
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      if (deltaX < -SWIPE_THRESHOLD) {
+        closeSidebar();
+      }
+    },
+    { passive: true },
+  );
 
   // Menu button
   if (menuBtn) {
@@ -105,7 +125,7 @@ function initSidebarSwipe(): void {
 
 function openSidebar(): void {
   const sidebar = $('.sidebar');
-  const backdrop = $('.sidebar-backdrop') as HTMLElement;
+  const backdrop = $('.sidebar-backdrop');
 
   sidebar?.classList.add('open');
   if (backdrop) {
@@ -116,7 +136,7 @@ function openSidebar(): void {
 
 function closeSidebar(): void {
   const sidebar = $('.sidebar');
-  const backdrop = $('.sidebar-backdrop') as HTMLElement;
+  const backdrop = $('.sidebar-backdrop');
 
   sidebar?.classList.remove('open');
   if (backdrop) {
@@ -131,72 +151,88 @@ function initConversationSwipe(): void {
   const conversationList = $('.conversationList');
   if (!conversationList) return;
 
-  conversationList.addEventListener('touchstart', (e) => {
-    const item = (e.target as HTMLElement).closest('.conversation-item');
-    if (!item) return;
+  conversationList.addEventListener(
+    'touchstart',
+    (e) => {
+      const item = (e.target as HTMLElement).closest('.conversation-item');
+      if (!item) return;
 
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    isSwiping = true;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isSwiping = true;
 
-    // Reset any previously swiped items
-    conversationList.querySelectorAll('.conversation-item.swiped').forEach((el) => {
-      el.classList.remove('swiped');
-    });
-  }, { passive: true });
-
-  conversationList.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-
-    const item = (e.target as HTMLElement).closest('.conversation-item');
-    if (!item) return;
-
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = Math.abs(touch.clientY - touchStartY);
-
-    // Only horizontal swipe
-    if (deltaY > 30) {
-      isSwiping = false;
-      return;
-    }
-
-    if (deltaX < -30) {
-      item.classList.add('swiped');
-    } else if (deltaX > 30) {
-      item.classList.remove('swiped');
-    }
-  }, { passive: true });
-
-  conversationList.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    isSwiping = false;
-
-    const item = (e.target as HTMLElement).closest('.conversation-item');
-    if (!item) return;
-
-    const deltaX = e.changedTouches[0].clientX - touchStartX;
-
-    if (deltaX < -SWIPE_THRESHOLD) {
-      item.classList.add('swiped');
-    } else if (deltaX > SWIPE_THRESHOLD) {
-      item.classList.remove('swiped');
-    }
-  }, { passive: true });
-
-  // Close swiped items when tapping elsewhere
-  document.addEventListener('touchstart', (e) => {
-    if (!(e.target as HTMLElement).closest('.conversation-item')) {
+      // Reset any previously swiped items
       conversationList.querySelectorAll('.conversation-item.swiped').forEach((el) => {
         el.classList.remove('swiped');
       });
-    }
-  }, { passive: true });
+    },
+    { passive: true },
+  );
+
+  conversationList.addEventListener(
+    'touchmove',
+    (e) => {
+      if (!isSwiping) return;
+
+      const item = (e.target as HTMLElement).closest('.conversation-item');
+      if (!item) return;
+
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = Math.abs(touch.clientY - touchStartY);
+
+      // Only horizontal swipe
+      if (deltaY > 30) {
+        isSwiping = false;
+        return;
+      }
+
+      if (deltaX < -30) {
+        item.classList.add('swiped');
+      } else if (deltaX > 30) {
+        item.classList.remove('swiped');
+      }
+    },
+    { passive: true },
+  );
+
+  conversationList.addEventListener(
+    'touchend',
+    (e) => {
+      if (!isSwiping) return;
+      isSwiping = false;
+
+      const item = (e.target as HTMLElement).closest('.conversation-item');
+      if (!item) return;
+
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+
+      if (deltaX < -SWIPE_THRESHOLD) {
+        item.classList.add('swiped');
+      } else if (deltaX > SWIPE_THRESHOLD) {
+        item.classList.remove('swiped');
+      }
+    },
+    { passive: true },
+  );
+
+  // Close swiped items when tapping elsewhere
+  document.addEventListener(
+    'touchstart',
+    (e) => {
+      if (!(e.target as HTMLElement).closest('.conversation-item')) {
+        conversationList.querySelectorAll('.conversation-item.swiped').forEach((el) => {
+          el.classList.remove('swiped');
+        });
+      }
+    },
+    { passive: true },
+  );
 }
 
 function initBackdropClose(): void {
   // Create backdrop element if it doesn't exist
-  let backdrop = $('.sidebar-backdrop') as HTMLElement;
+  let backdrop = $('.sidebar-backdrop');
   if (!backdrop) {
     backdrop = document.createElement('div');
     backdrop.className = 'sidebar-backdrop';

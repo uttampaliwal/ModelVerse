@@ -60,7 +60,10 @@ export function formatMessage(
   if (cached) return Promise.resolve(cached);
 
   const w = getWorker();
-  if (!w) return Promise.resolve(buildMessageHtml(thinking, answer, timestamp, undefined, thinkingDuration));
+  if (!w)
+    return Promise.resolve(
+      buildMessageHtml(thinking, answer, timestamp, undefined, thinkingDuration),
+    );
 
   return new Promise<string>((resolve) => {
     const id = nextId++;

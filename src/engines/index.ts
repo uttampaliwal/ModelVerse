@@ -7,16 +7,17 @@ import { TransformersEngine } from './transformers';
 import { KoboldCppEngine } from './koboldcpp';
 import { VLLMEngine } from './vllm';
 
-export type EngineId = 'llamacpp' | 'ollama' | 'lmstudio' | 'openai' | 'transformers' | 'koboldcpp' | 'vllm';
+export type EngineId =
+  'llamacpp' | 'ollama' | 'lmstudio' | 'openai' | 'transformers' | 'koboldcpp' | 'vllm';
 
 const engineClasses: Record<EngineId, EngineConstructor> = {
-  llamacpp: LlamaCppEngine as unknown as EngineConstructor,
-  ollama: OllamaEngine as unknown as EngineConstructor,
-  lmstudio: LMStudioEngine as unknown as EngineConstructor,
-  openai: OpenAIEngine as unknown as EngineConstructor,
-  transformers: TransformersEngine as unknown as EngineConstructor,
-  koboldcpp: KoboldCppEngine as unknown as EngineConstructor,
-  vllm: VLLMEngine as unknown as EngineConstructor,
+  llamacpp: LlamaCppEngine,
+  ollama: OllamaEngine,
+  lmstudio: LMStudioEngine,
+  openai: OpenAIEngine,
+  transformers: TransformersEngine,
+  koboldcpp: KoboldCppEngine,
+  vllm: VLLMEngine,
 };
 
 class EngineRegistry {

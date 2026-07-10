@@ -23,11 +23,16 @@ interface PluginEntry {
 
 const SETTINGS_FILE = path.join(process.cwd(), 'plugins.json');
 
-function loadPluginSettings(): Record<string, { enabled: boolean; config: Record<string, unknown> }> {
+function loadPluginSettings(): Record<
+  string,
+  { enabled: boolean; config: Record<string, unknown> }
+> {
   return loadAndValidate(pluginSettingsSchema, SETTINGS_FILE, {}, 'Plugins');
 }
 
-function savePluginSettings(settings: Record<string, { enabled: boolean; config: Record<string, unknown> }>): void {
+function savePluginSettings(
+  settings: Record<string, { enabled: boolean; config: Record<string, unknown> }>,
+): void {
   try {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
   } catch (e) {
@@ -109,7 +114,10 @@ class PluginManager {
     }
     for (const hook of entry.hooks) {
       const list = this.hooks.get(hook.name) || [];
-      this.hooks.set(hook.name, list.filter((h) => h !== hook));
+      this.hooks.set(
+        hook.name,
+        list.filter((h) => h !== hook),
+      );
     }
 
     this.settings[pluginId] = { enabled: false, config: this.settings[pluginId]?.config || {} };

@@ -20,7 +20,7 @@ let initialized = false;
 
 function init(): void {
   const dialog = $('searchDialog');
-  const input = $('searchInput') as HTMLInputElement;
+  const input = $('searchInput');
   const resultsContainer = $('searchResults');
 
   if (!dialog || !input || !resultsContainer) return;
@@ -82,7 +82,7 @@ export function initSearch(): void {
 export function openSearch(): void {
   initSearch();
   const dialog = $('searchDialog');
-  const input = $('searchInput') as HTMLInputElement;
+  const input = $('searchInput');
   if (!dialog || !input) return;
 
   dialog.style.display = 'flex';
@@ -196,7 +196,7 @@ function renderResults(): void {
   if (!container) return;
 
   if (results.length === 0) {
-    const query = ($('searchInput') as HTMLInputElement)?.value || '';
+    const query = $('searchInput')?.value || '';
     if (query.trim()) {
       container.innerHTML = `
         <div class="search-no-results">
@@ -205,7 +205,8 @@ function renderResults(): void {
         </div>
       `;
     } else {
-      container.innerHTML = '<div class="search-empty">Type to search across all conversations</div>';
+      container.innerHTML =
+        '<div class="search-empty">Type to search across all conversations</div>';
     }
     return;
   }

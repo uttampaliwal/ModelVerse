@@ -138,7 +138,11 @@ async function init(): Promise<void> {
       const name = prompt('Folder name:');
       if (!name || !name.trim()) return;
       const { AppState } = await import('./state.js');
-      const folder = { id: Date.now().toString(), name: name.trim(), createdAt: new Date().toISOString() };
+      const folder = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        createdAt: new Date().toISOString(),
+      };
       AppState.ui.folders.push(folder);
       const { putFolders } = await import('./db.js');
       await putFolders(AppState.ui.folders).catch((e) => logError('putFolders', e));
@@ -193,7 +197,12 @@ async function init(): Promise<void> {
       document.querySelectorAll('.settings-panel').forEach((p) => p.classList.remove('active'));
       ht.classList.add('active');
       const tabName = ht.dataset.tab;
-      const panelId = tabName === 'params' ? 'settingsParams' : tabName === 'system' ? 'settingsSystem' : 'settingsPresets';
+      const panelId =
+        tabName === 'params'
+          ? 'settingsParams'
+          : tabName === 'system'
+            ? 'settingsSystem'
+            : 'settingsPresets';
       $(panelId).classList.add('active');
     });
   });
@@ -201,11 +210,16 @@ async function init(): Promise<void> {
   el.applySettings.addEventListener('click', applySettings);
 
   el.presetSelect.addEventListener('change', () => {
-    if (el.presetSelect.value) applyPreset(el.presetSelect.value).catch((e) => logError('applyPreset', e));
+    if (el.presetSelect.value)
+      applyPreset(el.presetSelect.value).catch((e) => logError('applyPreset', e));
   });
 
-  el.savePresetBtn.addEventListener('click', () => { savePreset().catch((e) => logError('savePreset', e)); });
-  el.deletePresetBtn.addEventListener('click', () => { deletePreset().catch((e) => logError('deletePreset', e)); });
+  el.savePresetBtn.addEventListener('click', () => {
+    savePreset().catch((e) => logError('savePreset', e));
+  });
+  el.deletePresetBtn.addEventListener('click', () => {
+    deletePreset().catch((e) => logError('deletePreset', e));
+  });
 
   el.settingsBtn.addEventListener('click', () => el.settingsModal.classList.add('active'));
 
@@ -282,7 +296,9 @@ async function init(): Promise<void> {
       }
     }
     if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.active').forEach((m) => m.classList.remove('active'));
+      document
+        .querySelectorAll('.modal-overlay.active')
+        .forEach((m) => m.classList.remove('active'));
     }
   });
 
@@ -290,15 +306,18 @@ async function init(): Promise<void> {
     const target = e.target as HTMLElement;
 
     // Lazy load image viewer on image click
-    const img = target.closest('img') as HTMLImageElement | null;
-    if (img && (img.classList.contains('message-image') || img.classList.contains('user-attached-img'))) {
+    const img = target.closest('img');
+    if (
+      img &&
+      (img.classList.contains('message-image') || img.classList.contains('user-attached-img'))
+    ) {
       e.preventDefault();
       import('./image-viewer.js').then((m) => m.openViewer(img.src, img.alt)).catch(() => {});
       return;
     }
 
-    const btn = target.closest('.action-btn') as HTMLElement | null;
-    const msgEl = target.closest('.message') as HTMLElement | null;
+    const btn = target.closest('.action-btn');
+    const msgEl = target.closest('.message');
     if (!msgEl) return;
     const msgId = msgEl.dataset.messageId;
     if (!msgId) return;
@@ -383,7 +402,11 @@ async function init(): Promise<void> {
         }),
       });
 
-      const result = await res.json() as { success: boolean; output?: { stdout?: string; stderr?: string }; error?: string };
+      const result = (await res.json()) as {
+        success: boolean;
+        output?: { stdout?: string; stderr?: string };
+        error?: string;
+      };
 
       if (result.success && result.output) {
         const stdout = result.output.stdout || '';
@@ -431,7 +454,8 @@ async function init(): Promise<void> {
   el.chatMessages.addEventListener('scroll', () => {
     const threshold = 100;
     const atBottom =
-      el.chatMessages.scrollHeight - el.chatMessages.scrollTop - el.chatMessages.clientHeight < threshold;
+      el.chatMessages.scrollHeight - el.chatMessages.scrollTop - el.chatMessages.clientHeight <
+      threshold;
     el.scrollBottomBtn.classList.toggle('visible', !atBottom);
   });
 

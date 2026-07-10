@@ -59,14 +59,19 @@ function updateStatusBar(): void {
 async function fetchSystemStatus(): Promise<void> {
   try {
     // Try to get GPU and RAM info from the server
-    const data = await api<{ gpu?: { used: number; total: number; utilization: number }; ram?: { used: number; total: number } }>('/api/system');
-    
+    const data = await api<{
+      gpu?: { used: number; total: number; utilization: number };
+      ram?: { used: number; total: number };
+    }>('/api/system');
+
     if (data.gpu) {
       const gpuEl = $('statusGpu');
       if (gpuEl) {
         const span = gpuEl.querySelector('span');
         if (span) {
-          const pct = data.gpu.utilization ?? (data.gpu.total > 0 ? Math.round((data.gpu.used / data.gpu.total) * 100) : 0);
+          const pct =
+            data.gpu.utilization ??
+            (data.gpu.total > 0 ? Math.round((data.gpu.used / data.gpu.total) * 100) : 0);
           span.textContent = `GPU: ${pct}%`;
           gpuEl.classList.toggle('warning', pct > 80);
           gpuEl.classList.toggle('error', pct > 95);

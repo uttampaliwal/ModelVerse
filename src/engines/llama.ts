@@ -2,7 +2,15 @@ import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import net from 'net';
-import { LLMEngine, type ModelInfo, type ChatMessage, type GenerateOptions, type GenerateResult, type HealthStatus, type EngineConfig } from './base';
+import {
+  LLMEngine,
+  type ModelInfo,
+  type ChatMessage,
+  type GenerateOptions,
+  type GenerateResult,
+  type HealthStatus,
+  type EngineConfig,
+} from './base';
 import { openaiStreamToGenerator } from './stream-utils';
 import { log } from '../logger';
 
@@ -15,7 +23,18 @@ export interface LlamaCppConfig extends EngineConfig {
   gpuLayers: number;
 }
 
-const VISION_ARCHS = ['llava', 'qwen2vl', 'qwen2.5vl', 'qwen3vl', 'gemma4vl', 'idefics2', 'paligemma', 'florence2', 'minicpmv', 'xcomposer2'];
+const VISION_ARCHS = [
+  'llava',
+  'qwen2vl',
+  'qwen2.5vl',
+  'qwen3vl',
+  'gemma4vl',
+  'idefics2',
+  'paligemma',
+  'florence2',
+  'minicpmv',
+  'xcomposer2',
+];
 const REASONING_ARCHS = ['qwq', 'deepseek', 'qwen3', 'gemma4'];
 
 function getModelCapabilities(modelPath: string): string[] {
@@ -50,14 +69,41 @@ function getModelCapabilities(modelPath: string): string[] {
     };
     const skip = (type: number) => {
       switch (type) {
-        case 0: case 1: off += 1; break;
-        case 2: case 3: off += 2; break;
-        case 4: case 5: case 6: off += 4; break;
-        case 7: off += 1; break;
-        case 8: { const l = Number(r8()); off += l; break; }
-        case 9: { const at = r4().readUInt32LE(0); const al = Number(r8()); for (let j = 0; j < al; j++) skip(at); break; }
-        case 10: case 11: case 12: off += 8; break;
-        default: off += 4; break;
+        case 0:
+        case 1:
+          off += 1;
+          break;
+        case 2:
+        case 3:
+          off += 2;
+          break;
+        case 4:
+        case 5:
+        case 6:
+          off += 4;
+          break;
+        case 7:
+          off += 1;
+          break;
+        case 8: {
+          const l = Number(r8());
+          off += l;
+          break;
+        }
+        case 9: {
+          const at = r4().readUInt32LE(0);
+          const al = Number(r8());
+          for (let j = 0; j < al; j++) skip(at);
+          break;
+        }
+        case 10:
+        case 11:
+        case 12:
+          off += 8;
+          break;
+        default:
+          off += 4;
+          break;
       }
     };
     let hasChatTemplate = false;
@@ -114,7 +160,9 @@ export class LlamaCppEngine extends LLMEngine {
 
   protected engineConfig: LlamaCppConfig = {
     binPath: path.join(process.cwd(), 'bin'),
-    modelsPath: process.env.LLMODELS_PATH || path.join(process.env.HOME || process.env.USERPROFILE || '', '.lmstudio', 'models'),
+    modelsPath:
+      process.env.LLMODELS_PATH ||
+      path.join(process.env.HOME || process.env.USERPROFILE || '', '.lmstudio', 'models'),
     port: 8080,
     contextSize: 4096,
     threads: 4,
@@ -136,7 +184,9 @@ export class LlamaCppEngine extends LLMEngine {
       const proc = this.process;
       this.process = null;
       if (process.platform === 'win32') {
-        const child = spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], { stdio: 'ignore' });
+        const child = spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
+          stdio: 'ignore',
+        });
         child.on('exit', () => resolve());
         child.on('error', () => resolve());
         setTimeout(resolve, 3000);
@@ -160,7 +210,13 @@ export class LlamaCppEngine extends LLMEngine {
       const usedPort = await findAvailablePort(this.engineConfig.port);
 
       return new Promise<{ success: boolean; port: number }>((resolve, reject) => {
-        const serverReadyPatterns = ['listening on', 'running on', 'starting the server', 'server started', 'http://'];
+        const serverReadyPatterns = [
+          'listening on',
+          'running on',
+          'starting the server',
+          'server started',
+          'http://',
+        ];
 
         let mmprojPath: string | null = null;
         try {
@@ -170,12 +226,18 @@ export class LlamaCppEngine extends LLMEngine {
         } catch {}
 
         const args = [
-          '-m', modelPath,
-          '--host', '0.0.0.0',
-          '--port', usedPort.toString(),
-          '-c', this.engineConfig.contextSize.toString(),
-          '-ngl', this.engineConfig.gpuLayers.toString(),
-          '-t', this.engineConfig.threads.toString(),
+          '-m',
+          modelPath,
+          '--host',
+          '0.0.0.0',
+          '--port',
+          usedPort.toString(),
+          '-c',
+          this.engineConfig.contextSize.toString(),
+          '-ngl',
+          this.engineConfig.gpuLayers.toString(),
+          '-t',
+          this.engineConfig.threads.toString(),
         ];
         if (mmprojPath) args.push('--mmproj', mmprojPath);
 
@@ -238,7 +300,9 @@ export class LlamaCppEngine extends LLMEngine {
         setTimeout(() => {
           if (!started) {
             cleanup();
-            try { proc.kill(); } catch {}
+            try {
+              proc.kill();
+            } catch {}
             reject(new Error('Timeout waiting for server'));
           }
         }, 60000);

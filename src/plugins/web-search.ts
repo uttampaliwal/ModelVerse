@@ -1,4 +1,10 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 
 class WebSearchTool implements ToolDefinition {
   name = 'web_search';
@@ -15,7 +21,10 @@ class WebSearchTool implements ToolDefinition {
     try {
       const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`;
       const res = await fetch(url);
-      const data = await res.json() as { AbstractText?: string; RelatedTopics?: Array<{ Text?: string; FirstURL?: string }> };
+      const data = (await res.json()) as {
+        AbstractText?: string;
+        RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>;
+      };
 
       const results: Array<{ title: string; url: string; snippet: string }> = [];
 
@@ -92,12 +101,24 @@ export class WebSearchPlugin extends Plugin {
     category: 'search',
     enabled: false,
     settings: [
-      { key: 'provider', label: 'Search Provider', type: 'select', default: 'duckduckgo', options: [
-        { label: 'DuckDuckGo', value: 'duckduckgo' },
-        { label: 'Brave Search', value: 'brave' },
-        { label: 'Google Custom Search', value: 'google' },
-      ]},
-      { key: 'api_key', label: 'API Key', type: 'string', default: '', description: 'API key for Brave/Google (optional for DuckDuckGo)' },
+      {
+        key: 'provider',
+        label: 'Search Provider',
+        type: 'select',
+        default: 'duckduckgo',
+        options: [
+          { label: 'DuckDuckGo', value: 'duckduckgo' },
+          { label: 'Brave Search', value: 'brave' },
+          { label: 'Google Custom Search', value: 'google' },
+        ],
+      },
+      {
+        key: 'api_key',
+        label: 'API Key',
+        type: 'string',
+        default: '',
+        description: 'API key for Brave/Google (optional for DuckDuckGo)',
+      },
     ],
   };
 

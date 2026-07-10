@@ -18,7 +18,7 @@ let initialized = false;
 
 function init(): void {
   viewer.overlay = $('imageViewer');
-  viewer.img = $('imageViewerImg') as HTMLImageElement;
+  viewer.img = $('imageViewerImg');
   viewer.container = $('imageViewerContainer');
   viewer.caption = $('imageViewerCaption');
 
@@ -44,11 +44,15 @@ function init(): void {
     if (e.key === '0') resetView();
   });
 
-  viewer.container.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(viewer.zoom * delta);
-  }, { passive: false });
+  viewer.container.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(viewer.zoom * delta);
+    },
+    { passive: false },
+  );
 
   viewer.container.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
@@ -71,35 +75,43 @@ function init(): void {
   });
 
   let lastTouchDist = 0;
-  viewer.container.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      viewer.isDragging = true;
-      viewer.startX = e.touches[0].clientX - viewer.panX;
-      viewer.startY = e.touches[0].clientY - viewer.panY;
-    } else if (e.touches.length === 2) {
-      lastTouchDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-    }
-  }, { passive: true });
-
-  viewer.container.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 1 && viewer.isDragging) {
-      viewer.panX = e.touches[0].clientX - viewer.startX;
-      viewer.panY = e.touches[0].clientY - viewer.startY;
-      updateTransform();
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-      if (lastTouchDist > 0) {
-        setZoom(viewer.zoom * (dist / lastTouchDist));
+  viewer.container.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches.length === 1) {
+        viewer.isDragging = true;
+        viewer.startX = e.touches[0].clientX - viewer.panX;
+        viewer.startY = e.touches[0].clientY - viewer.panY;
+      } else if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY,
+        );
       }
-      lastTouchDist = dist;
-    }
-  }, { passive: true });
+    },
+    { passive: true },
+  );
+
+  viewer.container.addEventListener(
+    'touchmove',
+    (e) => {
+      if (e.touches.length === 1 && viewer.isDragging) {
+        viewer.panX = e.touches[0].clientX - viewer.startX;
+        viewer.panY = e.touches[0].clientY - viewer.startY;
+        updateTransform();
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY,
+        );
+        if (lastTouchDist > 0) {
+          setZoom(viewer.zoom * (dist / lastTouchDist));
+        }
+        lastTouchDist = dist;
+      }
+    },
+    { passive: true },
+  );
 
   viewer.container.addEventListener('touchend', () => {
     viewer.isDragging = false;

@@ -1,4 +1,10 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 import fs from 'fs';
 import path from 'path';
 import { documentChunkArraySchema, loadAndValidate } from '../config-schemas';
@@ -147,13 +153,20 @@ export class RAGPlugin extends Plugin {
     id: 'rag',
     name: 'RAG (Retrieval-Augmented Generation)',
     version: '1.0.0',
-    description: 'Build a knowledge base from documents and retrieve relevant context for conversations',
+    description:
+      'Build a knowledge base from documents and retrieve relevant context for conversations',
     author: 'ModelVerse',
     icon: 'database',
     category: 'rag',
     enabled: false,
     settings: [
-      { key: 'store_path', label: 'Store Path', type: 'string', default: './rag-store.json', description: 'Path to store documents' },
+      {
+        key: 'store_path',
+        label: 'Store Path',
+        type: 'string',
+        default: './rag-store.json',
+        description: 'Path to store documents',
+      },
       { key: 'chunk_size', label: 'Default Chunk Size', type: 'number', default: 1000 },
     ],
   };

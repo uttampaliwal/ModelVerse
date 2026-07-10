@@ -40,7 +40,18 @@ export function collectSettings(): Settings | null {
     repeatPenalty: parseFloat($<HTMLInputElement>('repeatPenalty').value),
     systemPrompt: el.systemPrompt.value,
   };
-  if ([s.temperature, s.topP, s.topK, s.maxTokens, s.contextSize, s.gpuLayers, s.threads, s.repeatPenalty].some((v) => Number.isNaN(v))) {
+  if (
+    [
+      s.temperature,
+      s.topP,
+      s.topK,
+      s.maxTokens,
+      s.contextSize,
+      s.gpuLayers,
+      s.threads,
+      s.repeatPenalty,
+    ].some((v) => Number.isNaN(v))
+  ) {
     showToast('Please enter valid numbers in all parameters', 'error');
     return null;
   }

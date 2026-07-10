@@ -1,7 +1,7 @@
 import { showToast } from './toast.js';
 
 const THEMES = ['dark', 'light', 'oled', 'dracula', 'nord', 'catppuccin', 'gruvbox'] as const;
-export type Theme = typeof THEMES[number];
+export type Theme = (typeof THEMES)[number];
 
 const STORAGE_KEY = 'theme';
 

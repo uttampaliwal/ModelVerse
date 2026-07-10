@@ -11,7 +11,9 @@ const loadingProgressBar = document.getElementById('loadingProgressBar');
 
 let switching = false;
 
-export function isSwitching(): boolean { return switching; }
+export function isSwitching(): boolean {
+  return switching;
+}
 
 function setLoadingState(loading: boolean, text?: string): void {
   const dot = el.statusIndicator.querySelector('.status-dot')!;

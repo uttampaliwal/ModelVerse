@@ -12,13 +12,7 @@ export interface PluginManifest {
 }
 
 export type PluginCategory =
-  | 'generation'
-  | 'speech'
-  | 'search'
-  | 'rag'
-  | 'code'
-  | 'vision'
-  | 'utility';
+  'generation' | 'speech' | 'search' | 'rag' | 'code' | 'vision' | 'utility';
 
 export interface PluginSettingDefinition {
   key: string;
@@ -42,11 +36,14 @@ export interface PluginContext {
 export interface ToolDefinition {
   name: string;
   description: string;
-  parameters: Record<string, {
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
+  parameters: Record<
+    string,
+    {
+      type: string;
+      description: string;
+      required?: boolean;
+    }
+  >;
   execute: (params: Record<string, unknown>) => Promise<ToolResult>;
 }
 

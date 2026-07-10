@@ -19,7 +19,13 @@ import {
   clearChatView,
 } from './conversation.js';
 import type { ContentPart } from './types.js';
-import type { ChatMessage, ChatChunk, ChatCompletionResponse, StatusResponse, PayloadMessage } from './types.js';
+import type {
+  ChatMessage,
+  ChatChunk,
+  ChatCompletionResponse,
+  StatusResponse,
+  PayloadMessage,
+} from './types.js';
 import { logWarn } from './logger.js';
 import { AppState } from './state.js';
 
@@ -180,7 +186,7 @@ export async function sendMessage(): Promise<void> {
   el.stopGenerateBtn.disabled = false;
   el.sendBtn.disabled = true;
 
-  let startTime = Date.now();
+  const startTime = Date.now();
   let streamTokenCount = 0;
   let thinkingStartTime: number | null = null;
   let thinkingDuration: number | undefined;
@@ -266,8 +272,9 @@ export async function sendMessage(): Promise<void> {
                 } else if (data.queue.status === 'error') {
                   hideQueueStatus(assistantMsg.id);
                   showToast(data.queue.message || 'Queue error', 'error');
-                  assistantMsg.content = '**Error:** ' + (data.queue.message || 'Queue processing failed');
-                  updateMessageContent(assistantMsg.id, assistantMsg.content as string);
+                  assistantMsg.content =
+                    '**Error:** ' + (data.queue.message || 'Queue processing failed');
+                  updateMessageContent(assistantMsg.id, assistantMsg.content);
                   saveConversations();
                 }
                 continue;
@@ -285,7 +292,7 @@ export async function sendMessage(): Promise<void> {
               fullContent += delta;
               assistantMsg.content = fullContent;
               const { thinking: t, content: c } = extractThinking(fullContent);
-              
+
               // Track thinking duration
               if (t && !thinkingStartTime) {
                 thinkingStartTime = Date.now();
@@ -293,7 +300,7 @@ export async function sendMessage(): Promise<void> {
                 thinkingDuration = Date.now() - thinkingStartTime;
                 thinkingStartTime = null;
               }
-              
+
               updateStreamingContent(assistantMsg.id, fullContent, t, c);
               const elapsed = (Date.now() - startTime) / 1000;
               if (el.latency) el.latency.textContent = elapsed.toFixed(1) + 's';
@@ -367,7 +374,7 @@ export async function sendMessage(): Promise<void> {
     } else {
       showToast('Connection error: ' + err.message, 'error');
       assistantMsg.content = '**Error:** ' + err.message;
-      updateMessageContent(assistantMsg.id, assistantMsg.content as string);
+      updateMessageContent(assistantMsg.id, assistantMsg.content);
       saveConversations();
     }
   } finally {
@@ -382,7 +389,10 @@ export async function sendMessage(): Promise<void> {
       if (el.latency) el.latency.textContent = totalTime.toFixed(1) + 's';
       if (el.tokenCount) el.tokenCount.textContent = streamTokenCount + ' tok \u00B7 ' + tps + '/s';
       updateTokensPerSecond(parseFloat(tps));
-      updateContextUsage(streamTokenCount, parseInt($<HTMLInputElement>('contextSize').value) || 2048);
+      updateContextUsage(
+        streamTokenCount,
+        parseInt($<HTMLInputElement>('contextSize').value) || 2048,
+      );
     }
     updateModelInfo();
   }

@@ -1,4 +1,10 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -20,31 +26,37 @@ class ExecuteCodeTool implements ToolDefinition {
     fs.writeFileSync(tmpFile, code);
 
     try {
-      const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve, reject) => {
-        const proc = spawn('python', [tmpFile], {
-          stdio: [stdinData ? 'pipe' : 'ignore', 'pipe', 'pipe'],
-          timeout: timeout * 1000,
-        });
+      const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>(
+        (resolve, reject) => {
+          const proc = spawn('python', [tmpFile], {
+            stdio: [stdinData ? 'pipe' : 'ignore', 'pipe', 'pipe'],
+            timeout: timeout * 1000,
+          });
 
-        let stdout = '';
-        let stderr = '';
+          let stdout = '';
+          let stderr = '';
 
-        if (stdinData) {
-          proc.stdin?.write(stdinData);
-          proc.stdin?.end();
-        }
+          if (stdinData) {
+            proc.stdin?.write(stdinData);
+            proc.stdin?.end();
+          }
 
-        proc.stdout?.on('data', (d) => { stdout += d.toString(); });
-        proc.stderr?.on('data', (d) => { stderr += d.toString(); });
+          proc.stdout?.on('data', (d) => {
+            stdout += d.toString();
+          });
+          proc.stderr?.on('data', (d) => {
+            stderr += d.toString();
+          });
 
-        proc.on('close', (code) => {
-          resolve({ stdout, stderr, exitCode: code || 0 });
-        });
+          proc.on('close', (code) => {
+            resolve({ stdout, stderr, exitCode: code || 0 });
+          });
 
-        proc.on('error', (err) => {
-          reject(err);
-        });
-      });
+          proc.on('error', (err) => {
+            reject(err);
+          });
+        },
+      );
 
       return {
         success: result.exitCode === 0,
@@ -58,7 +70,9 @@ class ExecuteCodeTool implements ToolDefinition {
     } catch (e) {
       return { success: false, error: (e as Error).message };
     } finally {
-      try { fs.unlinkSync(tmpFile); } catch {}
+      try {
+        fs.unlinkSync(tmpFile);
+      } catch {}
     }
   }
 }
@@ -108,14 +122,27 @@ export class PythonPlugin extends Plugin {
     id: 'python',
     name: 'Python Execution',
     version: '1.0.0',
-    description: 'Execute Python code and Jupyter notebooks for data analysis, visualization, and scripting',
+    description:
+      'Execute Python code and Jupyter notebooks for data analysis, visualization, and scripting',
     author: 'ModelVerse',
     icon: 'code',
     category: 'code',
     enabled: false,
     settings: [
-      { key: 'python_path', label: 'Python Path', type: 'string', default: 'python', description: 'Path to Python executable' },
-      { key: 'allowed_modules', label: 'Allowed Modules', type: 'string', default: '*', description: 'Comma-separated list of allowed modules (* for all)' },
+      {
+        key: 'python_path',
+        label: 'Python Path',
+        type: 'string',
+        default: 'python',
+        description: 'Path to Python executable',
+      },
+      {
+        key: 'allowed_modules',
+        label: 'Allowed Modules',
+        type: 'string',
+        default: '*',
+        description: 'Comma-separated list of allowed modules (* for all)',
+      },
       { key: 'max_timeout', label: 'Max Timeout (s)', type: 'number', default: 60 },
     ],
   };

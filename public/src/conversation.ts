@@ -3,12 +3,14 @@ import { showToast } from './toast.js';
 import { extractThinking, formatMd, escapeHtml } from './markdown.js';
 import { renderMath } from './latex.js';
 import { formatMessage } from './formatter.js';
-import { textOf, type ChatMessage, type Conversation, type ContentPart, type ExportFormat } from './types.js';
 import {
-  getAllConversations,
-  putConversations,
-  deleteConversationById,
-} from './db.js';
+  textOf,
+  type ChatMessage,
+  type Conversation,
+  type ContentPart,
+  type ExportFormat,
+} from './types.js';
+import { getAllConversations, putConversations, deleteConversationById } from './db.js';
 import { clearPendingAttachments } from './attachments.js';
 import { logError } from './logger.js';
 import { AppState, setCurrentConvId } from './state.js';
@@ -35,7 +37,7 @@ export function loadConversations(): Promise<void> {
           const arr: Conversation[] = Array.isArray(v)
             ? (v as Conversation[])
             : v && typeof v === 'object'
-              ? (Object.values(v) as Conversation[])
+              ? Object.values(v)
               : [];
           AppState.conversations.list = arr;
           localStorage.removeItem('conversations');
@@ -142,11 +144,16 @@ function userContentHtml(content: string | ContentPart[]): string {
     .join('<br>');
 }
 
-const SVG_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-const SVG_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_REGEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-const SVG_DELETE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-const SVG_SHARE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+const SVG_COPY =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const SVG_EDIT =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_REGEN =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+const SVG_DELETE =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const SVG_SHARE =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
 
 function userActionsHtml(): string {
   return `
@@ -170,9 +177,9 @@ function assistantActionsHtml(): string {
 export function showQueueStatus(msgId: string, position: number): void {
   const msgEl = document.querySelector(`.message[data-message-id="${msgId}"]`);
   if (!msgEl) return;
-  const container = msgEl.querySelector('.response-container') as HTMLElement | null;
+  const container = msgEl.querySelector('.response-container');
   if (!container) return;
-  let indicator = container.querySelector('.queue-indicator') as HTMLElement | null;
+  let indicator = container.querySelector('.queue-indicator');
   if (!indicator) {
     indicator = document.createElement('div');
     indicator.className = 'queue-indicator';
@@ -419,8 +426,8 @@ export function updateStreamingContent(
 ): void {
   const msgEl = el.chatMessages.querySelector(`.message[data-message-id="${msgId}"]`);
   if (!msgEl) return;
-  const thinkingContainer = msgEl.querySelector('.thinking-container') as HTMLElement | null;
-  const responseContainer = msgEl.querySelector('.response-container') as HTMLElement | null;
+  const thinkingContainer = msgEl.querySelector('.thinking-container');
+  const responseContainer = msgEl.querySelector('.response-container');
   if (!thinkingContainer && !responseContainer) {
     updateMessageContent(msgId, fullContent);
     return;
@@ -440,7 +447,7 @@ export function updateStreamingContent(
 export function updateMessageContent(msgId: string, content: string): void {
   const msgEl = el.chatMessages.querySelector(`.message[data-message-id="${msgId}"]`);
   if (!msgEl) return;
-  const contentDiv = msgEl.querySelector('.message-content') as HTMLElement | null;
+  const contentDiv = msgEl.querySelector('.message-content');
   if (contentDiv) {
     const msg = AppState.conversations.list.flatMap((c) => c.messages).find((m) => m.id === msgId);
     const thinking = msg?.thinking ?? '';
@@ -453,7 +460,9 @@ export function updateMessageContent(msgId: string, content: string): void {
 export function generateTitle(conv: Conversation): string {
   const firstMsg = conv.messages.find((m) => m.role === 'user');
   if (!firstMsg) return 'New Conversation';
-  const txt = textOf(firstMsg.content).replace(/<[^>]*>/g, '').trim();
+  const txt = textOf(firstMsg.content)
+    .replace(/<[^>]*>/g, '')
+    .trim();
   return txt.length > 40 ? txt.substring(0, 40) + '...' : txt;
 }
 
@@ -496,7 +505,11 @@ export function exportConversation(format: ExportFormat): void {
     });
     downloadFile(md, `${conv.title.replace(/[^a-z0-9]/gi, '_')}.md`, 'text/markdown');
   } else if (format === 'json') {
-    downloadFile(JSON.stringify(conv, null, 2), `${conv.title.replace(/[^a-z0-9]/gi, '_')}.json`, 'application/json');
+    downloadFile(
+      JSON.stringify(conv, null, 2),
+      `${conv.title.replace(/[^a-z0-9]/gi, '_')}.json`,
+      'application/json',
+    );
   }
 }
 

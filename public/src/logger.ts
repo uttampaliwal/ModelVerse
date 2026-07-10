@@ -42,7 +42,11 @@ export function logInfo(context: string, msg: string, extra?: Record<string, unk
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  { retries = 2, delayMs = 500, context = 'operation' }: { retries?: number; delayMs?: number; context?: string } = {},
+  {
+    retries = 2,
+    delayMs = 500,
+    context = 'operation',
+  }: { retries?: number; delayMs?: number; context?: string } = {},
 ): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {

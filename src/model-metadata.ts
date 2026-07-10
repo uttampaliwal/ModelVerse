@@ -39,14 +39,30 @@ function estimateFromFilename(filename: string): Partial<ModelMetadata> {
   if (lower.includes('70b') || lower.includes('72b')) meta.parameters = '70B';
   else if (lower.includes('34b')) meta.parameters = '34B';
   else if (lower.includes('13b') || lower.includes('14b')) meta.parameters = '13B';
-  else if (lower.includes('8b') || lower.includes('8x7b') || lower.includes('8x22b')) meta.parameters = '8B';
+  else if (lower.includes('8b') || lower.includes('8x7b') || lower.includes('8x22b'))
+    meta.parameters = '8B';
   else if (lower.includes('7b')) meta.parameters = '7B';
   else if (lower.includes('3b') || lower.includes('3.8b')) meta.parameters = '3B';
   else if (lower.includes('1b') || lower.includes('1.5b')) meta.parameters = '1B';
   else if (lower.includes('0.5b') || lower.includes('500m')) meta.parameters = '0.5B';
 
   // Estimate quantization
-  const quants = ['q2_k', 'q3_k_s', 'q3_k_m', 'q3_k_l', 'q4_0', 'q4_k_s', 'q4_k_m', 'q5_0', 'q5_k_s', 'q5_k_m', 'q6_k', 'q8_0', 'f16', 'f32'];
+  const quants = [
+    'q2_k',
+    'q3_k_s',
+    'q3_k_m',
+    'q3_k_l',
+    'q4_0',
+    'q4_k_s',
+    'q4_k_m',
+    'q5_0',
+    'q5_k_s',
+    'q5_k_m',
+    'q6_k',
+    'q8_0',
+    'f16',
+    'f32',
+  ];
   for (const q of quants) {
     if (lower.includes(q)) {
       meta.quantization = q.toUpperCase();
@@ -56,29 +72,29 @@ function estimateFromFilename(filename: string): Partial<ModelMetadata> {
 
   // Detect architecture
   const archs: Record<string, string> = {
-    'llama': 'LLaMA',
-    'mistral': 'Mistral',
-    'mixtral': 'Mixtral',
-    'qwen': 'Qwen',
-    'phi': 'Phi',
-    'gemma': 'Gemma',
-    'gemma2': 'Gemma 2',
-    'deepseek': 'DeepSeek',
-    'yi': 'Yi',
-    'codellama': 'Code Llama',
-    'vicuna': 'Vicuna',
-    'orca': 'Orca',
-    'neural': 'NeuralChat',
-    'starcoder': 'StarCoder',
-    'falcon': 'Falcon',
-    'baichuan': 'Baichuan',
-    'internlm': 'InternLM',
-    'chatglm': 'ChatGLM',
-    'command': 'Command',
-    'dbrx': 'DBRX',
-    'olmo': 'OLMo',
-    'openchat': 'OpenChat',
-    'bagel': 'Bagel',
+    llama: 'LLaMA',
+    mistral: 'Mistral',
+    mixtral: 'Mixtral',
+    qwen: 'Qwen',
+    phi: 'Phi',
+    gemma: 'Gemma',
+    gemma2: 'Gemma 2',
+    deepseek: 'DeepSeek',
+    yi: 'Yi',
+    codellama: 'Code Llama',
+    vicuna: 'Vicuna',
+    orca: 'Orca',
+    neural: 'NeuralChat',
+    starcoder: 'StarCoder',
+    falcon: 'Falcon',
+    baichuan: 'Baichuan',
+    internlm: 'InternLM',
+    chatglm: 'ChatGLM',
+    command: 'Command',
+    dbrx: 'DBRX',
+    olmo: 'OLMo',
+    openchat: 'OpenChat',
+    bagel: 'Bagel',
   };
   for (const [key, name] of Object.entries(archs)) {
     if (lower.includes(key)) {
@@ -89,16 +105,27 @@ function estimateFromFilename(filename: string): Partial<ModelMetadata> {
   }
 
   // Detect capabilities
-  meta.vision = lower.includes('llava') || lower.includes('vision') || lower.includes('vl') || lower.includes('mmproj');
+  meta.vision =
+    lower.includes('llava') ||
+    lower.includes('vision') ||
+    lower.includes('vl') ||
+    lower.includes('mmproj');
   meta.embedding = lower.includes('embed') || lower.includes('e5') || lower.includes('bge');
-  meta.reasoning = lower.includes('qwq') || lower.includes('deepseek-r1') || lower.includes('think');
-  meta.code = lower.includes('code') || lower.includes('coder') || lower.includes('starcoder') || lower.includes('deepseek-coder');
+  meta.reasoning =
+    lower.includes('qwq') || lower.includes('deepseek-r1') || lower.includes('think');
+  meta.code =
+    lower.includes('code') ||
+    lower.includes('coder') ||
+    lower.includes('starcoder') ||
+    lower.includes('deepseek-coder');
   meta.tools = lower.includes('tool') || lower.includes('function');
 
   // Detect languages
   const langs: string[] = [];
-  if (lower.includes('chinese') || lower.includes('zh') || lower.includes('cn')) langs.push('Chinese');
-  if (lower.includes('japanese') || lower.includes('ja') || lower.includes('jp')) langs.push('Japanese');
+  if (lower.includes('chinese') || lower.includes('zh') || lower.includes('cn'))
+    langs.push('Chinese');
+  if (lower.includes('japanese') || lower.includes('ja') || lower.includes('jp'))
+    langs.push('Japanese');
   if (lower.includes('korean') || lower.includes('ko')) langs.push('Korean');
   if (lower.includes('arabic') || lower.includes('ar')) langs.push('Arabic');
   if (lower.includes('french') || lower.includes('fr')) langs.push('French');
@@ -140,7 +167,7 @@ function estimateMemoryRequirements(params: string, quant: string): string {
 export function getOrCreateMetadata(
   modelPath: string,
   provider: string,
-  autoDetected?: Partial<ModelMetadata>
+  autoDetected?: Partial<ModelMetadata>,
 ): ModelMetadata {
   const id = generateId(modelPath);
   const existing = metadataStore.get(id);
@@ -164,16 +191,20 @@ export function getOrCreateMetadata(
     ...fromFilename,
     ...autoDetected,
     memoryRequired: estimateMemoryRequirements(
-      (autoDetected?.parameters || fromFilename.parameters || '7B'),
-      (autoDetected?.quantization || fromFilename.quantization || 'Q4_K_M')
+      autoDetected?.parameters || fromFilename.parameters || '7B',
+      autoDetected?.quantization || fromFilename.quantization || 'Q4_K_M',
     ),
-    tags: [...new Set([
-      ...(autoDetected?.tags || []),
-      ...(fromFilename.architecture ? [fromFilename.architecture] : []),
-      ...(fromFilename.vision ? ['vision'] : []),
-      ...(fromFilename.reasoning ? ['reasoning'] : []),
-      ...(fromFilename.code ? ['code'] : []),
-    ].filter(Boolean))],
+    tags: [
+      ...new Set(
+        [
+          ...(autoDetected?.tags || []),
+          ...(fromFilename.architecture ? [fromFilename.architecture] : []),
+          ...(fromFilename.vision ? ['vision'] : []),
+          ...(fromFilename.reasoning ? ['reasoning'] : []),
+          ...(fromFilename.code ? ['code'] : []),
+        ].filter(Boolean),
+      ),
+    ],
     addedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -205,11 +236,19 @@ export function searchMetadata(query: string): ModelMetadata[] {
   const lower = query.toLowerCase();
   return Array.from(metadataStore.values()).filter((m) => {
     const searchFields = [
-      m.name, m.architecture, m.family, m.description, m.source,
-      m.quantization, m.parameters, m.license,
+      m.name,
+      m.architecture,
+      m.family,
+      m.description,
+      m.source,
+      m.quantization,
+      m.parameters,
+      m.license,
       ...(m.tags || []),
       ...(m.languages || []),
-    ].filter(Boolean).map((s) => s!.toLowerCase());
+    ]
+      .filter(Boolean)
+      .map((s) => s!.toLowerCase());
 
     return searchFields.some((f) => f.includes(lower));
   });
@@ -235,20 +274,30 @@ export function filterMetadata(filters: {
     const lower = filters.query.toLowerCase();
     results = results.filter((m) => {
       const searchFields = [
-        m.name, m.architecture, m.family, m.description,
-        m.quantization, m.parameters,
+        m.name,
+        m.architecture,
+        m.family,
+        m.description,
+        m.quantization,
+        m.parameters,
         ...(m.tags || []),
         ...(m.languages || []),
-      ].filter(Boolean).map((s) => s!.toLowerCase());
+      ]
+        .filter(Boolean)
+        .map((s) => s!.toLowerCase());
       return searchFields.some((f) => f.includes(lower));
     });
   }
 
   if (filters.architecture) {
-    results = results.filter((m) => m.architecture?.toLowerCase() === filters.architecture!.toLowerCase());
+    results = results.filter(
+      (m) => m.architecture?.toLowerCase() === filters.architecture!.toLowerCase(),
+    );
   }
   if (filters.quantization) {
-    results = results.filter((m) => m.quantization?.toLowerCase() === filters.quantization!.toLowerCase());
+    results = results.filter(
+      (m) => m.quantization?.toLowerCase() === filters.quantization!.toLowerCase(),
+    );
   }
   if (filters.vision !== undefined) {
     results = results.filter((m) => m.vision === filters.vision);
@@ -266,14 +315,10 @@ export function filterMetadata(filters: {
     results = results.filter((m) => m.tools === filters.tools);
   }
   if (filters.languages && filters.languages.length > 0) {
-    results = results.filter((m) =>
-      filters.languages!.some((l) => m.languages?.includes(l))
-    );
+    results = results.filter((m) => filters.languages!.some((l) => m.languages?.includes(l)));
   }
   if (filters.tags && filters.tags.length > 0) {
-    results = results.filter((m) =>
-      filters.tags!.some((t) => m.tags?.includes(t))
-    );
+    results = results.filter((m) => filters.tags!.some((t) => m.tags?.includes(t)));
   }
 
   return results;

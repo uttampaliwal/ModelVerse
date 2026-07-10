@@ -125,15 +125,7 @@ export function textOf(content: MessageContent): string {
 
 // ---- Attachments ------------------------------------------------------------
 
-export type AttachKind =
-  | 'image'
-  | 'pdf'
-  | 'docx'
-  | 'xlsx'
-  | 'csv'
-  | 'zip'
-  | 'code'
-  | 'text';
+export type AttachKind = 'image' | 'pdf' | 'docx' | 'xlsx' | 'csv' | 'zip' | 'code' | 'text';
 
 export interface Attachment {
   id: string;

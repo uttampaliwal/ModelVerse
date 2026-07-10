@@ -3,7 +3,13 @@ import fs from 'fs';
 import { log } from './logger';
 
 export const engineIdSchema = z.enum([
-  'llamacpp', 'ollama', 'lmstudio', 'openai', 'transformers', 'koboldcpp', 'vllm',
+  'llamacpp',
+  'ollama',
+  'lmstudio',
+  'openai',
+  'transformers',
+  'koboldcpp',
+  'vllm',
 ]);
 
 export const serverSettingsSchema = z.object({
@@ -25,19 +31,21 @@ export const activeProfileSchema = z.object({
   profile: z.string().default('Balanced'),
 });
 
-export const profileSchema = z.object({
-  name: z.string(),
-  description: z.string().default(''),
-  temperature: z.number().min(0).max(2).default(0.7),
-  topP: z.number().min(0).max(1).default(0.9),
-  topK: z.number().int().min(0).default(40),
-  repeatPenalty: z.number().min(0).max(2).default(1.1),
-  maxTokens: z.number().int().min(1).default(4096),
-  contextSize: z.number().int().min(1).default(8192),
-  threads: z.number().int().min(0).default(4),
-  gpuLayers: z.number().int().min(0).default(99),
-  systemPrompt: z.string().default('You are a helpful assistant.'),
-}).passthrough();
+export const profileSchema = z
+  .object({
+    name: z.string(),
+    description: z.string().default(''),
+    temperature: z.number().min(0).max(2).default(0.7),
+    topP: z.number().min(0).max(1).default(0.9),
+    topK: z.number().int().min(0).default(40),
+    repeatPenalty: z.number().min(0).max(2).default(1.1),
+    maxTokens: z.number().int().min(1).default(4096),
+    contextSize: z.number().int().min(1).default(8192),
+    threads: z.number().int().min(0).default(4),
+    gpuLayers: z.number().int().min(0).default(99),
+    systemPrompt: z.string().default('You are a helpful assistant.'),
+  })
+  .passthrough();
 
 export const modelMetadataSchema = z.object({
   id: z.string(),
@@ -69,7 +77,14 @@ export const modelMetadataSchema = z.object({
 export const modelMetadataArraySchema = z.array(modelMetadataSchema);
 
 export const modelSourceSchema = z.enum([
-  'lmstudio', 'ollama', 'llamacpp', 'gpt4all', 'jan', 'openwebui', 'transformers', 'custom',
+  'lmstudio',
+  'ollama',
+  'llamacpp',
+  'gpt4all',
+  'jan',
+  'openwebui',
+  'transformers',
+  'custom',
 ]);
 
 export const scannerConfigSchema = z.object({

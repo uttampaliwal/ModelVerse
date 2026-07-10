@@ -12,10 +12,45 @@ export function clearPendingAttachments(): void {
 }
 
 const CODE_EXT = new Set([
-  'py', 'js', 'ts', 'jsx', 'tsx', 'mjs', 'cjs', 'html', 'htm', 'css', 'scss',
-  'json', 'xml', 'yaml', 'yml', 'md', 'markdown', 'sh', 'bash', 'zsh', 'c',
-  'cpp', 'h', 'hpp', 'java', 'go', 'rs', 'rb', 'php', 'sql', 'log', 'toml',
-  'ini', 'cfg', 'kt', 'swift', 'r', 'pl', 'ps1',
+  'py',
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'mjs',
+  'cjs',
+  'html',
+  'htm',
+  'css',
+  'scss',
+  'json',
+  'xml',
+  'yaml',
+  'yml',
+  'md',
+  'markdown',
+  'sh',
+  'bash',
+  'zsh',
+  'c',
+  'cpp',
+  'h',
+  'hpp',
+  'java',
+  'go',
+  'rs',
+  'rb',
+  'php',
+  'sql',
+  'log',
+  'toml',
+  'ini',
+  'cfg',
+  'kt',
+  'swift',
+  'r',
+  'pl',
+  'ps1',
 ]);
 
 function uid(): string {
@@ -132,14 +167,17 @@ async function extractXlsx(file: File): Promise<string> {
   return text;
 }
 
-async function extractZip(file: File): Promise<{ text: string; entries: { name: string; size: number }[] }> {
+async function extractZip(
+  file: File,
+): Promise<{ text: string; entries: { name: string; size: number }[] }> {
   const JSZip = await loadLibOnce('/vendor/libs/jszip.min.js', 'JSZip');
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
-  const textExt = /\.(txt|md|markdown|csv|tsv|json|xml|html|htm|yaml|yml|py|js|ts|jsx|tsx|java|c|cpp|h|hpp|go|rs|rb|php|sql|log|toml|ini|cfg|sh|bat|ps1?)$/i;
+  const textExt =
+    /\.(txt|md|markdown|csv|tsv|json|xml|html|htm|yaml|yml|py|js|ts|jsx|tsx|java|c|cpp|h|hpp|go|rs|rb|php|sql|log|toml|ini|cfg|sh|bat|ps1?)$/i;
   const entries: { name: string; size: number }[] = [];
   let text = '';
   for (const [name, f] of Object.entries(zip.files)) {
-    const entry = f as unknown as {
+    const entry = f as {
       dir: boolean;
       _data?: { uncompressedSize?: number };
       async(format: string): Promise<string>;
@@ -161,14 +199,22 @@ async function extractZip(file: File): Promise<{ text: string; entries: { name: 
 
 function kindIcon(kind: AttachKind): string {
   switch (kind) {
-    case 'image': return '🖼️';
-    case 'pdf': return '📕';
-    case 'docx': return '📘';
-    case 'xlsx': return '📗';
-    case 'csv': return '📊';
-    case 'zip': return '🗜️';
-    case 'code': return '💻';
-    default: return '📄';
+    case 'image':
+      return '🖼️';
+    case 'pdf':
+      return '📕';
+    case 'docx':
+      return '📘';
+    case 'xlsx':
+      return '📗';
+    case 'csv':
+      return '📊';
+    case 'zip':
+      return '🗜️';
+    case 'code':
+      return '💻';
+    default:
+      return '📄';
   }
 }
 
@@ -180,11 +226,16 @@ function splitCsvLine(line: string): string[] {
     const c = line[i];
     if (inQ) {
       if (c === '"') {
-        if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false;
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQ = false;
       } else cur += c;
     } else if (c === '"') inQ = true;
-    else if (c === ',') { out.push(cur); cur = ''; }
-    else cur += c;
+    else if (c === ',') {
+      out.push(cur);
+      cur = '';
+    } else cur += c;
   }
   out.push(cur);
   return out;
@@ -208,7 +259,11 @@ function codePreview(name: string, text: string): string {
   const lang = (name.split('.').pop() || '').toLowerCase();
   let body: string;
   if (hl && hl.getLanguage && hl.getLanguage(lang)) {
-    try { body = hl.highlight(text.slice(0, 4000), { language: lang }).value; } catch { body = esc(text.slice(0, 4000)); }
+    try {
+      body = hl.highlight(text.slice(0, 4000), { language: lang }).value;
+    } catch {
+      body = esc(text.slice(0, 4000));
+    }
   } else {
     body = esc(text.slice(0, 4000));
   }
@@ -221,12 +276,18 @@ function snippetPreview(title: string, meta: string, text: string): string {
 }
 
 function zipPreview(entries: { name: string; size: number }[]): string {
-  const fmt = (n: number) => (n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : n > 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B');
+  const fmt = (n: number) =>
+    n > 1024 * 1024
+      ? (n / 1024 / 1024).toFixed(1) + ' MB'
+      : n > 1024
+        ? (n / 1024).toFixed(1) + ' KB'
+        : n + ' B';
   let html = '<div class="attach-zip">';
   for (const e of entries.slice(0, 40)) {
     html += `<div class="attach-zip-row"><span>${esc(e.name)}</span><span class="attach-meta">${fmt(e.size)}</span></div>`;
   }
-  if (entries.length > 40) html += `<div class="attach-note">+ ${entries.length - 40} more entries</div>`;
+  if (entries.length > 40)
+    html += `<div class="attach-note">+ ${entries.length - 40} more entries</div>`;
   html += '</div>';
   return html;
 }

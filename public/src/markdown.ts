@@ -1,36 +1,259 @@
 const LATEX_MATH_CMDS = new Set([
-  'boxed','frac','dfrac','tfrac','sqrt','binom','overset','underset','substack','genfrac',
-  'vec','bar','hat','tilde','dot','ddot','dddot','widetilde','widehat','overline','underline','overbrace','underbrace','overrightarrow','overleftarrow',
-  'sum','prod','int','oint','iint','iiint','iiiint','lim','coprod','bigcup','bigcap','bigoplus','bigotimes','bigsqcup','bigvee','bigwedge',
-  'leq','le','ge','geq','ne','neq','approx','approxeq','equiv','sim','simeq','cong','in','notin','subset','subseteq','supset','supseteq','subsetneq','supsetneq','mapsto','implies','impliedby','iff','forall','exists','nexists','pm','mp','times','div','cdot','ast','circ','star','oplus','otimes','langle','rangle','perp','parallel','propto','partial','nabla','infty','emptyset','setminus','cup','cap',
-  'alpha','beta','gamma','delta','epsilon','varepsilon','zeta','eta','theta','vartheta','iota','kappa','lambda','mu','nu','xi','pi','varpi','rho','varrho','sigma','varsigma','tau','upsilon','phi','varphi','chi','psi','omega',
-  'Gamma','Delta','Theta','Lambda','Xi','Pi','Sigma','Upsilon','Phi','Psi','Omega',
-  'log','ln','sin','cos','tan','cot','sec','csc','arcsin','arccos','arctan','exp','det','gcd','min','max','sup','inf','deg','Pr','bmod','pmod','mod',
-  'mathbb','mathbf','mathit','mathrm','mathcal','mathfrak','mathsf','mathtt','text','textbf','textit','textrm','operatorname','boldsymbol','bm',
-  'left','right','big','Big','bigg','Bigg','quad','qquad','space',
-  'begin','end','matrix','pmatrix','bmatrix','Bmatrix','vmatrix','Vmatrix','cases','array','aligned','gathered','split','eqnarray','smallmatrix'
+  'boxed',
+  'frac',
+  'dfrac',
+  'tfrac',
+  'sqrt',
+  'binom',
+  'overset',
+  'underset',
+  'substack',
+  'genfrac',
+  'vec',
+  'bar',
+  'hat',
+  'tilde',
+  'dot',
+  'ddot',
+  'dddot',
+  'widetilde',
+  'widehat',
+  'overline',
+  'underline',
+  'overbrace',
+  'underbrace',
+  'overrightarrow',
+  'overleftarrow',
+  'sum',
+  'prod',
+  'int',
+  'oint',
+  'iint',
+  'iiint',
+  'iiiint',
+  'lim',
+  'coprod',
+  'bigcup',
+  'bigcap',
+  'bigoplus',
+  'bigotimes',
+  'bigsqcup',
+  'bigvee',
+  'bigwedge',
+  'leq',
+  'le',
+  'ge',
+  'geq',
+  'ne',
+  'neq',
+  'approx',
+  'approxeq',
+  'equiv',
+  'sim',
+  'simeq',
+  'cong',
+  'in',
+  'notin',
+  'subset',
+  'subseteq',
+  'supset',
+  'supseteq',
+  'subsetneq',
+  'supsetneq',
+  'mapsto',
+  'implies',
+  'impliedby',
+  'iff',
+  'forall',
+  'exists',
+  'nexists',
+  'pm',
+  'mp',
+  'times',
+  'div',
+  'cdot',
+  'ast',
+  'circ',
+  'star',
+  'oplus',
+  'otimes',
+  'langle',
+  'rangle',
+  'perp',
+  'parallel',
+  'propto',
+  'partial',
+  'nabla',
+  'infty',
+  'emptyset',
+  'setminus',
+  'cup',
+  'cap',
+  'alpha',
+  'beta',
+  'gamma',
+  'delta',
+  'epsilon',
+  'varepsilon',
+  'zeta',
+  'eta',
+  'theta',
+  'vartheta',
+  'iota',
+  'kappa',
+  'lambda',
+  'mu',
+  'nu',
+  'xi',
+  'pi',
+  'varpi',
+  'rho',
+  'varrho',
+  'sigma',
+  'varsigma',
+  'tau',
+  'upsilon',
+  'phi',
+  'varphi',
+  'chi',
+  'psi',
+  'omega',
+  'Gamma',
+  'Delta',
+  'Theta',
+  'Lambda',
+  'Xi',
+  'Pi',
+  'Sigma',
+  'Upsilon',
+  'Phi',
+  'Psi',
+  'Omega',
+  'log',
+  'ln',
+  'sin',
+  'cos',
+  'tan',
+  'cot',
+  'sec',
+  'csc',
+  'arcsin',
+  'arccos',
+  'arctan',
+  'exp',
+  'det',
+  'gcd',
+  'min',
+  'max',
+  'sup',
+  'inf',
+  'deg',
+  'Pr',
+  'bmod',
+  'pmod',
+  'mod',
+  'mathbb',
+  'mathbf',
+  'mathit',
+  'mathrm',
+  'mathcal',
+  'mathfrak',
+  'mathsf',
+  'mathtt',
+  'text',
+  'textbf',
+  'textit',
+  'textrm',
+  'operatorname',
+  'boldsymbol',
+  'bm',
+  'left',
+  'right',
+  'big',
+  'Big',
+  'bigg',
+  'Bigg',
+  'quad',
+  'qquad',
+  'space',
+  'begin',
+  'end',
+  'matrix',
+  'pmatrix',
+  'bmatrix',
+  'Bmatrix',
+  'vmatrix',
+  'Vmatrix',
+  'cases',
+  'array',
+  'aligned',
+  'gathered',
+  'split',
+  'eqnarray',
+  'smallmatrix',
 ]);
 
 const LANG_ICONS: Record<string, string> = {
-  javascript: 'js', typescript: 'ts', python: 'py', rust: 'rs',
-  html: 'html', css: 'css', json: 'json', yaml: 'yml',
-  bash: 'sh', shell: 'sh', sh: 'sh', zsh: 'sh',
-  cpp: 'c++', c: 'c', csharp: 'cs', java: 'java',
-  go: 'go', ruby: 'rb', php: 'php', swift: 'swift',
-  kotlin: 'kt', scala: 'scala', r: 'r', lua: 'lua',
-  sql: 'sql', xml: 'xml', markdown: 'md', dockerfile: 'docker',
-  makefile: 'make', cmake: 'cmake', vim: 'vim',
-  plaintext: 'txt', text: 'txt', txt: 'txt',
+  javascript: 'js',
+  typescript: 'ts',
+  python: 'py',
+  rust: 'rs',
+  html: 'html',
+  css: 'css',
+  json: 'json',
+  yaml: 'yml',
+  bash: 'sh',
+  shell: 'sh',
+  sh: 'sh',
+  zsh: 'sh',
+  cpp: 'c++',
+  c: 'c',
+  csharp: 'cs',
+  java: 'java',
+  go: 'go',
+  ruby: 'rb',
+  php: 'php',
+  swift: 'swift',
+  kotlin: 'kt',
+  scala: 'scala',
+  r: 'r',
+  lua: 'lua',
+  sql: 'sql',
+  xml: 'xml',
+  markdown: 'md',
+  dockerfile: 'docker',
+  makefile: 'make',
+  cmake: 'cmake',
+  vim: 'vim',
+  plaintext: 'txt',
+  text: 'txt',
+  txt: 'txt',
 };
 
 const LANG_COLORS: Record<string, string> = {
-  javascript: '#f7df1e', typescript: '#3178c6', python: '#3776ab',
-  rust: '#dea584', html: '#e34f26', css: '#1572b6', json: '#292929',
-  bash: '#4eaa25', shell: '#4eaa25', sh: '#4eaa25',
-  cpp: '#00599c', c: '#555555', java: '#ed8b00', go: '#00add8',
-  ruby: '#cc342d', php: '#777bb4', swift: '#f05138', kotlin: '#7f52ff',
-  r: '#276dc3', sql: '#e38c00', markdown: '#083fa1',
-  dockerfile: '#2496ed', makefile: '#427819',
+  javascript: '#f7df1e',
+  typescript: '#3178c6',
+  python: '#3776ab',
+  rust: '#dea584',
+  html: '#e34f26',
+  css: '#1572b6',
+  json: '#292929',
+  bash: '#4eaa25',
+  shell: '#4eaa25',
+  sh: '#4eaa25',
+  cpp: '#00599c',
+  c: '#555555',
+  java: '#ed8b00',
+  go: '#00add8',
+  ruby: '#cc342d',
+  php: '#777bb4',
+  swift: '#f05138',
+  kotlin: '#7f52ff',
+  r: '#276dc3',
+  sql: '#e38c00',
+  markdown: '#083fa1',
+  dockerfile: '#2496ed',
+  makefile: '#427819',
 };
 
 function getLangIcon(lang: string): string {
@@ -193,7 +416,10 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     const dataRows = rows.slice(2);
 
     const parseCells = (row: string): string[] =>
-      row.split('|').slice(1, -1).map((c) => c.trim());
+      row
+        .split('|')
+        .slice(1, -1)
+        .map((c) => c.trim());
 
     const headers = parseCells(headerRow);
     const tableHtml = [
@@ -220,17 +446,33 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
   t = t.replace(/~~(.+?)~~/g, '<del>$1</del>');
 
   // Task lists
-  t = t.replace(/^[\s]*[-*]\s+\[x\]\s+(.+)$/gm, '<li class="task-item done"><input type="checkbox" checked disabled><span>$1</span></li>');
-  t = t.replace(/^[\s]*[-*]\s+\[\s?\]\s+(.+)$/gm, '<li class="task-item"><input type="checkbox" disabled><span>$1</span></li>');
+  t = t.replace(
+    /^[\s]*[-*]\s+\[x\]\s+(.+)$/gm,
+    '<li class="task-item done"><input type="checkbox" checked disabled><span>$1</span></li>',
+  );
+  t = t.replace(
+    /^[\s]*[-*]\s+\[\s?\]\s+(.+)$/gm,
+    '<li class="task-item"><input type="checkbox" disabled><span>$1</span></li>',
+  );
 
   // Callout boxes
-  t = t.replace(/^>\s*\[!(note|tip|info|warning|danger|important|success|question|bug|example|quote)\]\s*\n((?:>\s?.*\n?)*)/gm, (_, type: string, content: string) => {
-    const inner = content.split('\n').map((l: string) => l.replace(/^>\s?/, '')).join('\n').trim();
-    return `@@CALLOUT${type}@@${inner}@@ENDCALLOUT@@`;
-  });
+  t = t.replace(
+    /^>\s*\[!(note|tip|info|warning|danger|important|success|question|bug|example|quote)\]\s*\n((?:>\s?.*\n?)*)/gm,
+    (_, type: string, content: string) => {
+      const inner = content
+        .split('\n')
+        .map((l: string) => l.replace(/^>\s?/, ''))
+        .join('\n')
+        .trim();
+      return `@@CALLOUT${type}@@${inner}@@ENDCALLOUT@@`;
+    },
+  );
 
   // Spoilers
-  t = t.replace(/\|\|(.+?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>');
+  t = t.replace(
+    /\|\|(.+?)\|\|/g,
+    '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>',
+  );
 
   // Footnotes
   const footnotes: { id: string; content: string }[] = [];
@@ -238,7 +480,10 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     footnotes.push({ id, content: content.trim() });
     return `@@FN${footnotes.length - 1}@@`;
   });
-  t = t.replace(/\[\^(\w+)\]/g, '<sup class="footnote-ref"><a href="#fn-$1" id="fnref-$1">[$1]</a></sup>');
+  t = t.replace(
+    /\[\^(\w+)\]/g,
+    '<sup class="footnote-ref"><a href="#fn-$1" id="fnref-$1">[$1]</a></sup>',
+  );
 
   const lines = t.split('\n');
   let result = '';
@@ -322,12 +567,23 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
     const langIcon = getLangIcon(lang);
     const langColor = getLangColor(lang);
     const lineCount = code.split('\n').length;
-    const runLanguages = ['python', 'javascript', 'typescript', 'bash', 'sh', 'shell', 'js', 'ts', 'py'];
+    const runLanguages = [
+      'python',
+      'javascript',
+      'typescript',
+      'bash',
+      'sh',
+      'shell',
+      'js',
+      'ts',
+      'py',
+    ];
     const canRun = runLanguages.includes(lang.toLowerCase());
 
     // Generate line numbers
-    const lineNumbers = Array.from({ length: lineCount }, (_, i) =>
-      `<span class="line-number">${i + 1}</span>`
+    const lineNumbers = Array.from(
+      { length: lineCount },
+      (_, i) => `<span class="line-number">${i + 1}</span>`,
     ).join('');
 
     // Check if it's a mermaid block
@@ -360,10 +616,14 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>Download</span>
       </button>
-      ${canRun ? `<button class="code-block-btn code-block-run" title="Run code" aria-label="Run code" data-lang="${lang}">
+      ${
+        canRun
+          ? `<button class="code-block-btn code-block-run" title="Run code" aria-label="Run code" data-lang="${lang}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span>Run</span>
-      </button>` : ''}
+      </button>`
+          : ''
+      }
       <button class="code-block-btn code-block-collapse" title="Collapse code" aria-label="Collapse code block">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         <span>Collapse</span>
@@ -385,16 +645,19 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
   }
 
   // Replace callouts
-  result = result.replace(/@@CALLOUT(\w+)@@([\s\S]*?)@@ENDCALLOUT@@/g, (_, type: string, content: string) => {
-    const c = CALLOUT_TYPES[type.toLowerCase()] || CALLOUT_TYPES.note;
-    return `<div class="callout callout-${type.toLowerCase()}" style="--callout-color: ${c.color}">
+  result = result.replace(
+    /@@CALLOUT(\w+)@@([\s\S]*?)@@ENDCALLOUT@@/g,
+    (_, type: string, content: string) => {
+      const c = CALLOUT_TYPES[type.toLowerCase()] || CALLOUT_TYPES.note;
+      return `<div class="callout callout-${type.toLowerCase()}" style="--callout-color: ${c.color}">
       <div class="callout-header">
         <span class="callout-icon">${c.icon}</span>
         <span class="callout-type">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
       </div>
       <div class="callout-content">${content.trim()}</div>
     </div>`;
-  });
+    },
+  );
 
   // Replace footnotes
   if (footnotes.length > 0) {
@@ -419,7 +682,10 @@ export function extractThinking(text: string): { thinking: string; content: stri
   const completeRegex = /<think>[\s\S]*?<\/think>/gi;
   let match: RegExpExecArray | null;
   while ((match = completeRegex.exec(content)) !== null) {
-    const inner = match[0].replace(/^<think>/i, '').replace(/<\/think>$/i, '').trim();
+    const inner = match[0]
+      .replace(/^<think>/i, '')
+      .replace(/<\/think>$/i, '')
+      .trim();
     thinking += inner + '\n';
   }
   content = content.replace(completeRegex, '');

@@ -20,9 +20,10 @@ function esc(s: string): string {
 }
 
 export async function loadModels(): Promise<void> {
-  const list = $('modelList') as HTMLElement;
+  const list = $('modelList');
   if (!list) return;
-  list.innerHTML = '<div class="model-loading"><span class="loading-dots"><span></span><span></span><span></span></span></div>';
+  list.innerHTML =
+    '<div class="model-loading"><span class="loading-dots"><span></span><span></span><span></span></span></div>';
 
   try {
     const data = await api<{ models: ModelInfo[] }>('/api/models');
@@ -50,8 +51,12 @@ export async function loadModels(): Promise<void> {
       groupEl.innerHTML = `<div class="model-group-title">${esc(folder)}</div>`;
 
       for (const m of items) {
-        const caps = m.capabilities && m.capabilities.length
-          ? m.capabilities.map((c) => `<span class="model-cap-badge ${capClass(c)}">${esc(c)}</span>`).join('') : '';
+        const caps =
+          m.capabilities && m.capabilities.length
+            ? m.capabilities
+                .map((c) => `<span class="model-cap-badge ${capClass(c)}">${esc(c)}</span>`)
+                .join('')
+            : '';
 
         const card = document.createElement('div');
         card.className = 'model-card';
@@ -82,7 +87,8 @@ export async function loadModels(): Promise<void> {
     }
 
     if (models.length === 0) {
-      list.innerHTML = '<div class="model-empty">No models found. Check your engine settings.</div>';
+      list.innerHTML =
+        '<div class="model-empty">No models found. Check your engine settings.</div>';
     }
   } catch (e) {
     logError('loadModels', e);
@@ -93,7 +99,7 @@ export async function loadModels(): Promise<void> {
 async function selectModel(modelId: string): Promise<void> {
   el.modelSelect.value = modelId;
 
-  const list = $('modelList') as HTMLElement;
+  const list = $('modelList');
   if (list) {
     list.querySelectorAll('.model-card').forEach((card) => {
       const c = card as HTMLElement;
@@ -123,5 +129,5 @@ export function updateModelInfo(): void {
   el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ${m.provider || 'local'}`;
   el.modelBadge.textContent = `${m.name} · ${caps}`;
 
-  import('./status.js').then(mod => mod.setModelInfo(m.name, 0));
+  import('./status.js').then((mod) => mod.setModelInfo(m.name, 0));
 }

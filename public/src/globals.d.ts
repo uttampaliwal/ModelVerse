@@ -8,8 +8,10 @@ declare global {
   }
 
   // Provided by highlight.js (loaded via CDN script tag).
-  // eslint-disable-next-line no-var
-  var hljs: {
-    highlightElement(element: Element): void;
-  } | undefined;
+
+  var hljs:
+    | {
+        highlightElement(element: Element): void;
+      }
+    | undefined;
 }

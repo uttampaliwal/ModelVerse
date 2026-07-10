@@ -1,4 +1,12 @@
-import { LLMEngine, type ModelInfo, type ChatMessage, type GenerateOptions, type GenerateResult, type HealthStatus, type EngineConfig } from './base';
+import {
+  LLMEngine,
+  type ModelInfo,
+  type ChatMessage,
+  type GenerateOptions,
+  type GenerateResult,
+  type HealthStatus,
+  type EngineConfig,
+} from './base';
 import { ollamaStreamToGenerator } from './stream-utils';
 
 export interface OllamaConfig extends EngineConfig {
@@ -31,7 +39,7 @@ export class OllamaEngine extends LLMEngine {
     try {
       const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`);
       if (!res.ok) return [];
-      const data = await res.json() as { models: Array<{ name: string; size: number }> };
+      const data = (await res.json()) as { models: Array<{ name: string; size: number }> };
       return data.models.map((m) => ({
         name: m.name,
         id: m.name,

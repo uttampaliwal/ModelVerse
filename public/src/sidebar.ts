@@ -93,10 +93,18 @@ export function renderSidebar(): void {
     );
   } else {
     switch (currentFilter) {
-      case 'pinned': filtered = convs.filter((c) => c.pinned); break;
-      case 'starred': filtered = convs.filter((c) => c.starred); break;
-      case 'archived': filtered = convs.filter((c) => c.archived); break;
-      default: filtered = convs.filter((c) => !c.archived); break;
+      case 'pinned':
+        filtered = convs.filter((c) => c.pinned);
+        break;
+      case 'starred':
+        filtered = convs.filter((c) => c.starred);
+        break;
+      case 'archived':
+        filtered = convs.filter((c) => c.archived);
+        break;
+      default:
+        filtered = convs.filter((c) => !c.archived);
+        break;
     }
   }
 
@@ -249,8 +257,10 @@ export function renderSidebar(): void {
   // Empty state
   if (filtered.length === 0 && !searchTerm) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;';
-    empty.textContent = currentFilter === 'archived' ? 'No archived conversations' : 'No conversations yet';
+    empty.style.cssText =
+      'text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;';
+    empty.textContent =
+      currentFilter === 'archived' ? 'No archived conversations' : 'No conversations yet';
     el.sidebarList.appendChild(empty);
   }
 }
@@ -269,7 +279,8 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   const preview = lastMessageText(conv);
   const relTime = timeAgo(conv.updatedAt);
   const snippet =
-    (el.sidebarSearch?.value || '').trim() && !conv.title.toLowerCase().includes((el.sidebarSearch?.value || '').toLowerCase())
+    (el.sidebarSearch?.value || '').trim() &&
+    !conv.title.toLowerCase().includes((el.sidebarSearch?.value || '').toLowerCase())
       ? firstMatchSnippet(conv, (el.sidebarSearch?.value || '').toLowerCase())
       : null;
 
@@ -318,7 +329,10 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   // Event: click title → open
   const titleEl = div.querySelector('.conv-title')!;
   titleEl.addEventListener('click', () => {
-    if (AppState.ui.multiSelectMode) { toggleSelect(conv.id); return; }
+    if (AppState.ui.multiSelectMode) {
+      toggleSelect(conv.id);
+      return;
+    }
     setCurrentConvId(conv.id);
     selectConversation(conv.id);
     closeSidebar();
@@ -326,7 +340,10 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   titleEl.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
       e.preventDefault();
-      if (AppState.ui.multiSelectMode) { toggleSelect(conv.id); return; }
+      if (AppState.ui.multiSelectMode) {
+        toggleSelect(conv.id);
+        return;
+      }
       setCurrentConvId(conv.id);
       selectConversation(conv.id);
       closeSidebar();
@@ -335,28 +352,43 @@ function buildConversationNode(conv: Conversation): HTMLElement {
 
   // Event: star
   const starBtn = div.querySelector('.conv-star-btn')!;
-  starBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleStar(conv.id); });
+  starBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleStar(conv.id);
+  });
   starBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
-      e.preventDefault(); e.stopPropagation(); toggleStar(conv.id);
+      e.preventDefault();
+      e.stopPropagation();
+      toggleStar(conv.id);
     }
   });
 
   // Event: pin
   const pinBtn = div.querySelector('.conv-pin-btn')!;
-  pinBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePin(conv.id); });
+  pinBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePin(conv.id);
+  });
   pinBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
-      e.preventDefault(); e.stopPropagation(); togglePin(conv.id);
+      e.preventDefault();
+      e.stopPropagation();
+      togglePin(conv.id);
     }
   });
 
   // Event: rename
   const renameBtn = div.querySelector('.rename-action')!;
-  renameBtn.addEventListener('click', (e) => { e.stopPropagation(); renameConversation(conv.id); });
+  renameBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    renameConversation(conv.id);
+  });
   renameBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
-      e.preventDefault(); e.stopPropagation(); renameConversation(conv.id);
+      e.preventDefault();
+      e.stopPropagation();
+      renameConversation(conv.id);
     }
   });
 
@@ -368,23 +400,32 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   });
   archiveBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
       conv.archived ? unarchiveConversation(conv.id) : archiveConversation(conv.id);
     }
   });
 
   // Event: delete
   const deleteBtn = div.querySelector('.delete-action')!;
-  deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(conv.id); });
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteConversation(conv.id);
+  });
   deleteBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
-      e.preventDefault(); e.stopPropagation(); deleteConversation(conv.id);
+      e.preventDefault();
+      e.stopPropagation();
+      deleteConversation(conv.id);
     }
   });
 
   // Event: whole row click
   div.addEventListener('click', () => {
-    if (AppState.ui.multiSelectMode) { toggleSelect(conv.id); return; }
+    if (AppState.ui.multiSelectMode) {
+      toggleSelect(conv.id);
+      return;
+    }
     setCurrentConvId(conv.id);
     selectConversation(conv.id);
     closeSidebar();
@@ -392,7 +433,10 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   div.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
       e.preventDefault();
-      if (AppState.ui.multiSelectMode) { toggleSelect(conv.id); return; }
+      if (AppState.ui.multiSelectMode) {
+        toggleSelect(conv.id);
+        return;
+      }
       setCurrentConvId(conv.id);
       selectConversation(conv.id);
       closeSidebar();
@@ -405,13 +449,17 @@ function buildConversationNode(conv: Conversation): HTMLElement {
     e.dataTransfer!.effectAllowed = 'move';
     div.style.opacity = '0.5';
   });
-  div.addEventListener('dragend', () => { div.style.opacity = ''; });
+  div.addEventListener('dragend', () => {
+    div.style.opacity = '';
+  });
   div.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.dataTransfer!.dropEffect = 'move';
     div.classList.add('drag-over');
   });
-  div.addEventListener('dragleave', () => { div.classList.remove('drag-over'); });
+  div.addEventListener('dragleave', () => {
+    div.classList.remove('drag-over');
+  });
   div.addEventListener('drop', (e) => {
     e.preventDefault();
     div.classList.remove('drag-over');

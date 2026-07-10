@@ -1,10 +1,21 @@
-import { Plugin, type PluginManifest, type PluginContext, type ToolDefinition, type ToolResult } from './base';
+import {
+  Plugin,
+  type PluginManifest,
+  type PluginContext,
+  type ToolDefinition,
+  type ToolResult,
+} from './base';
 
 class ImageGeneratorTool implements ToolDefinition {
   name = 'generate_image';
-  description = 'Generate an image from a text prompt using Stable Diffusion, DALL-E, or local models';
+  description =
+    'Generate an image from a text prompt using Stable Diffusion, DALL-E, or local models';
   parameters = {
-    prompt: { type: 'string', description: 'Text description of the image to generate', required: true },
+    prompt: {
+      type: 'string',
+      description: 'Text description of the image to generate',
+      required: true,
+    },
     negative_prompt: { type: 'string', description: 'What to avoid in the image' },
     width: { type: 'number', description: 'Image width in pixels (default: 512)' },
     height: { type: 'number', description: 'Image height in pixels (default: 512)' },
@@ -45,18 +56,31 @@ export class ImageGenerationPlugin extends Plugin {
     id: 'image-generation',
     name: 'Image Generation',
     version: '1.0.0',
-    description: 'Generate images from text prompts using Stable Diffusion, DALL-E, or local models',
+    description:
+      'Generate images from text prompts using Stable Diffusion, DALL-E, or local models',
     author: 'ModelVerse',
     icon: 'image',
     category: 'generation',
     enabled: false,
     settings: [
-      { key: 'provider', label: 'Provider', type: 'select', default: 'local', options: [
-        { label: 'Local (Stable Diffusion)', value: 'local' },
-        { label: 'DALL-E', value: 'dalle' },
-        { label: 'ComfyUI', value: 'comfyui' },
-      ]},
-      { key: 'model', label: 'Model Path', type: 'string', default: '', description: 'Path to local SD model or API endpoint' },
+      {
+        key: 'provider',
+        label: 'Provider',
+        type: 'select',
+        default: 'local',
+        options: [
+          { label: 'Local (Stable Diffusion)', value: 'local' },
+          { label: 'DALL-E', value: 'dalle' },
+          { label: 'ComfyUI', value: 'comfyui' },
+        ],
+      },
+      {
+        key: 'model',
+        label: 'Model Path',
+        type: 'string',
+        default: '',
+        description: 'Path to local SD model or API endpoint',
+      },
     ],
   };
 

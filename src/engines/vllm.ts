@@ -1,4 +1,12 @@
-import { LLMEngine, type ModelInfo, type ChatMessage, type GenerateOptions, type GenerateResult, type HealthStatus, type EngineConfig } from './base';
+import {
+  LLMEngine,
+  type ModelInfo,
+  type ChatMessage,
+  type GenerateOptions,
+  type GenerateResult,
+  type HealthStatus,
+  type EngineConfig,
+} from './base';
 import { openaiStreamToGenerator } from './stream-utils';
 
 export interface VLLMConfig extends EngineConfig {
@@ -33,7 +41,7 @@ export class VLLMEngine extends LLMEngine {
     try {
       const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`);
       if (!res.ok) return [];
-      const data = await res.json() as { data: Array<{ id: string; owned_by: string }> };
+      const data = (await res.json()) as { data: Array<{ id: string; owned_by: string }> };
       return data.data.map((m) => ({
         name: m.id,
         id: m.id,
