@@ -22,6 +22,27 @@ function esc(s: string): string {
   return d.innerHTML;
 }
 
+function providerLabel(provider?: string): string {
+  switch (provider) {
+    case 'llamacpp':
+      return 'llama.cpp';
+    case 'ollama':
+      return 'Ollama';
+    case 'vllm':
+      return 'vLLM';
+    case 'lmstudio':
+      return 'LM Studio';
+    case 'koboldcpp':
+      return 'KoboldCpp';
+    case 'openai':
+      return 'OpenAI';
+    case 'transformers':
+      return 'Transformers';
+    default:
+      return provider || 'Local';
+  }
+}
+
 export async function loadModels(): Promise<void> {
   const list = $('modelList');
   if (!list) return;
@@ -36,7 +57,7 @@ export async function loadModels(): Promise<void> {
 
     const groups = new Map<string, ModelInfo[]>();
     for (const m of models) {
-      const folder = m.folder || m.provider || 'Available Models';
+      const folder = providerLabel(m.provider) || m.folder || 'Available Models';
       if (!groups.has(folder)) groups.set(folder, []);
       groups.get(folder)!.push(m);
       AppState.models[m.id || m.path || m.name] = m;
@@ -61,6 +82,10 @@ export async function loadModels(): Promise<void> {
                 .join('')
             : '';
 
+        const providerBadge = m.provider
+          ? `<span class="model-card-provider">${esc(providerLabel(m.provider))}</span>`
+          : '';
+
         const ctxLen = m.contextLength ? esc(String(m.contextLength)) : '';
         const card = document.createElement('div');
         card.className = 'model-card';
@@ -73,6 +98,7 @@ export async function loadModels(): Promise<void> {
             <span class="model-card-name">${esc(m.name)}</span>
           </div>
           <div class="model-card-meta">
+            ${providerBadge}
             <span class="model-card-size">${esc(m.sizeFormatted)}</span>
             ${ctxLen ? `<span class="model-card-ctx">${ctxLen} ctx</span>` : ''}
             ${caps ? `<span class="model-card-caps">${caps}</span>` : ''}
@@ -114,9 +140,12 @@ export async function selectModel(modelId: string): Promise<void> {
 
   updateModelInfo();
 
+  const m = AppState.models[modelId];
+  const provider = m?.provider;
+
   try {
     const { ensureServerRunning } = await import('./connection.js');
-    await ensureServerRunning(modelId);
+    await ensureServerRunning(modelId, provider);
   } catch (e) {
     showToast('Failed to load model: ' + (e as Error).message, 'error');
   }
@@ -131,7 +160,7 @@ export function updateModelInfo(): void {
     return;
   }
   const caps = m.capabilities && m.capabilities.length ? m.capabilities.join(', ') : 'text';
-  el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ${m.provider || 'local'}`;
+  el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ${providerLabel(m.provider)}`;
   el.modelBadge.textContent = `${m.name} · ${caps}`;
 
   void import('./status.js').then((mod) => mod.setModelInfo(m.name, 0));

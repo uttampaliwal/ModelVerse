@@ -5,7 +5,7 @@ import os from 'os';
 import crypto from 'crypto';
 import { execSync } from 'child_process';
 import { engines, type EngineId } from './src/engines/index';
-import type { ChatMessage, GenerateOptions } from './src/engines/base';
+import type { ChatMessage, GenerateOptions, ModelInfo } from './src/engines/base';
 import { plugins } from './src/plugins/index';
 import { ImageGenerationPlugin } from './src/plugins/image-generation';
 import { SpeechPlugin } from './src/plugins/speech';
@@ -341,8 +341,17 @@ app.post('/api/engines/switch', (req: express.Request, res: express.Response) =>
 
 app.get('/api/models', async (_req: express.Request, res: express.Response) => {
   try {
-    const engine = engines.getActive();
-    const models = await engine.listModels();
+    // Aggregate models across every registered engine so the UI can present a
+    // single unified model list. Each ModelInfo keeps its `provider` set by the
+    // engine, which the client uses to route selection.
+    const models: ModelInfo[] = [];
+    for (const { id } of engines.listAvailable()) {
+      try {
+        models.push(...(await engines.get(id).listModels()));
+      } catch {
+        // an unreachable engine (e.g. Ollama not running) contributes no models
+      }
+    }
     res.json({ models });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
@@ -411,6 +420,33 @@ app.post('/api/server/switch', (req: express.Request, res: express.Response) => 
     const engine = engines.getActive();
     engines.setActiveModel(engines.getActiveId(), modelId ?? null);
     res.json({ success: true, currentModel: engine.activeModel });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post('/api/server/select', (req: express.Request, res: express.Response) => {
+  const { id, provider } = req.body as { id?: string; provider?: string };
+  try {
+    if (!provider) {
+      res.status(400).json({ error: 'provider is required' });
+      return;
+    }
+    // Switching the active engine also switches the server. The previously
+    // running engine is stopped so only one backend serves at a time.
+    const prev = engines.getActive();
+    if (prev.running) void prev.stop();
+    engines.setActive(provider);
+    engines.setActiveModel(provider, id ?? null);
+    settings.activeEngine = provider as EngineId;
+    saveSettings();
+    const engine = engines.getActive();
+    res.json({
+      success: true,
+      engine: provider,
+      currentModel: engine.activeModel,
+      running: engine.running,
+    });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }

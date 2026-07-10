@@ -36,23 +36,36 @@ function showProgress(pct: number): void {
   loadingProgress.setAttribute('aria-valuenow', String(Math.round(pct)));
 }
 
-export async function ensureServerRunning(modelPath: string): Promise<boolean> {
-  if (!modelPath) return false;
+export async function ensureServerRunning(modelId: string, provider?: string): Promise<boolean> {
+  if (!modelId) return false;
 
   switching = true;
 
   try {
     const status = await api<StatusResponse>('/api/status');
-    if (status.running) {
+    if (status.running && status.engine === provider) {
       switching = false;
-      // Server is up: switch the active model without restarting.
+      // Server is up on the same engine: switch the active model without
+      // restarting.
       await api('/api/server/switch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelId: modelPath }),
+        body: JSON.stringify({ modelId }),
       });
       (await import('./models.js')).updateModelInfo();
       await checkStatus();
+      return true;
+    }
+    if (status.running && provider && status.engine !== provider) {
+      // Engine mismatch: switch the whole backend (stops the old one).
+      await api('/api/server/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: modelId, provider }),
+      });
+      (await import('./models.js')).updateModelInfo();
+      await checkStatus();
+      switching = false;
       return true;
     }
   } catch {
@@ -84,7 +97,7 @@ export async function ensureServerRunning(modelPath: string): Promise<boolean> {
     const data = await api<StartServerResponse>('/api/server/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelPath }),
+      body: JSON.stringify({ modelPath: modelId }),
     });
     clearInterval(progressInterval);
 

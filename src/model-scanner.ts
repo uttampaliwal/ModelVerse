@@ -139,25 +139,32 @@ function scanOllama(): ScannedModel[] {
     // Ollama stores blobs
     const blobsDir = path.join(modelsDir, 'blobs', 'sha256');
     if (fs.existsSync(blobsDir)) {
-      const files = fs.readdirSync(blobsDir);
-      for (const file of files) {
-        const filePath = path.join(blobsDir, file);
-        try {
-          const stats = fs.statSync(filePath);
-          if (stats.size < 1024 * 1024) continue; // Skip small files
+      // Blob entries are not selectable chat models (they are raw weights, not
+      // tag names), so we only surface them as informational size data when no
+      // manifest exists. The chat-selectable entries come from manifests below.
+      const manifestDir = path.join(modelsDir, 'manifests', 'registry.ollama.ai', 'library');
+      const hasManifests = fs.existsSync(manifestDir);
+      if (!hasManifests) {
+        const files = fs.readdirSync(blobsDir);
+        for (const file of files) {
+          const filePath = path.join(blobsDir, file);
+          try {
+            const stats = fs.statSync(filePath);
+            if (stats.size < 1024 * 1024) continue; // Skip small files
 
-          models.push({
-            id: `ollama:${file}`,
-            name: file.substring(0, 12),
-            path: filePath,
-            source: 'ollama',
-            size: stats.size,
-            sizeFormatted: formatBytes(stats.size),
-            format: 'gguf',
-            metadata: { source: 'Ollama' },
-          });
-        } catch {
-          /* ignore: blob may be a symlink or transient read error */
+            models.push({
+              id: `ollama:${file}`,
+              name: file.substring(0, 12),
+              path: filePath,
+              source: 'ollama',
+              size: stats.size,
+              sizeFormatted: formatBytes(stats.size),
+              format: 'gguf',
+              metadata: { source: 'Ollama' },
+            });
+          } catch {
+            /* ignore: blob may be a symlink or transient read error */
+          }
         }
       }
     }
