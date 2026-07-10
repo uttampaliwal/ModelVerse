@@ -425,7 +425,7 @@ app.post('/api/server/switch', (req: express.Request, res: express.Response) => 
   }
 });
 
-app.post('/api/server/select', (req: express.Request, res: express.Response) => {
+app.post('/api/server/select', async (req: express.Request, res: express.Response) => {
   const { id, provider } = req.body as { id?: string; provider?: string };
   try {
     if (!provider) {
@@ -435,7 +435,11 @@ app.post('/api/server/select', (req: express.Request, res: express.Response) => 
     // Switching the active engine also switches the server. The previously
     // running engine is stopped so only one backend serves at a time.
     const prev = engines.getActive();
-    if (prev.running) void prev.stop();
+    // Await the stop so the old backend fully exits and releases its port
+    // before we report success; otherwise a fast follow-up /api/server/start
+    // can spawn the new process while the old one still holds the port,
+    // causing the new backend to fail to bind ("disconnected").
+    if (prev.running) await prev.stop();
     engines.setActive(provider);
     engines.setActiveModel(provider, id ?? null);
     settings.activeEngine = provider as EngineId;
