@@ -216,7 +216,7 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
   t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
   t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  t = t.replace(/(?<!\*)\*(?!\s|\*)(.+?)(?<!\s|\*)\*(?!\*)/g, '<em>$1</em>');
   t = t.replace(/~~(.+?)~~/g, '<del>$1</del>');
 
   // Task lists
@@ -415,21 +415,38 @@ export function extractThinking(text: string): { thinking: string; content: stri
   let thinking = '';
   let content = text;
 
+  // 1. Extract complete <think>...</think> pairs
   const completeRegex = /<think>[\s\S]*?<\/think>/gi;
   let match: RegExpExecArray | null;
   while ((match = completeRegex.exec(content)) !== null) {
-    const inner = match[0].replace(/^<think>/, '').replace(/<\/think>$/, '').trim();
+    const inner = match[0].replace(/^<think>/i, '').replace(/<\/think>$/i, '').trim();
     thinking += inner + '\n';
   }
   content = content.replace(completeRegex, '');
 
+  // 2. Handle unclosed <think> (opening tag without closing tag)
   const openIdx = content.lastIndexOf('<think>');
   if (openIdx !== -1) {
     const tail = content.slice(openIdx + '<think>'.length);
     thinking += tail.trim() + '\n';
     content = content.slice(0, openIdx);
   }
-  return { thinking: thinking.trim(), content: content.trim() };
+
+  // 3. Handle lone </think> (closing tag without opening tag)
+  const closeIdx = content.lastIndexOf('</think>');
+  if (closeIdx !== -1) {
+    const before = content.slice(0, closeIdx).trim();
+    if (before) {
+      thinking += before + '\n';
+    }
+    content = content.slice(closeIdx + '</think>'.length);
+  }
+
+  // 4. Strip special control tokens like <SPECIAL_12>, <SPECIAL_0>, etc.
+  content = content.replace(/<SPECIAL_\d+>/gi, '').trim();
+  thinking = thinking.replace(/<SPECIAL_\d+>/gi, '').trim();
+
+  return { thinking, content };
 }
 
 export function buildMessageHtml(
