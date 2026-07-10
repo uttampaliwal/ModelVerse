@@ -1,4 +1,5 @@
 import { $, el } from './utils.js';
+import type { Theme } from './theme.js';
 
 interface Command {
   id: string;
@@ -66,9 +67,9 @@ function buildCommands(): void {
       shortcut: 'Ctrl+Shift+N',
       category: 'chat',
       action: () =>
-        import('./conversation.js').then((m) => {
+        void import('./conversation.js').then((m) => {
           m.newConversation();
-          import('./sidebar.js').then((s) => s.renderSidebar());
+          void import('./sidebar.js').then((s) => s.renderSidebar());
         }),
     },
     {
@@ -77,7 +78,7 @@ function buildCommands(): void {
       description: 'Find messages and conversations',
       shortcut: 'Ctrl+K',
       category: 'chat',
-      action: () => import('./search.js').then((m) => m.openSearch()),
+      action: () => void import('./search.js').then((m) => m.openSearch()),
     },
     {
       id: 'switch-model',
@@ -94,7 +95,7 @@ function buildCommands(): void {
       label: 'Refresh Models',
       description: 'Rescan for available models',
       category: 'model',
-      action: () => import('./models.js').then((m) => m.loadModels()),
+      action: () => void import('./models.js').then((m) => m.loadModels()),
     },
     {
       id: 'settings',
@@ -135,12 +136,12 @@ function buildCommands(): void {
       description: 'Cycle through available color themes',
       category: 'app',
       action: () =>
-        import('./theme.js').then((m) => {
+        void import('./theme.js').then((m) => {
           const themes = ['dark', 'light', 'oled', 'dracula', 'nord', 'catppuccin', 'gruvbox'];
           const current = m.getTheme();
           const next = themes[(themes.indexOf(current) + 1) % themes.length];
-          m.applyTheme(next as any);
-          import('./toast.js').then((t) =>
+          m.applyTheme(next as Theme);
+          void import('./toast.js').then((t) =>
             t.showToast(`Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'success'),
           );
         }),
@@ -150,7 +151,7 @@ function buildCommands(): void {
       label: 'Stop Generation',
       description: 'Cancel the current model response',
       category: 'chat',
-      action: () => import('./chat.js').then((m) => m.stopGeneration()),
+      action: () => void import('./chat.js').then((m) => m.stopGeneration()),
     },
     {
       id: 'restart-chat',
@@ -158,28 +159,28 @@ function buildCommands(): void {
       description: 'Clear all messages in the current chat',
       shortcut: 'Ctrl+Shift+C',
       category: 'chat',
-      action: () => import('./chat.js').then((m) => m.restartConversation()),
+      action: () => void import('./chat.js').then((m) => m.restartConversation()),
     },
     {
       id: 'export-markdown',
       label: 'Export as Markdown',
       description: 'Export conversation as a Markdown file',
       category: 'chat',
-      action: () => import('./conversation.js').then((m) => m.exportConversation('markdown')),
+      action: () => void import('./conversation.js').then((m) => m.exportConversation('markdown')),
     },
     {
       id: 'export-json',
       label: 'Export as JSON',
       description: 'Export conversation as a JSON file',
       category: 'chat',
-      action: () => import('./conversation.js').then((m) => m.exportConversation('json')),
+      action: () => void import('./conversation.js').then((m) => m.exportConversation('json')),
     },
     {
       id: 'shortcuts',
       label: 'Keyboard Shortcuts',
       description: 'Show all available keyboard shortcuts',
       category: 'app',
-      action: () => import('./utils.js').then((m) => m.showShortcuts()),
+      action: () => void import('./utils.js').then((m) => m.showShortcuts()),
     },
   ];
 }

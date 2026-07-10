@@ -177,7 +177,6 @@ export function getOrCreateMetadata(
 
   const filename = path.basename(modelPath);
   const fromFilename = estimateFromFilename(filename);
-  const stats = fs.existsSync(modelPath) ? fs.statSync(modelPath) : null;
 
   const meta: ModelMetadata = {
     id,

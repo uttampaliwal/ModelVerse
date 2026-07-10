@@ -29,25 +29,24 @@ export class TransformersEngine extends LLMEngine {
 
   async start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
     this._running = true;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
-  async stop(): Promise<{ success: boolean }> {
+  stop(): Promise<{ success: boolean }> {
     this._running = false;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
-  async listModels(): Promise<ModelInfo[]> {
-    return [];
+  listModels(): Promise<ModelInfo[]> {
+    return Promise.resolve([]);
   }
 
-  async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
-    const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n') + '\nassistant:';
+  generate(_messages: ChatMessage[], _options?: GenerateOptions): Promise<GenerateResult> {
     const text = `[Transformers.js] Model: ${this.engineConfig.model}\n\nPrompt received. Full implementation requires @huggingface/transformers.\n`;
-    return { stream: toGenerator(text) };
+    return Promise.resolve({ stream: toGenerator(text) });
   }
 
-  async health(): Promise<HealthStatus> {
-    return { status: 'ok', engine: this.id };
+  health(): Promise<HealthStatus> {
+    return Promise.resolve({ status: 'ok', engine: this.id });
   }
 }

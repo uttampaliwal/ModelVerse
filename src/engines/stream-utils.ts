@@ -61,5 +61,5 @@ export async function* ollamaStreamToGenerator(res: Response): AsyncGenerator<st
 
 /** Wraps a single string as a generator (non-streaming engines / stubs). */
 export async function* toGenerator(text: string): AsyncGenerator<string> {
-  yield text;
+  yield await Promise.resolve(text);
 }

@@ -84,7 +84,7 @@ export function renderSidebar(): void {
   const folders = AppState.ui.folders;
 
   // Filter
-  let filtered: Conversation[] = convs;
+  let filtered: Conversation[];
   if (searchTerm) {
     filtered = convs.filter(
       (c) =>
@@ -395,13 +395,15 @@ function buildConversationNode(conv: Conversation): HTMLElement {
   const archiveBtn = div.querySelector('.archive-action')!;
   archiveBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    conv.archived ? unarchiveConversation(conv.id) : archiveConversation(conv.id);
+    if (conv.archived) unarchiveConversation(conv.id);
+    else archiveConversation(conv.id);
   });
   archiveBtn.addEventListener('keydown', (e: Event) => {
     if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
       e.preventDefault();
       e.stopPropagation();
-      conv.archived ? unarchiveConversation(conv.id) : archiveConversation(conv.id);
+      if (conv.archived) unarchiveConversation(conv.id);
+      else archiveConversation(conv.id);
     }
   });
 
@@ -509,7 +511,7 @@ export function setupSidebarListeners(): void {
   });
 
   // Load folders on startup
-  loadFolders();
+  void loadFolders();
 }
 
 async function loadFolders(): Promise<void> {

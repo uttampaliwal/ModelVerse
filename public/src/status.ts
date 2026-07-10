@@ -113,8 +113,8 @@ let statusInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startStatusUpdates(): void {
   if (statusInterval) return;
-  fetchSystemStatus();
-  statusInterval = setInterval(fetchSystemStatus, 3000); // Update every 3 seconds
+  void fetchSystemStatus();
+  statusInterval = setInterval(() => void fetchSystemStatus(), 3000); // Update every 3 seconds
 }
 
 export function stopStatusUpdates(): void {
@@ -127,7 +127,7 @@ export function stopStatusUpdates(): void {
 // Initialize
 export function initStatusBar(): void {
   updateStatusBar();
-  fetchVersion();
+  void fetchVersion();
 }
 
 async function fetchVersion(): Promise<void> {

@@ -30,14 +30,14 @@ export class OpenAIEngine extends LLMEngine {
     this.engineConfig = { ...this.engineConfig, ...config };
   }
 
-  async start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
+  start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
     this._running = true;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
-  async stop(): Promise<{ success: boolean }> {
+  stop(): Promise<{ success: boolean }> {
     this._running = false;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
   async listModels(): Promise<ModelInfo[]> {
@@ -84,10 +84,10 @@ export class OpenAIEngine extends LLMEngine {
     return { stream: openaiStreamToGenerator(res) };
   }
 
-  async health(): Promise<HealthStatus> {
+  health(): Promise<HealthStatus> {
     if (!this.engineConfig.apiKey) {
-      return { status: 'error', engine: this.id, detail: 'No API key configured' };
+      return Promise.resolve({ status: 'error', engine: this.id, detail: 'No API key configured' });
     }
-    return { status: 'ok', engine: this.id };
+    return Promise.resolve({ status: 'ok', engine: this.id });
   }
 }

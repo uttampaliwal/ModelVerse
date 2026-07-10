@@ -239,7 +239,9 @@ export class LlamaCppEngine extends LLMEngine {
           const files = fs.readdirSync(path.dirname(modelPath));
           const mmproj = files.find((f) => f.includes('mmproj') && f.endsWith('.gguf'));
           if (mmproj) mmprojPath = path.join(path.dirname(modelPath), mmproj);
-        } catch {}
+        } catch {
+          /* ignore: mmproj discovery is best-effort */
+        }
 
         const args = [
           '-m',
@@ -280,7 +282,9 @@ export class LlamaCppEngine extends LLMEngine {
               proc.stderr?.removeAllListeners('data');
               if (proc.stdout) proc.stdout.on('data', (d) => process.stdout.write(d));
               if (proc.stderr) proc.stderr.on('data', (d) => process.stderr.write(d));
-            } catch {}
+            } catch {
+              /* ignore: listener reattach may race with process exit */
+            }
             log.engine('Server ready on port ' + usedPort);
             resolve({ success: true, port: usedPort });
           }
@@ -293,7 +297,9 @@ export class LlamaCppEngine extends LLMEngine {
           try {
             proc.stdout?.removeAllListeners('data');
             proc.stderr?.removeAllListeners('data');
-          } catch {}
+          } catch {
+            /* ignore: listeners may already be gone */
+          }
         };
 
         proc.on('error', (err) => {
@@ -318,7 +324,9 @@ export class LlamaCppEngine extends LLMEngine {
             cleanup();
             try {
               proc.kill();
-            } catch {}
+            } catch {
+              /* ignore: process may already be gone */
+            }
             reject(new Error('Timeout waiting for server'));
           }
         }, 60000);
@@ -349,7 +357,7 @@ export class LlamaCppEngine extends LLMEngine {
     return { success: true };
   }
 
-  async listModels(): Promise<ModelInfo[]> {
+  listModels(): Promise<ModelInfo[]> {
     const models: ModelInfo[] = [];
     try {
       const scanDir = (dir: string, depth = 0): void => {
@@ -398,7 +406,7 @@ export class LlamaCppEngine extends LLMEngine {
     } catch (e) {
       log.error('Error scanning models', e as Error);
     }
-    return models;
+    return Promise.resolve(models);
   }
 
   async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {

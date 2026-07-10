@@ -78,11 +78,11 @@ export async function loadModels(): Promise<void> {
             ${caps ? `<span class="model-card-caps">${caps}</span>` : ''}
           </div>`;
 
-        card.addEventListener('click', () => selectModel(m.id || m.path || m.name));
+        card.addEventListener('click', () => void selectModel(m.id || m.path || m.name));
         card.addEventListener('keydown', (e: Event) => {
           if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
             e.preventDefault();
-            selectModel(m.id || m.path || m.name);
+            void selectModel(m.id || m.path || m.name);
           }
         });
 
@@ -134,5 +134,5 @@ export function updateModelInfo(): void {
   el.modelInfo.textContent = `${m.name} · ${m.sizeFormatted} · ${m.provider || 'local'}`;
   el.modelBadge.textContent = `${m.name} · ${caps}`;
 
-  import('./status.js').then((mod) => mod.setModelInfo(m.name, 0));
+  void import('./status.js').then((mod) => mod.setModelInfo(m.name, 0));
 }

@@ -6,6 +6,44 @@ import type { Attachment, AttachKind } from './types.js';
 
 export type { AttachKind, Attachment };
 
+// Minimal shapes for the dynamically-loaded vendor libraries.
+interface PdfJsLib {
+  GlobalWorkerOptions: { workerSrc: string };
+  getDocument(data: { data: ArrayBuffer }): {
+    promise: Promise<{
+      numPages: number;
+      getPage(
+        n: number,
+      ): Promise<{ getTextContent(): Promise<{ items: Array<{ str?: string }> }> }>;
+    }>;
+  };
+}
+interface MammothLib {
+  convertToHtml(opts: { arrayBuffer: ArrayBuffer }): Promise<{ value: string }>;
+}
+interface XlsxLib {
+  read(
+    data: ArrayBuffer,
+    opts: { type: 'array' },
+  ): {
+    SheetNames: string[];
+    Sheets: Record<string, { sheet_to_csv(target: unknown): string }>;
+  };
+  utils: { sheet_to_csv(sheet: unknown): string };
+}
+interface JsZipLib {
+  loadAsync(data: Promise<ArrayBuffer> | ArrayBuffer): Promise<{
+    files: Record<
+      string,
+      {
+        dir: boolean;
+        _data?: { uncompressedSize?: number };
+        async(format: string): Promise<string>;
+      }
+    >;
+  }>;
+}
+
 export function clearPendingAttachments(): void {
   AppState.attachments = [];
   renderAttachmentList();
@@ -78,17 +116,18 @@ function kindOf(file: File): AttachKind {
 
 // ---- Lazy library loading ---------------------------------------------------
 
-const libPromises = new Map<string, Promise<any>>();
+const libPromises = new Map<string, Promise<unknown>>();
 
-function loadLibOnce(src: string, globalName: string): Promise<any> {
-  const w = window as unknown as Record<string, any>;
-  if (w[globalName]) return Promise.resolve(w[globalName]);
+function loadLibOnce<T = unknown>(src: string, globalName: string): Promise<T> {
+  const w = window as unknown as Record<string, unknown>;
+  const existing = w[globalName];
+  if (existing) return Promise.resolve(existing as T);
   const cached = libPromises.get(globalName);
-  if (cached) return cached;
-  const p = new Promise<any>((resolve, reject) => {
+  if (cached) return cached as Promise<T>;
+  const p = new Promise<T>((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src;
-    s.onload = () => resolve(w[globalName]);
+    s.onload = () => resolve(w[globalName] as T);
     s.onerror = () => reject(new Error('Failed to load ' + globalName));
     document.head.appendChild(s);
   });
@@ -100,7 +139,7 @@ function readAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
+    r.onerror = () => reject(r.error instanceof Error ? r.error : new Error('FileReader error'));
     r.readAsDataURL(file);
   });
 }
@@ -109,7 +148,7 @@ function readAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
+    r.onerror = () => reject(r.error instanceof Error ? r.error : new Error('FileReader error'));
     r.readAsText(file);
   });
 }
@@ -134,7 +173,7 @@ function htmlToText(html: string): string {
 // ---- Format-specific text extraction ----------------------------------------
 
 async function extractPdf(file: File): Promise<string> {
-  const pdfjsLib = await loadLibOnce('/vendor/libs/pdf.min.js', 'pdfjsLib');
+  const pdfjsLib = await loadLibOnce<PdfJsLib>('/vendor/libs/pdf.min.js', 'pdfjsLib');
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/libs/pdf.worker.min.js';
   const buf = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buf }).promise;
@@ -143,20 +182,20 @@ async function extractPdf(file: File): Promise<string> {
   for (let p = 1; p <= pages; p++) {
     const page = await doc.getPage(p);
     const tc = await page.getTextContent();
-    text += tc.items.map((it: any) => it.str ?? '').join(' ') + '\n';
+    text += tc.items.map((it: { str?: string }) => it.str ?? '').join(' ') + '\n';
   }
   return text;
 }
 
 async function extractDocx(file: File): Promise<string> {
-  const mammoth = await loadLibOnce('/vendor/libs/mammoth.min.js', 'mammoth');
+  const mammoth = await loadLibOnce<MammothLib>('/vendor/libs/mammoth.min.js', 'mammoth');
   const ab = await file.arrayBuffer();
   const res = await mammoth.convertToHtml({ arrayBuffer: ab });
   return htmlToText(res.value);
 }
 
 async function extractXlsx(file: File): Promise<string> {
-  const XLSX = await loadLibOnce('/vendor/libs/xlsx.full.min.js', 'XLSX');
+  const XLSX = await loadLibOnce<XlsxLib>('/vendor/libs/xlsx.full.min.js', 'XLSX');
   const ab = await file.arrayBuffer();
   const wb = XLSX.read(ab, { type: 'array' });
   let text = '';
@@ -170,18 +209,14 @@ async function extractXlsx(file: File): Promise<string> {
 async function extractZip(
   file: File,
 ): Promise<{ text: string; entries: { name: string; size: number }[] }> {
-  const JSZip = await loadLibOnce('/vendor/libs/jszip.min.js', 'JSZip');
+  const JSZip = await loadLibOnce<JsZipLib>('/vendor/libs/jszip.min.js', 'JSZip');
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const textExt =
     /\.(txt|md|markdown|csv|tsv|json|xml|html|htm|yaml|yml|py|js|ts|jsx|tsx|java|c|cpp|h|hpp|go|rs|rb|php|sql|log|toml|ini|cfg|sh|bat|ps1?)$/i;
   const entries: { name: string; size: number }[] = [];
   let text = '';
   for (const [name, f] of Object.entries(zip.files)) {
-    const entry = f as {
-      dir: boolean;
-      _data?: { uncompressedSize?: number };
-      async(format: string): Promise<string>;
-    };
+    const entry = f;
     const size = entry._data?.uncompressedSize ?? 0;
     entries.push({ name, size });
     if (!entry.dir && textExt.test(name) && size < 200000) {
@@ -255,7 +290,7 @@ function csvPreview(text: string): string {
 }
 
 function codePreview(name: string, text: string): string {
-  const hl = (window as unknown as { hljs?: any }).hljs;
+  const hl = window.hljs;
   const lang = (name.split('.').pop() || '').toLowerCase();
   let body: string;
   if (hl && hl.getLanguage && hl.getLanguage(lang)) {
@@ -336,7 +371,7 @@ export async function parseFile(file: File): Promise<Attachment> {
         return { ...base, text: t2, truncated, previewHtml: zipPreview(entries) };
       }
     }
-  } catch (e) {
+  } catch {
     return { ...base, error: 'Could not parse file' };
   }
   return { ...base, error: 'Unsupported file type' };
@@ -418,7 +453,7 @@ export function setupAttachmentListeners(): void {
           .catch((e) => logError('parseFile', e, { name: file.name })),
       );
     }
-    Promise.all(tasks).then(() => {
+    void Promise.all(tasks).then(() => {
       renderAttachmentList();
       checkVision();
       el.userInput.focus();

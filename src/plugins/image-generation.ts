@@ -23,7 +23,7 @@ class ImageGeneratorTool implements ToolDefinition {
     seed: { type: 'number', description: 'Random seed for reproducibility' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
     const prompt = params.prompt as string;
     const width = (params.width as number) || 512;
     const height = (params.height as number) || 512;
@@ -40,14 +40,14 @@ class ImageGeneratorTool implements ToolDefinition {
       </text>
     </svg>`;
 
-    return {
+    return Promise.resolve({
       success: true,
       output: {
         format: 'svg',
         data: placeholderSvg,
         metadata: { prompt, width, height, steps },
       },
-    };
+    });
   }
 }
 
@@ -85,13 +85,15 @@ export class ImageGenerationPlugin extends Plugin {
     ],
   };
 
-  async activate(ctx: PluginContext): Promise<void> {
+  activate(ctx: PluginContext): Promise<void> {
     this.ctx = ctx;
     this.registerTool(new ImageGeneratorTool());
     ctx.log('Image Generation plugin activated');
+    return Promise.resolve();
   }
 
-  async deactivate(): Promise<void> {
+  deactivate(): Promise<void> {
     this.tools = [];
+    return Promise.resolve();
   }
 }

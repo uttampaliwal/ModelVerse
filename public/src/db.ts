@@ -27,7 +27,7 @@ export function getDB(): Promise<IDBDatabase> {
         }
       };
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error ?? new Error('Failed to open database'));
     });
   }
   return dbPromise;
@@ -40,7 +40,7 @@ function tx(db: IDBDatabase, mode: IDBTransactionMode): IDBObjectStore {
 function reqToPromise<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB request failed'));
   });
 }
 
@@ -123,8 +123,8 @@ function txDone(store: IDBObjectStore): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const t = store.transaction;
     t.oncomplete = () => resolve();
-    t.onerror = () => reject(t.error);
-    t.onabort = () => reject(t.error);
+    t.onerror = () => reject(t.error ?? new Error('IndexedDB transaction error'));
+    t.onabort = () => reject(t.error ?? new Error('IndexedDB transaction aborted'));
   });
 }
 

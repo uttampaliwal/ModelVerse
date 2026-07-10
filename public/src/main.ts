@@ -134,20 +134,22 @@ async function init(): Promise<void> {
   // Folder creation
   const newFolderBtn = $('newFolderBtn');
   if (newFolderBtn) {
-    newFolderBtn.addEventListener('click', async () => {
-      const name = prompt('Folder name:');
-      if (!name || !name.trim()) return;
-      const { AppState } = await import('./state.js');
-      const folder = {
-        id: Date.now().toString(),
-        name: name.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      AppState.ui.folders.push(folder);
-      const { putFolders } = await import('./db.js');
-      await putFolders(AppState.ui.folders).catch((e) => logError('putFolders', e));
-      const { renderSidebar } = await import('./sidebar.js');
-      renderSidebar();
+    newFolderBtn.addEventListener('click', () => {
+      void (async () => {
+        const name = prompt('Folder name:');
+        if (!name || !name.trim()) return;
+        const { AppState } = await import('./state.js');
+        const folder = {
+          id: Date.now().toString(),
+          name: name.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        AppState.ui.folders.push(folder);
+        const { putFolders } = await import('./db.js');
+        await putFolders(AppState.ui.folders).catch((e) => logError('putFolders', e));
+        const { renderSidebar } = await import('./sidebar.js');
+        renderSidebar();
+      })();
     });
   }
 
@@ -164,18 +166,18 @@ async function init(): Promise<void> {
   });
 
   // Status polling
-  setInterval(checkStatus, 3000);
+  setInterval(() => void checkStatus(), 3000);
 
-  el.sendBtn.addEventListener('click', sendMessage);
+  el.sendBtn.addEventListener('click', () => void sendMessage());
 
-  el.stopGenerateBtn.addEventListener('click', stopGeneration);
+  el.stopGenerateBtn.addEventListener('click', () => void stopGeneration());
 
-  el.restartBtn.addEventListener('click', restartConversation);
+  el.restartBtn.addEventListener('click', () => void restartConversation());
 
   el.userInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      void sendMessage();
     }
   });
 
@@ -184,9 +186,9 @@ async function init(): Promise<void> {
     el.userInput.style.height = el.userInput.scrollHeight + 'px';
   });
 
-  el.stopBtn.addEventListener('click', stopServer);
+  el.stopBtn.addEventListener('click', () => void stopServer());
 
-  el.refreshModelsBtn.addEventListener('click', loadModels);
+  el.refreshModelsBtn.addEventListener('click', () => void loadModels());
 
   el.modelSelect.addEventListener('change', updateModelInfo);
 
@@ -207,7 +209,7 @@ async function init(): Promise<void> {
     });
   });
 
-  el.applySettings.addEventListener('click', applySettings);
+  el.applySettings.addEventListener('click', () => void applySettings());
 
   el.presetSelect.addEventListener('change', () => {
     if (el.presetSelect.value)
@@ -344,7 +346,7 @@ async function init(): Promise<void> {
       const conv = getCurrentConv();
       if (!conv) return;
       conv.messages = conv.messages.filter((m) => m.id !== msgId);
-      saveConversations();
+      void saveConversations();
       renderConversation(conv);
       return;
     }
@@ -354,7 +356,7 @@ async function init(): Promise<void> {
       if (!conv) return;
       const msg = conv.messages.find((m) => m.id === msgId);
       if (msg) {
-        navigator.clipboard.writeText(textOf(msg.content)).then(() => {
+        void navigator.clipboard.writeText(textOf(msg.content)).then(() => {
           showToast('Copied to clipboard', 'success');
         });
       }
@@ -369,7 +371,7 @@ async function init(): Promise<void> {
         const newContent = prompt('Edit message:', textOf(msg.content));
         if (newContent !== null && newContent.trim()) {
           msg.content = newContent;
-          saveConversations();
+          void saveConversations();
           renderConversation(conv);
         }
       }
@@ -390,7 +392,7 @@ async function init(): Promise<void> {
         if (navigator.share) {
           navigator.share({ text }).catch((e) => logError('share', e));
         } else {
-          navigator.clipboard.writeText(text).then(() => {
+          void navigator.clipboard.writeText(text).then(() => {
             showToast('Copied to clipboard', 'success');
           });
         }
@@ -450,7 +452,7 @@ async function init(): Promise<void> {
     const rawCode = rawTextarea?.value || '';
 
     if (btn.classList.contains('code-block-copy')) {
-      navigator.clipboard.writeText(rawCode);
+      void navigator.clipboard.writeText(rawCode);
     } else if (btn.classList.contains('code-block-download')) {
       const lang = codeBlock.getAttribute('data-lang') || 'txt';
       const ext = lang === 'plaintext' ? 'txt' : lang;
@@ -465,7 +467,7 @@ async function init(): Promise<void> {
       codeBlock.classList.toggle('collapsed');
     } else if (btn.classList.contains('code-block-run')) {
       const lang = btn.getAttribute('data-lang') || '';
-      runCode(codeBlock as HTMLElement, rawCode, lang);
+      void runCode(codeBlock as HTMLElement, rawCode, lang);
     }
   });
 
@@ -511,10 +513,10 @@ async function init(): Promise<void> {
   document.querySelectorAll('.quick-action').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (btn.textContent?.includes('Keyboard Shortcuts')) {
-        showShortcuts();
+        void showShortcuts();
       }
     });
   });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => void init());

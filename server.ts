@@ -106,7 +106,9 @@ class RequestQueue {
     } else {
       this.currentId = entry.id;
       sendSSE(res, { queue: { status: 'running' } });
-      setImmediate(() => this.processEntry(entry));
+      setImmediate(() => {
+        void this.processEntry(entry);
+      });
     }
 
     return entry;
@@ -189,7 +191,9 @@ class RequestQueue {
       next.status = 'running';
       this.currentId = next.id;
       sendSSE(next.res, { queue: { status: 'running' } });
-      setImmediate(() => this.processEntry(next));
+      setImmediate(() => {
+        void this.processEntry(next);
+      });
     }
   }
 
@@ -249,7 +253,11 @@ function loadSettings(): void {
   settings = loadAndValidate(serverSettingsSchema, SETTINGS_FILE, getDefaultSettings(), 'Settings');
   engines.setActive(settings.activeEngine);
   for (const [id, config] of Object.entries(settings.engineConfigs || {})) {
-    engines.configure(id, config).catch((e) => log.error('Engine configure error', e as Error));
+    try {
+      engines.configure(id, config);
+    } catch (e) {
+      log.error('Engine configure error', e as Error);
+    }
   }
 }
 
@@ -613,7 +621,7 @@ app.delete('/api/queue/:id', (req: express.Request, res: express.Response) => {
   res.json({ success: true });
 });
 
-app.post('/api/chat', async (req: express.Request, res: express.Response) => {
+app.post('/api/chat', (req: express.Request, res: express.Response) => {
   const { messages } = req.body as { messages: ChatMessageDTO[] };
   const engine = engines.getActive();
 

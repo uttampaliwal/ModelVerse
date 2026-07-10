@@ -135,7 +135,7 @@ function injectCSS(): void {
   document.head.appendChild(link);
 }
 
-export async function openViewer(src: string, alt: string): Promise<void> {
+export function openViewer(src: string, alt: string): void {
   if (!initialized) {
     injectCSS();
     init();

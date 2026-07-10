@@ -350,7 +350,7 @@ export type HighlightFn = (code: string, lang: string) => string;
 
 /** Highlights code using the page-loaded highlight.js (main thread). */
 const mainThreadHighlight: HighlightFn = (code, lang) => {
-  const hl = typeof window !== 'undefined' ? (window as unknown as { hljs?: any }).hljs : undefined;
+  const hl = typeof window !== 'undefined' ? window.hljs : undefined;
   if (hl && typeof hl.highlight === 'function') {
     try {
       const language = hl.getLanguage && hl.getLanguage(lang) ? lang : 'plaintext';
@@ -492,7 +492,7 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
 
   for (const line of lines) {
     const headingMatch = line.match(/^(#{1,6})\s+(.*)/);
-    const bulletMatch = line.match(/^\s*[\*\-]\s+(.*)/);
+    const bulletMatch = line.match(/^\s*[*-]\s+(.*)/);
     const numMatch = line.match(/^\s*\d+\.\s+(.*)/);
 
     // Check for task items

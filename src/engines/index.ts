@@ -57,7 +57,7 @@ class EngineRegistry {
     });
   }
 
-  async configure(id: string, config: EngineConfig): Promise<void> {
+  configure(id: string, config: EngineConfig): void {
     this.get(id).configure(config);
   }
 

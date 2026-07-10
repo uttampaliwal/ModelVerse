@@ -31,7 +31,9 @@ class RAGStore {
   private save(): void {
     try {
       fs.writeFileSync(this.storePath, JSON.stringify(this.chunks, null, 2));
-    } catch {}
+    } catch {
+      /* ignore: RAG store persistence is best-effort */
+    }
   }
 
   add(content: string, metadata: Record<string, unknown>): string {
@@ -89,8 +91,8 @@ class IngestDocumentTool implements ToolDefinition {
     chunk_size: { type: 'number', description: 'Chunk size in characters (default: 1000)' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
-    if (!store) return { success: false, error: 'RAG store not initialized' };
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
+    if (!store) return Promise.resolve({ success: false, error: 'RAG store not initialized' });
 
     const content = params.content as string;
     const source = (params.source as string) || 'direct';
@@ -103,10 +105,10 @@ class IngestDocumentTool implements ToolDefinition {
 
     const ids = chunks.map((c) => store!.add(c, { source, ingestedAt: new Date().toISOString() }));
 
-    return {
+    return Promise.resolve({
       success: true,
       output: { chunks_ingested: ids.length, source, total_documents: store.list().length },
-    };
+    });
   }
 }
 
@@ -118,21 +120,21 @@ class SearchKnowledgeTool implements ToolDefinition {
     top_k: { type: 'number', description: 'Number of results (default: 5)' },
   };
 
-  async execute(params: Record<string, unknown>): Promise<ToolResult> {
-    if (!store) return { success: false, error: 'RAG store not initialized' };
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
+    if (!store) return Promise.resolve({ success: false, error: 'RAG store not initialized' });
 
     const query = params.query as string;
     const topK = (params.top_k as number) || 5;
 
     const results = store.search(query, topK);
-    return {
+    return Promise.resolve({
       success: true,
       output: results.map((r) => ({
         id: r.id,
         content: r.content,
         metadata: r.metadata,
       })),
-    };
+    });
   }
 }
 
@@ -141,10 +143,10 @@ class ListDocumentsTool implements ToolDefinition {
   description = 'List all documents in the RAG knowledge base';
   parameters = {};
 
-  async execute(): Promise<ToolResult> {
-    if (!store) return { success: false, error: 'RAG store not initialized' };
+  execute(): Promise<ToolResult> {
+    if (!store) return Promise.resolve({ success: false, error: 'RAG store not initialized' });
     const docs = store.list();
-    return { success: true, output: { count: docs.length, documents: docs } };
+    return Promise.resolve({ success: true, output: { count: docs.length, documents: docs } });
   }
 }
 
@@ -172,7 +174,7 @@ export class RAGPlugin extends Plugin {
     ],
   };
 
-  async activate(ctx: PluginContext): Promise<void> {
+  activate(ctx: PluginContext): Promise<void> {
     this.ctx = ctx;
     const config = ctx.getConfig();
     const storePath = (config.store_path as string) || './rag-store.json';
@@ -181,10 +183,12 @@ export class RAGPlugin extends Plugin {
     this.registerTool(new SearchKnowledgeTool());
     this.registerTool(new ListDocumentsTool());
     ctx.log(`RAG plugin activated (store: ${storePath})`);
+    return Promise.resolve();
   }
 
-  async deactivate(): Promise<void> {
+  deactivate(): Promise<void> {
     this.tools = [];
     store = null;
+    return Promise.resolve();
   }
 }

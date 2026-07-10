@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { execSync } from 'child_process';
-import { getOrCreateMetadata, type ModelMetadata } from './model-metadata';
+import { getOrCreateMetadata } from './model-metadata';
 import { log } from './logger';
 import { scannerConfigSchema, loadAndValidate } from './config-schemas';
 
@@ -47,7 +46,9 @@ function loadConfig(): ScannerConfig {
 function saveConfig(config: ScannerConfig): void {
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-  } catch {}
+  } catch {
+    /* ignore: scanner config is best-effort persistence */
+  }
 }
 
 function formatBytes(bytes: number): string {
@@ -77,7 +78,9 @@ function scanDirectory(dir: string, extensions: string[], depth = 0): string[] {
         results.push(fullPath);
       }
     }
-  } catch {}
+  } catch {
+    /* ignore: directory may be unreadable */
+  }
   return results;
 }
 
@@ -153,7 +156,9 @@ function scanOllama(): ScannedModel[] {
             format: 'gguf',
             metadata: { source: 'Ollama' },
           });
-        } catch {}
+        } catch {
+          /* ignore: blob may be a symlink or transient read error */
+        }
       }
     }
 
@@ -189,7 +194,9 @@ function scanOllama(): ScannedModel[] {
                 tags: [modelDir.name],
               },
             });
-          } catch {}
+          } catch {
+            /* ignore: malformed manifest */
+          }
         }
       }
     }
@@ -349,7 +356,9 @@ function scanTransformers(): ScannedModel[] {
           format: path.extname(filePath).replace('.', ''),
           metadata: { source: 'Transformers' },
         });
-      } catch {}
+      } catch {
+        /* ignore: file may vanish between stat and push */
+      }
     }
   }
   return models;
@@ -401,7 +410,9 @@ export function scanAllModels(config?: ScannerConfig): ScannedModel[] {
           metadata: { source: 'Custom' },
         });
       }
-    } catch {}
+    } catch {
+      /* ignore: custom path scan failed */
+    }
   }
 
   // Enrich with metadata
@@ -409,7 +420,9 @@ export function scanAllModels(config?: ScannerConfig): ScannedModel[] {
     try {
       const meta = getOrCreateMetadata(model.path, model.source, model.metadata);
       model.metadata = meta;
-    } catch {}
+    } catch {
+      /* ignore: metadata enrichment is best-effort */
+    }
   }
 
   // Sort by source then name
@@ -446,7 +459,9 @@ export function getAvailableSources(): Array<{ id: ModelSource; name: string; de
     try {
       const models = scanners[source.id]();
       source.detected = models.length > 0;
-    } catch {}
+    } catch {
+      /* ignore: detection of a source failed */
+    }
   }
 
   return sources;

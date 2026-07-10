@@ -1,17 +1,22 @@
 export {};
 
 declare global {
-  interface Window {
-    MathJax?: {
-      typesetPromise(elements?: Element[]): Promise<void>;
-    };
+  interface HljsApi {
+    highlight(code: string, options: { language: string }): { value: string };
+    getLanguage(lang: string): unknown;
+    highlightElement(element: Element): void;
   }
 
-  // Provided by highlight.js (loaded via CDN script tag).
-
-  var hljs:
-    | {
-        highlightElement(element: Element): void;
-      }
-    | undefined;
+  interface Window {
+    MathJax?: {
+      typesetPromise?(elements?: Element[]): Promise<void>;
+      loader?: { paths?: Record<string, string> };
+      tex?: {
+        inlineMath?: string[][];
+        displayMath?: string[][];
+      };
+      options?: { skipHtmlTags?: string[] };
+    };
+    hljs?: HljsApi;
+  }
 }

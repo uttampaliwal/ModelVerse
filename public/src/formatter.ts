@@ -18,10 +18,10 @@ function ensureHighlight(): void {
   document.head.appendChild(link);
 
   // Warm up highlight.js on the main thread (for fallback)
-  // @ts-ignore — runtime URL path resolved by the static server
+  // @ts-expect-error — runtime URL path resolved by the static server
   import('/vendor/highlight/highlight.esm.js')
     .then((m) => {
-      (window as any).hljs = m.default;
+      window.hljs = m.default as HljsApi;
     })
     .catch((e) => logError('highlight', e));
 }

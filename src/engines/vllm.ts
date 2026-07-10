@@ -28,14 +28,14 @@ export class VLLMEngine extends LLMEngine {
     this.engineConfig = { ...this.engineConfig, ...config };
   }
 
-  async start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
+  start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
     this._running = true;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
-  async stop(): Promise<{ success: boolean }> {
+  stop(): Promise<{ success: boolean }> {
     this._running = false;
-    return { success: true };
+    return Promise.resolve({ success: true });
   }
 
   async listModels(): Promise<ModelInfo[]> {

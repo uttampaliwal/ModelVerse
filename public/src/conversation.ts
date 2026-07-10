@@ -361,7 +361,7 @@ export function newConversation(): Conversation {
   };
   AppState.conversations.list.unshift(conv);
   setCurrentConvId(conv.id);
-  saveConversations();
+  void saveConversations();
   clearChatView();
   clearPendingAttachments();
   el.chatTitle.textContent = 'New Conversation';
@@ -382,7 +382,7 @@ export function selectConversation(id: string): void {
   el.sendBtn.querySelector('.btn-icon')!.textContent = '➤';
   el.sendBtn.querySelector('.btn-label')!.textContent = 'Send';
   el.restartBtn.classList.add('hidden');
-  saveConversations();
+  void saveConversations();
   renderConversation(conv);
 }
 
@@ -409,7 +409,6 @@ export function renderMessage(msg: ChatMessage, scroll = true, streaming = false
     const fresh = buildMessageNode(msg, true);
     node.replaceWith(fresh);
     nodeForId.set(msg.id, fresh);
-    node = fresh;
   }
   mountWindow();
   if (scroll) {
@@ -473,8 +472,8 @@ export function renameConversation(id: string): void {
   if (newTitle && newTitle.trim()) {
     conv.title = newTitle.trim();
     conv.updatedAt = new Date().toISOString();
-    saveConversations();
-    import('./sidebar.js').then((m) => m.renderSidebar());
+    void saveConversations();
+    void import('./sidebar.js').then((m) => m.renderSidebar());
     if (AppState.conversations.currentId === id) el.chatTitle.textContent = conv.title;
   }
 }
@@ -488,8 +487,8 @@ export function deleteConversation(id: string): void {
     showWelcome();
     el.restartBtn.classList.add('hidden');
   }
-  deleteConversationById(id);
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void deleteConversationById(id);
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function exportConversation(format: ExportFormat): void {
@@ -519,16 +518,16 @@ export function togglePin(id: string): void {
   const conv = AppState.conversations.list.find((c) => c.id === id);
   if (!conv) return;
   conv.pinned = !conv.pinned;
-  saveConversations();
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void saveConversations();
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function toggleStar(id: string): void {
   const conv = AppState.conversations.list.find((c) => c.id === id);
   if (!conv) return;
   conv.starred = !conv.starred;
-  saveConversations();
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void saveConversations();
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function archiveConversation(id: string): void {
@@ -541,24 +540,24 @@ export function archiveConversation(id: string): void {
     showWelcome();
     el.restartBtn.classList.add('hidden');
   }
-  saveConversations();
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void saveConversations();
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function unarchiveConversation(id: string): void {
   const conv = AppState.conversations.list.find((c) => c.id === id);
   if (!conv) return;
   conv.archived = false;
-  saveConversations();
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void saveConversations();
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function moveToFolder(id: string, folderId: string | null): void {
   const conv = AppState.conversations.list.find((c) => c.id === id);
   if (!conv) return;
   conv.folderId = folderId || undefined;
-  saveConversations();
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void saveConversations();
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function batchDelete(ids: string[]): void {
@@ -572,10 +571,10 @@ export function batchDelete(ids: string[]): void {
     showWelcome();
     el.restartBtn.classList.add('hidden');
   }
-  for (const id of ids) deleteConversationById(id);
+  for (const id of ids) void deleteConversationById(id);
   AppState.ui.selectedIds.clear();
   AppState.ui.multiSelectMode = false;
-  import('./sidebar.js').then((m) => m.renderSidebar());
+  void import('./sidebar.js').then((m) => m.renderSidebar());
 }
 
 export function batchExport(ids: string[], format: ExportFormat): void {
