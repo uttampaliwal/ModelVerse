@@ -1,7 +1,10 @@
+export const PLUGIN_API_VERSION = '0.1.0';
+
 export interface PluginManifest {
   id: string;
   name: string;
   version: string;
+  apiVersion: string;
   description: string;
   author: string;
   icon?: string;

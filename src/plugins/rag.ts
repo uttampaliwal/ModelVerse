@@ -153,6 +153,7 @@ export class RAGPlugin extends Plugin {
     id: 'rag',
     name: 'RAG (Retrieval-Augmented Generation)',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description:
       'Build a knowledge base from documents and retrieve relevant context for conversations',
     author: 'ModelVerse',

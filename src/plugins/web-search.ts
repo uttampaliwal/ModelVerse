@@ -95,6 +95,7 @@ export class WebSearchPlugin extends Plugin {
     id: 'web-search',
     name: 'Web Search',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description: 'Search the web and fetch content from URLs for up-to-date information',
     author: 'ModelVerse',
     icon: 'search',

@@ -82,6 +82,7 @@ export class VisionPlugin extends Plugin {
     id: 'vision',
     name: 'Vision',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description:
       'Analyze images, extract text via OCR, and interpret charts using vision-capable models',
     author: 'ModelVerse',

@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { satisfies } from 'semver';
 import {
+  PLUGIN_API_VERSION,
   type Plugin,
   type PluginManifest,
   type PluginContext,
@@ -50,7 +52,13 @@ class PluginManager {
 
   register(type: PluginConstructor): void {
     const instance = new type();
-    this.registry.set(instance.manifest.id, type);
+    const { id, name, apiVersion } = instance.manifest;
+    if (!satisfies(PLUGIN_API_VERSION, apiVersion)) {
+      throw new Error(
+        `Plugin "${name}" requires plugin API ${apiVersion}, but host supports ${PLUGIN_API_VERSION}`,
+      );
+    }
+    this.registry.set(id, type);
   }
 
   async activate(pluginId: string): Promise<void> {
@@ -192,6 +200,10 @@ class PluginManager {
       result.push({ manifest: { ...instance.manifest, enabled: active }, active });
     }
     return result;
+  }
+
+  getApiVersion(): string {
+    return PLUGIN_API_VERSION;
   }
 
   listActive(): PluginManifest[] {

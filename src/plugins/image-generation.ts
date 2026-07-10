@@ -56,6 +56,7 @@ export class ImageGenerationPlugin extends Plugin {
     id: 'image-generation',
     name: 'Image Generation',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description:
       'Generate images from text prompts using Stable Diffusion, DALL-E, or local models',
     author: 'ModelVerse',

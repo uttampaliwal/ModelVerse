@@ -568,7 +568,7 @@ plugins.register(VisionPlugin);
 plugins.activateAll().catch((e) => log.error('Plugins activation error', e));
 
 app.get('/api/plugins', (_req: express.Request, res: express.Response) => {
-  res.json({ plugins: plugins.listAvailable() });
+  res.json({ pluginApiVersion: plugins.getApiVersion(), plugins: plugins.listAvailable() });
 });
 
 app.post('/api/plugins/toggle', async (req: express.Request, res: express.Response) => {

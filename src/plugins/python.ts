@@ -122,6 +122,7 @@ export class PythonPlugin extends Plugin {
     id: 'python',
     name: 'Python Execution',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description:
       'Execute Python code and Jupyter notebooks for data analysis, visualization, and scripting',
     author: 'ModelVerse',

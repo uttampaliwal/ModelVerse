@@ -61,6 +61,7 @@ export class SpeechPlugin extends Plugin {
     id: 'speech',
     name: 'Speech',
     version: '1.0.0',
+    apiVersion: '^0.1.0',
     description:
       'Text-to-speech and speech-to-text capabilities using Whisper, Piper, or cloud APIs',
     author: 'ModelVerse',
