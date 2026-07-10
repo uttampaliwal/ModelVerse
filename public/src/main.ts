@@ -271,6 +271,13 @@ async function init(): Promise<void> {
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
+      import('./command-palette.js')
+        .then((m) => m.openPalette())
+        .catch((e) => logError('commandPalette', e));
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+      e.preventDefault();
       import('./search.js').then((m) => m.openSearch()).catch((e) => logError('openSearch', e));
       return;
     }
@@ -296,6 +303,11 @@ async function init(): Promise<void> {
       }
     }
     if (e.key === 'Escape') {
+      const palette = document.getElementById('commandPalette');
+      if (palette && palette.style.display !== 'none') {
+        palette.style.display = 'none';
+        return;
+      }
       document
         .querySelectorAll('.modal-overlay.active')
         .forEach((m) => m.classList.remove('active'));
