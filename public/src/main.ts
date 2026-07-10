@@ -1,6 +1,6 @@
 import { el, $, showShortcuts, closeSidebar } from './utils.js';
 import { showToast } from './toast.js';
-import { loadModels, updateModelInfo } from './models.js';
+import { loadModels } from './models.js';
 import { escapeHtml } from './markdown.js';
 import {
   loadSettings,
@@ -190,7 +190,14 @@ async function init(): Promise<void> {
 
   el.refreshModelsBtn.addEventListener('click', () => void loadModels());
 
-  el.modelSelect.addEventListener('change', updateModelInfo);
+  el.modelSelect.addEventListener('change', () => {
+    const id = el.modelSelect.value;
+    if (id)
+      void (async () => {
+        const { selectModel } = await import('./models.js');
+        await selectModel(id);
+      })();
+  });
 
   document.querySelectorAll('.settings-tab').forEach((tab) => {
     tab.addEventListener('click', () => {

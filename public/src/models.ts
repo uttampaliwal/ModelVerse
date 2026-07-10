@@ -101,7 +101,7 @@ export async function loadModels(): Promise<void> {
   }
 }
 
-async function selectModel(modelId: string): Promise<void> {
+export async function selectModel(modelId: string): Promise<void> {
   el.modelSelect.value = modelId;
 
   const list = $('modelList');

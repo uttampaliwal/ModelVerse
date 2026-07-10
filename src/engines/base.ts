@@ -125,9 +125,19 @@ export abstract class LLMEngine {
 
   protected config: EngineConfig = {};
   protected _running = false;
+  protected _activeModel: string | null = null;
 
   get running(): boolean {
     return this._running;
+  }
+
+  get activeModel(): string | null {
+    return this._activeModel;
+  }
+
+  /** Record the model the user switched to so generate() can target it. */
+  setActiveModel(model: string | null): void {
+    this._activeModel = model;
   }
 
   abstract configure(config: EngineConfig): void;

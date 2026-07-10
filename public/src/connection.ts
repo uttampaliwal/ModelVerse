@@ -45,6 +45,14 @@ export async function ensureServerRunning(modelPath: string): Promise<boolean> {
     const status = await api<StatusResponse>('/api/status');
     if (status.running) {
       switching = false;
+      // Server is up: switch the active model without restarting.
+      await api('/api/server/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelId: modelPath }),
+      });
+      (await import('./models.js')).updateModelInfo();
+      await checkStatus();
       return true;
     }
   } catch {

@@ -355,6 +355,7 @@ app.get('/api/status', async (_req: express.Request, res: express.Response) => {
   res.json({
     running: engine.running,
     engine: engines.getActiveId(),
+    currentModel: engine.activeModel,
     health,
     port: settings.port,
   });
@@ -399,6 +400,17 @@ app.post('/api/server/stop', async (_req: express.Request, res: express.Response
     const engine = engines.getActive();
     const result = await engine.stop();
     res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post('/api/server/switch', (req: express.Request, res: express.Response) => {
+  const { modelId } = req.body as { modelId?: string | null };
+  try {
+    const engine = engines.getActive();
+    engines.setActiveModel(engines.getActiveId(), modelId ?? null);
+    res.json({ success: true, currentModel: engine.activeModel });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }

@@ -55,11 +55,12 @@ export class OllamaEngine extends LLMEngine {
   }
 
   async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
+    const model = this._activeModel || 'llama3';
     const res = await fetch(`${this.engineConfig.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: messages[0]?.role === 'system' ? 'llama3' : 'llama3',
+        model,
         messages,
         stream: true,
         options: {

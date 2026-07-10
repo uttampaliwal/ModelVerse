@@ -216,6 +216,7 @@ export class LlamaCppEngine extends LLMEngine {
   async start(modelPath: string): Promise<{ success: boolean; port?: number }> {
     if (this.stopPromise) await this.stopPromise;
     if (this.process) await this.killProcess();
+    this._activeModel = modelPath;
 
     this.startPromise = (async () => {
       const serverPath = path.join(this.engineConfig.binPath, 'llama-server.exe');

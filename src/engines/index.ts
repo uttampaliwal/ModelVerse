@@ -61,6 +61,10 @@ class EngineRegistry {
     this.get(id).configure(config);
   }
 
+  setActiveModel(id: string, model: string | null): void {
+    this.get(id).setActiveModel(model);
+  }
+
   async healthAll(): Promise<Record<string, { status: string; engine: string; detail?: string }>> {
     const results: Record<string, { status: string; engine: string; detail?: string }> = {};
     for (const [id, engine] of this.engines) {

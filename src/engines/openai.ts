@@ -61,6 +61,7 @@ export class OpenAIEngine extends LLMEngine {
   }
 
   async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
+    const model = this._activeModel || this.engineConfig.model;
     const res = await fetch(`${this.engineConfig.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -68,7 +69,7 @@ export class OpenAIEngine extends LLMEngine {
         Authorization: `Bearer ${this.engineConfig.apiKey}`,
       },
       body: JSON.stringify({
-        model: this.engineConfig.model,
+        model,
         messages,
         temperature: options?.temperature ?? 0.7,
         top_p: options?.topP ?? 0.9,
