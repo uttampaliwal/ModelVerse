@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/uttam/ModelVerse/main/assets/logo.svg" alt="ModelVerse" width="200"/>
+  <img src="https://raw.githubusercontent.com/uttampaliwal/ModelVerse/main/assets/logo.svg" alt="ModelVerse" width="200"/>
 </p>
 
 <h1 align="center">ModelVerse</h1>
@@ -45,16 +45,17 @@
 - **Model cards** — Visual selection with capability badges and size display
 - **System monitoring** — GPU utilization, RAM usage, tokens/second, context usage with color warnings
 
-### Plugins (6 included)
+### Plugins (7 included)
 
-| Plugin               | Tools                                                   | Description                                                |
-| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
-| **Image Generation** | `generate_image`                                        | Text-to-image (Stable Diffusion / DALL-E / ComfyUI)        |
-| **Speech**           | `text_to_speech`, `speech_to_text`                      | TTS (Piper / OpenAI / eSpeak) and STT (Whisper)            |
-| **Web Search**       | `web_search`, `fetch_url`                               | DuckDuckGo / Brave / Google search with page fetching      |
-| **RAG**              | `ingest_document`, `search_knowledge`, `list_documents` | Document ingestion and keyword search over knowledge bases |
-| **Python Execution** | `execute_python`, `run_notebook`                        | Sandboxed Python and Jupyter notebook execution            |
-| **Vision**           | `analyze_image`, `ocr_extract`, `describe_chart`        | Image analysis, OCR, chart interpretation                  |
+| Plugin               | Tools                                                                             | Description                                                      |
+| -------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Image Generation** | `generate_image`                                                                  | Text-to-image (Stable Diffusion / DALL-E / ComfyUI)              |
+| **Speech**           | `text_to_speech`, `speech_to_text`                                                | TTS (Piper / OpenAI / eSpeak) and STT (Whisper)                  |
+| **Web Search**       | `web_search`, `fetch_url`                                                         | DuckDuckGo / Brave / Google search with page fetching            |
+| **RAG**              | `ingest_document`, `search_knowledge`, `list_documents`                           | Document ingestion and keyword search over knowledge bases       |
+| **Python Execution** | `execute_python`, `run_notebook`                                                  | Sandboxed Python and Jupyter notebook execution                  |
+| **Vision**           | `analyze_image`, `ocr_extract`, `describe_chart`                                  | Image analysis, OCR, chart interpretation                        |
+| **Vector Store**     | `vector_upsert`, `vector_search`, `vector_delete`, `vector_clear`, `vector_stats` | Persistent embedding-based store with semantic similarity search |
 
 ### Profiles
 
@@ -91,7 +92,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/uttam/ModelVerse.git
+git clone https://github.com/uttampaliwal/ModelVerse.git
 cd ModelVerse
 
 # Install dependencies
@@ -190,7 +191,7 @@ ModelVerse/
 │   ├── model-scanner.ts   # Filesystem scanner
 │   ├── logger.ts          # File-based logging
 │   ├── engines/           # 7 LLM backends
-│   └── plugins/           # 6 plugins
+│   └── plugins/           # 7 plugins
 ├── public/                # Client-side (browser)
 │   ├── index.html         # Single-page app
 │   ├── css/               # 14 stylesheets
@@ -207,26 +208,26 @@ ModelVerse/
 
 ## Comparison
 
-| Feature                  | ModelVerse                                    | Open WebUI               | Ollama Web UI | LM Studio    | Jan        |
-| ------------------------ | --------------------------------------------- | ------------------------ | ------------- | ------------ | ---------- |
-| **Local-first**          | ✅                                            | ✅                       | ✅            | ✅           | ✅         |
-| **Multi-engine**         | 7 engines                                     | Ollama only              | Ollama only   | 1 engine     | 1 engine   |
-| **Streaming**            | ✅ SSE                                        | ✅ SSE                   | ✅ SSE        | ✅           | ✅         |
-| **Conversation folders** | ✅ Pin, star, archive, folders                | ✅                       | ❌            | ❌           | ❌         |
-| **Virtual scrolling**    | ✅ 1000+ msgs                                 | ❌                       | ❌            | ❌           | ❌         |
-| **Built-in plugins**     | 6 (search, vision, TTS, RAG, code, image gen) | ✅ Web search, image gen | ❌            | ❌           | ❌         |
-| **Python execution**     | ✅ Jupyter notebooks                          | ❌                       | ❌            | ❌           | ❌         |
-| **RAG**                  | ✅ Document ingestion + keyword search        | ✅ Full RAG              | ❌            | ❌           | ❌         |
-| **Themes**               | 7 themes                                      | Light/Dark               | Light/Dark    | Light/Dark   | Light/Dark |
-| **Model scanning**       | 8 sources auto-detect                         | Ollama only              | Ollama only   | 1 folder     | 1 folder   |
-| **GGUF metadata**        | ✅ Header parsing                             | ❌                       | ❌            | ❌           | ❌         |
-| **Profiles**             | 7 built-in + custom                           | ❌                       | ❌            | Presets only | ❌         |
-| **Math rendering**       | ✅ MathJax                                    | ✅                       | ❌            | ❌           | ❌         |
-| **Mermaid diagrams**     | ✅                                            | ❌                       | ❌            | ❌           | ❌         |
-| **Mobile support**       | ✅ Touch gestures                             | ✅                       | ❌            | ❌           | ❌         |
-| **Export**               | Markdown / JSON                               | Markdown                 | Markdown      | ❌           | ❌         |
-| **Keyboard shortcuts**   | 6 shortcuts                                   | ❌                       | ❌            | ❌           | ❌         |
-| **Open source**          | ✅ MIT                                        | ✅ MIT                   | ✅ MIT        | ❌           | ✅ AGPL    |
+| Feature                  | ModelVerse                                             | Open WebUI               | Ollama Web UI | LM Studio    | Jan        |
+| ------------------------ | ------------------------------------------------------ | ------------------------ | ------------- | ------------ | ---------- |
+| **Local-first**          | ✅                                                     | ✅                       | ✅            | ✅           | ✅         |
+| **Multi-engine**         | 7 engines                                              | Ollama only              | Ollama only   | 1 engine     | 1 engine   |
+| **Streaming**            | ✅ SSE                                                 | ✅ SSE                   | ✅ SSE        | ✅           | ✅         |
+| **Conversation folders** | ✅ Pin, star, archive, folders                         | ✅                       | ❌            | ❌           | ❌         |
+| **Virtual scrolling**    | ✅ 1000+ msgs                                          | ❌                       | ❌            | ❌           | ❌         |
+| **Built-in plugins**     | 7 (search, vision, TTS, RAG, code, image gen, vectors) | ✅ Web search, image gen | ❌            | ❌           | ❌         |
+| **Python execution**     | ✅ Jupyter notebooks                                   | ❌                       | ❌            | ❌           | ❌         |
+| **RAG**                  | ✅ Document ingestion + keyword search                 | ✅ Full RAG              | ❌            | ❌           | ❌         |
+| **Themes**               | 7 themes                                               | Light/Dark               | Light/Dark    | Light/Dark   | Light/Dark |
+| **Model scanning**       | 8 sources auto-detect                                  | Ollama only              | Ollama only   | 1 folder     | 1 folder   |
+| **GGUF metadata**        | ✅ Header parsing                                      | ❌                       | ❌            | ❌           | ❌         |
+| **Profiles**             | 7 built-in + custom                                    | ❌                       | ❌            | Presets only | ❌         |
+| **Math rendering**       | ✅ MathJax                                             | ✅                       | ❌            | ❌           | ❌         |
+| **Mermaid diagrams**     | ✅                                                     | ❌                       | ❌            | ❌           | ❌         |
+| **Mobile support**       | ✅ Touch gestures                                      | ✅                       | ❌            | ❌           | ❌         |
+| **Export**               | Markdown / JSON                                        | Markdown                 | Markdown      | ❌           | ❌         |
+| **Keyboard shortcuts**   | 6 shortcuts                                            | ❌                       | ❌            | ❌           | ❌         |
+| **Open source**          | ✅ MIT                                                 | ✅ MIT                   | ✅ MIT        | ❌           | ✅ AGPL    |
 
 ---
 
@@ -300,7 +301,7 @@ Pull the latest changes and rebuild: `git pull && npm install && npm run build`.
 
 - **Single-user** — No multi-user or authentication support yet (planned for v0.4)
 - **No built-in model downloads** — You must provide your own models. Auto-download is not yet integrated.
-- **RAG is keyword-based** — Current RAG uses keyword search only. Semantic/embedding-based search is planned.
+- **RAG is keyword-based** — The RAG plugin uses keyword search only. For semantic/embedding-based retrieval, enable the Vector Store plugin (`vector_upsert` + `vector_search` tools).
 - **Transformers.js engine is a stub** — The Transformers.js backend does not yet perform real inference. Contributions welcome.
 - **Ollama model scanning** — Requires Ollama to be running locally for manifest-based detection.
 - **WebSocket not yet used for chat** — Chat uses SSE (HTTP streaming) rather than WebSockets. The `ws` dependency is reserved for planned real-time features.
