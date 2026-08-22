@@ -30,6 +30,7 @@ export default tseslint.config(
   {
     files: ['tests/**/*.ts', 'vitest.config.ts'],
     languageOptions: {
+      parser: tseslint.parser,
       parserOptions: {
         project: false,
       },

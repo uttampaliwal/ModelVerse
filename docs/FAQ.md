@@ -50,6 +50,6 @@ Ensure your model directory is in the scanner configuration. Run a manual scan f
 
 - Single-user (no multi-user or authentication yet)
 - No built-in model downloads
-- RAG is keyword-based (semantic search planned)
+- RAG is keyword-based (enable the Vector Store plugin for semantic search)
 - Transformers.js engine is a stub (not yet functional)
 - Plugins require server restart to fully take effect on enable/disable

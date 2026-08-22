@@ -61,7 +61,7 @@ ModelVerse/
 ├── server.ts              # Express server entry point
 ├── src/                   # Server-side TypeScript
 │   ├── engines/           # 7 LLM backends
-│   ├── plugins/           # Plugin system + 6 built-in plugins
+│   ├── plugins/           # Plugin system + 7 built-in plugins
 │   ├── config-schemas.ts  # Zod validation
 │   ├── profiles.ts        # Profile management
 │   ├── model-metadata.ts  # Metadata CRUD

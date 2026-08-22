@@ -13,6 +13,7 @@ import { WebSearchPlugin } from './src/plugins/web-search';
 import { RAGPlugin } from './src/plugins/rag';
 import { PythonPlugin } from './src/plugins/python';
 import { VisionPlugin } from './src/plugins/vision';
+import { VectorStorePlugin } from './src/plugins/vector-store';
 import {
   listProfiles,
   getActiveProfile,
@@ -647,6 +648,7 @@ plugins.register(WebSearchPlugin);
 plugins.register(RAGPlugin);
 plugins.register(PythonPlugin);
 plugins.register(VisionPlugin);
+plugins.register(VectorStorePlugin);
 
 plugins.activateAll().catch((e) => log.error('Plugins activation error', e));
 

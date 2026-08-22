@@ -109,6 +109,17 @@ export const documentChunkSchema = z.object({
 
 export const documentChunkArraySchema = z.array(documentChunkSchema);
 
+export const vectorRecordSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  vector: z.array(z.number()),
+  dimension: z.number().int().positive(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
+export const vectorRecordArraySchema = z.array(vectorRecordSchema);
+
 export const packageJsonSchema = z.object({
   version: z.string().optional(),
 });

@@ -26,6 +26,10 @@ Supported engines: `llamacpp`, `ollama`, `lmstudio`, `openai`, `koboldcpp`, `vll
 
 Extensible plugin system. See [PluginAPI.md](PluginAPI.md).
 
+### Vector Store (`src/vector-store.ts`)
+
+Persistent embedding-based store used by the Vector Store plugin. Texts are embedded with a local hashed bag-of-words encoder (no external services) and searched via cosine similarity. Records persist as JSON validated by `vectorRecordArraySchema`.
+
 ### Config Schemas (`src/config-schemas.ts`)
 
 Zod schemas for validating settings, profiles, metadata, and plugin config. The `loadAndValidate()` helper reads a JSON file, validates it against a schema, and returns defaults on failure.
