@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { vectorRecordArraySchema, loadAndValidate } from './config-schemas';
+import { type EmbeddingProvider, tokenize, cosineSimilarity } from './embeddings';
 
 export interface VectorRecord {
   id: string;
@@ -8,6 +9,7 @@ export interface VectorRecord {
   dimension: number;
   metadata: Record<string, unknown>;
   createdAt: string;
+  provider?: string;
 }
 
 export interface SearchHit {
@@ -15,65 +17,71 @@ export interface SearchHit {
   score: number;
 }
 
-const DEFAULT_DIMENSION = 256;
+export type SearchMode = 'semantic' | 'keyword' | 'hybrid';
 
-function hashToken(token: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < token.length; i++) {
-    hash ^= token.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+export const DEFAULT_CHUNK_SIZE = 1000;
+export const DEFAULT_CHUNK_OVERLAP = 150;
+export const RRF_K = 60;
+const HASH_PROVIDER_FALLBACK_NAME = 'hashed-bow';
+
+export function chunkText(
+  text: string,
+  chunkSize: number = DEFAULT_CHUNK_SIZE,
+  overlap: number = DEFAULT_CHUNK_OVERLAP,
+): string[] {
+  const size = Math.max(1, Math.floor(chunkSize));
+  const overlapSafe = Math.min(Math.max(0, Math.floor(overlap)), size - 1);
+  if (text.length <= size) return text.length > 0 ? [text] : [];
+
+  const chunks: string[] = [];
+  const step = size - overlapSafe;
+  for (let start = 0; start < text.length; start += step) {
+    chunks.push(text.substring(start, start + size));
+    if (start + size >= text.length) break;
   }
-  return Math.abs(hash);
+  return chunks;
 }
 
-export function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 0);
-}
-
-export function embed(text: string, dimension: number = DEFAULT_DIMENSION): number[] {
-  const vector = new Array<number>(dimension).fill(0);
-  const tokens = tokenize(text);
-  if (tokens.length === 0) return vector;
-
-  const counts = new Map<number, number>();
-  for (const token of tokens) {
-    const index = hashToken(token) % dimension;
-    counts.set(index, (counts.get(index) || 0) + 1);
+function keywordScore(queryTokens: string[], recordTokens: Set<string>): number {
+  let score = 0;
+  for (const token of new Set(queryTokens)) {
+    if (recordTokens.has(token)) score++;
   }
+  return score;
+}
 
-  for (const [index, count] of counts) {
-    vector[index] += 1 + Math.log(count);
+function reciprocalRankFusion(
+  rankedLists: string[][],
+  k: number = RRF_K,
+): Array<{ id: string; score: number }> {
+  const scores = new Map<string, number>();
+  for (const list of rankedLists) {
+    for (let rank = 0; rank < list.length; rank++) {
+      scores.set(list[rank], (scores.get(list[rank]) || 0) + 1 / (k + rank + 1));
+    }
   }
-  return normalize(vector);
-}
-
-function normalize(vector: number[]): number[] {
-  let norm = 0;
-  for (const value of vector) norm += value * value;
-  norm = Math.sqrt(norm);
-  if (norm === 0) return vector;
-  return vector.map((value) => value / norm);
-}
-
-export function cosineSimilarity(a: number[], b: number[], dimension: number): number {
-  let dot = 0;
-  const length = Math.min(a.length, b.length, dimension);
-  for (let i = 0; i < length; i++) dot += a[i] * b[i];
-  return dot;
+  return [...scores.entries()]
+    .map(([id, score]) => ({ id, score }))
+    .sort((a, b) => b.score - a.score);
 }
 
 export class VectorStore {
   private records: VectorRecord[] = [];
   private storePath: string;
-  private dimension: number;
+  private provider: EmbeddingProvider;
 
-  constructor(storePath: string, dimension: number = DEFAULT_DIMENSION) {
+  constructor(storePath: string, provider: EmbeddingProvider) {
     this.storePath = storePath;
-    this.dimension = dimension;
+    this.provider = provider;
     this.load();
+  }
+
+  get dimension(): number {
+    return this.provider.dimension;
+  }
+
+  get providerName(): string {
+    return this.provider.name;
   }
 
   get size(): number {
@@ -87,7 +95,14 @@ export class VectorStore {
       [] as VectorRecord[],
       'VectorStore',
     );
-    this.records = records.filter((r) => r.dimension === this.dimension);
+    this.records = records.filter((r) => this.isCompatible(r));
+  }
+
+  private isCompatible(record: VectorRecord): boolean {
+    return (
+      record.dimension === this.provider.dimension &&
+      (record.provider || HASH_PROVIDER_FALLBACK_NAME) === this.provider.name
+    );
   }
 
   private save(): void {
@@ -98,36 +113,87 @@ export class VectorStore {
     }
   }
 
-  upsert(text: string, metadata: Record<string, unknown> = {}, id?: string): string {
-    const recordId = id || `vec_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-    const existingIndex = this.records.findIndex((r) => r.id === recordId);
-    const record: VectorRecord = {
-      id: recordId,
-      text,
-      vector: embed(text, this.dimension),
-      dimension: this.dimension,
-      metadata,
-      createdAt: new Date().toISOString(),
-    };
-    if (existingIndex >= 0) {
-      this.records[existingIndex] = record;
-    } else {
-      this.records.push(record);
-    }
-    this.save();
-    return recordId;
+  private removeFamily(id: string): void {
+    const prefix = `${id}#`;
+    this.records = this.records.filter((r) => r.id !== id && !r.id.startsWith(prefix));
   }
 
-  search(query: string, topK: number = 5): SearchHit[] {
-    const queryVector = embed(query, this.dimension);
-    return this.records
+  async upsert(
+    text: string,
+    metadata: Record<string, unknown> = {},
+    id?: string,
+    chunkSize: number = DEFAULT_CHUNK_SIZE,
+  ): Promise<string[]> {
+    if (!text) return [];
+    const baseId = id || `vec_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    const chunks = chunkText(text, chunkSize);
+    if (chunks.length === 0) return [];
+
+    this.removeFamily(baseId);
+    const vectors = await this.provider.embed(chunks);
+
+    const now = new Date().toISOString();
+    const ids = chunks.map((chunk, index) => {
+      const isSingle = chunks.length === 1;
+      const recordId = isSingle ? baseId : `${baseId}#${index}`;
+      const record: VectorRecord = {
+        id: recordId,
+        text: chunk,
+        vector: vectors[index],
+        dimension: this.provider.dimension,
+        metadata:
+          chunks.length > 1
+            ? { ...metadata, chunk_index: index, total_chunks: chunks.length }
+            : metadata,
+        createdAt: now,
+        provider: this.provider.name,
+      };
+      return record;
+    });
+
+    this.records.push(...ids);
+    this.save();
+    return ids.map((r) => r.id);
+  }
+
+  async search(query: string, topK: number = 5, mode: SearchMode = 'hybrid'): Promise<SearchHit[]> {
+    if (!query || this.records.length === 0) return [];
+    const compatible = this.records.filter((r) => this.isCompatible(r));
+    if (compatible.length === 0) return [];
+
+    if (mode === 'keyword') {
+      return this.keywordHits(compatible, query).slice(0, topK);
+    }
+
+    const queryVector = (await this.provider.embed([query]))[0];
+    const semanticHits = compatible
       .map((record) => ({
         record,
-        score: cosineSimilarity(queryVector, record.vector, this.dimension),
+        score: cosineSimilarity(queryVector, record.vector, this.provider.dimension),
       }))
       .filter((hit) => hit.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
+      .sort((a, b) => b.score - a.score);
+
+    if (mode === 'semantic') return semanticHits.slice(0, topK);
+
+    const keywordHits = this.keywordHits(compatible, query);
+    const fused = reciprocalRankFusion([
+      semanticHits.map((h) => h.record.id),
+      keywordHits.map((h) => h.record.id),
+    ]);
+    const byId = new Map(semanticHits.concat(keywordHits).map((h) => [h.record.id, h]));
+    return fused.map(({ id, score }) => ({ ...(byId.get(id) as SearchHit), score })).slice(0, topK);
+  }
+
+  private keywordHits(records: VectorRecord[], query: string): SearchHit[] {
+    const queryTokens = tokenize(query);
+    return records
+      .map((record) => ({
+        record,
+        score: keywordScore(queryTokens, new Set(tokenize(record.text))),
+      }))
+      .filter((hit) => hit.score > 0)
+      .sort((a, b) => b.score - a.score);
   }
 
   get(id: string): VectorRecord | undefined {
@@ -140,7 +206,7 @@ export class VectorStore {
 
   delete(id: string): boolean {
     const before = this.records.length;
-    this.records = this.records.filter((r) => r.id !== id);
+    this.removeFamily(id);
     if (this.records.length < before) {
       this.save();
       return true;
@@ -153,7 +219,11 @@ export class VectorStore {
     this.save();
   }
 
-  stats(): { count: number; dimension: number } {
-    return { count: this.records.length, dimension: this.dimension };
+  stats(): { count: number; dimension: number; provider: string } {
+    return {
+      count: this.records.length,
+      dimension: this.provider.dimension,
+      provider: this.provider.name,
+    };
   }
 }

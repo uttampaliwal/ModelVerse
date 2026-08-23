@@ -23,6 +23,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "express": "^5.2.1",
     "highlight.js": "^11.9.0",
     "jszip": "^3.10.1",

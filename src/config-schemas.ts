@@ -116,6 +116,7 @@ export const vectorRecordSchema = z.object({
   dimension: z.number().int().positive(),
   metadata: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
+  provider: z.string().optional(),
 });
 
 export const vectorRecordArraySchema = z.array(vectorRecordSchema);

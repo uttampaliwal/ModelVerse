@@ -47,15 +47,15 @@
 
 ### Plugins (7 included)
 
-| Plugin               | Tools                                                                             | Description                                                      |
-| -------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Image Generation** | `generate_image`                                                                  | Text-to-image (Stable Diffusion / DALL-E / ComfyUI)              |
-| **Speech**           | `text_to_speech`, `speech_to_text`                                                | TTS (Piper / OpenAI / eSpeak) and STT (Whisper)                  |
-| **Web Search**       | `web_search`, `fetch_url`                                                         | DuckDuckGo / Brave / Google search with page fetching            |
-| **RAG**              | `ingest_document`, `search_knowledge`, `list_documents`                           | Document ingestion and keyword search over knowledge bases       |
-| **Python Execution** | `execute_python`, `run_notebook`                                                  | Sandboxed Python and Jupyter notebook execution                  |
-| **Vision**           | `analyze_image`, `ocr_extract`, `describe_chart`                                  | Image analysis, OCR, chart interpretation                        |
-| **Vector Store**     | `vector_upsert`, `vector_search`, `vector_delete`, `vector_clear`, `vector_stats` | Persistent embedding-based store with semantic similarity search |
+| Plugin               | Tools                                                                             | Description                                                                                                |
+| -------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Image Generation** | `generate_image`                                                                  | Text-to-image (Stable Diffusion / DALL-E / ComfyUI)                                                        |
+| **Speech**           | `text_to_speech`, `speech_to_text`                                                | TTS (Piper / OpenAI / eSpeak) and STT (Whisper)                                                            |
+| **Web Search**       | `web_search`, `fetch_url`                                                         | DuckDuckGo / Brave / Google search with page fetching                                                      |
+| **RAG**              | `ingest_document`, `search_knowledge`, `list_documents`                           | Document ingestion and keyword search over knowledge bases                                                 |
+| **Python Execution** | `execute_python`, `run_notebook`                                                  | Sandboxed Python and Jupyter notebook execution                                                            |
+| **Vision**           | `analyze_image`, `ocr_extract`, `describe_chart`                                  | Image analysis, OCR, chart interpretation                                                                  |
+| **Vector Store**     | `vector_upsert`, `vector_search`, `vector_delete`, `vector_clear`, `vector_stats` | Persistent embeddings (local ONNX MiniLM), chunked ingestion, hybrid retrieval with Reciprocal Rank Fusion |
 
 ### Profiles
 
@@ -162,10 +162,10 @@ Edit `settings.json` in the project root to set your default engine and port:
 │  │ config-  │  │ │ollama  │ │  │ │ Image Gen    │ │      ││
 │  │ schemas  │  │ │lmstudio│ │  │ │ Speech       │ │      ││
 │  │          │  │ │openai  │ │  │ │ RAG          │ │      ││
-│  │ model-   │  │ │kobold  │ │  │ │ Python Exec  │ │      ││
-│  │ metadata │  │ │vllm    │ │  │ │ Vision       │ │      ││
-│  │          │  │ │transf. │ │  │ └──────────────┘ │      ││
-│  │ model-   │  │ └────────┘ │  └──────────────────┘      ││
+│  │ model-   │  │ │kobold  │ │  │ │ Vector Store │ │      ││
+│  │ metadata │  │ │vllm    │ │  │ │ Python Exec  │ │      ││
+│  │          │  │ │transf. │ │  │ │ Vision       │ │      ││
+│  │ model-   │  │ └────────┘ │  │ └──────────────┘ │      ││
 │  │ scanner  │  └────────────┘                            ││
 │  └──────────┘                                            ││
 │  RequestQueue (serializes generation)                     ││
@@ -217,7 +217,7 @@ ModelVerse/
 | **Virtual scrolling**    | ✅ 1000+ msgs                                          | ❌                       | ❌            | ❌           | ❌         |
 | **Built-in plugins**     | 7 (search, vision, TTS, RAG, code, image gen, vectors) | ✅ Web search, image gen | ❌            | ❌           | ❌         |
 | **Python execution**     | ✅ Jupyter notebooks                                   | ❌                       | ❌            | ❌           | ❌         |
-| **RAG**                  | ✅ Document ingestion + keyword search                 | ✅ Full RAG              | ❌            | ❌           | ❌         |
+| **RAG**                  | ✅ Keyword + hybrid semantic (RRF)                     | ✅ Full RAG              | ❌            | ❌           | ❌         |
 | **Themes**               | 7 themes                                               | Light/Dark               | Light/Dark    | Light/Dark   | Light/Dark |
 | **Model scanning**       | 8 sources auto-detect                                  | Ollama only              | Ollama only   | 1 folder     | 1 folder   |
 | **GGUF metadata**        | ✅ Header parsing                                      | ❌                       | ❌            | ❌           | ❌         |
@@ -301,7 +301,7 @@ Pull the latest changes and rebuild: `git pull && npm install && npm run build`.
 
 - **Single-user** — No multi-user or authentication support yet (planned for v0.4)
 - **No built-in model downloads** — You must provide your own models. Auto-download is not yet integrated.
-- **RAG is keyword-based** — The RAG plugin uses keyword search only. For semantic/embedding-based retrieval, enable the Vector Store plugin (`vector_upsert` + `vector_search` tools).
+- **RAG is keyword-based** — The RAG plugin uses keyword search only; enable the Vector Store plugin for semantic and hybrid (RRF-fused) retrieval instead. The MiniLM provider downloads its ONNX model (~25MB) on first use, then runs fully offline.
 - **Transformers.js engine is a stub** — The Transformers.js backend does not yet perform real inference. Contributions welcome.
 - **Ollama model scanning** — Requires Ollama to be running locally for manifest-based detection.
 - **WebSocket not yet used for chat** — Chat uses SSE (HTTP streaming) rather than WebSockets. The `ws` dependency is reserved for planned real-time features.

@@ -8,6 +8,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { documentChunkArraySchema, loadAndValidate } from '../config-schemas';
+import { chunkText } from '../vector-store';
 
 interface DocumentChunk {
   id: string;
@@ -98,10 +99,7 @@ class IngestDocumentTool implements ToolDefinition {
     const source = (params.source as string) || 'direct';
     const chunkSize = (params.chunk_size as number) || 1000;
 
-    const chunks: string[] = [];
-    for (let i = 0; i < content.length; i += chunkSize) {
-      chunks.push(content.substring(i, i + chunkSize));
-    }
+    const chunks = chunkText(content, chunkSize, 0);
 
     const ids = chunks.map((c) => store!.add(c, { source, ingestedAt: new Date().toISOString() }));
 

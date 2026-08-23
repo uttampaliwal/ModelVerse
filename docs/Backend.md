@@ -28,7 +28,13 @@ Extensible plugin system. See [PluginAPI.md](PluginAPI.md).
 
 ### Vector Store (`src/vector-store.ts`)
 
-Persistent embedding-based store used by the Vector Store plugin. Texts are embedded with a local hashed bag-of-words encoder (no external services) and searched via cosine similarity. Records persist as JSON validated by `vectorRecordArraySchema`.
+Persistent embedding store used by the Vector Store plugin:
+
+- **Embedding providers** (`src/embeddings.ts`) — `minilm` runs all-MiniLM-L6-v2 locally via ONNX (transformers.js, 384-dim; downloads ~25MB on first use then offline). `hash` is a zero-dependency hashed bag-of-words fallback (256-dim default).
+- **Chunked ingestion** — `upsert()` splits long texts into overlapping chunks (`1000` chars / `150` overlap by default); re-upserting an id replaces its whole chunk family.
+- **Hybrid retrieval** — `search(query, topK, mode)` supports `semantic` (cosine), `keyword` (token overlap), and `hybrid` (default): Reciprocal Rank Fusion (`k=60`) over both ranked lists.
+- Records persist as JSON validated by `vectorRecordArraySchema`; records from mismatched providers/dimensions are ignored at load and search time.
+- Retrieval is brute-force cosine over the in-memory corpus — fine at small N; an ANN/HNSW index can be swapped in behind the same interface if scale demands it.
 
 ### Config Schemas (`src/config-schemas.ts`)
 
