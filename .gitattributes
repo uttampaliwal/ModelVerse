@@ -2,4 +2,4 @@
 public/vendor/** linguist-vendored
 
 # Normalize line endings
-* text=auto
+* text=auto eol=lf
