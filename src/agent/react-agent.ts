@@ -1,0 +1,256 @@
+import type { ChatMessage, GenerateOptions, LLMEngine } from '../engines/base';
+import type { ToolDefinition, ToolResult } from '../plugins/base';
+
+export interface AgentToolInfo {
+  pluginId: string;
+  tool: ToolDefinition;
+}
+
+export interface AgentDeps {
+  generate: (messages: ChatMessage[]) => Promise<string>;
+  listTools: () => AgentToolInfo[];
+  executeTool: (fullName: string, params: Record<string, unknown>) => Promise<ToolResult>;
+}
+
+export interface AgentOptions {
+  maxIterations?: number;
+  maxObservationChars?: number;
+}
+
+export type AgentStep =
+  | { kind: 'thought'; content: string }
+  | { kind: 'action'; tool: string; input: Record<string, unknown>; thought?: string }
+  | { kind: 'observation'; tool: string; result: ToolResult }
+  | { kind: 'error'; content: string }
+  | { kind: 'final'; answer: string };
+
+export interface AgentRunResult {
+  success: boolean;
+  answer: string;
+  steps: AgentStep[];
+  iterations: number;
+  stoppedReason: 'completed' | 'max_iterations' | 'invalid_output';
+}
+
+const DEFAULT_MAX_ITERATIONS = 8;
+const DEFAULT_MAX_OBSERVATION_CHARS = 4000;
+
+interface ParsedOutput {
+  kind: 'final' | 'action';
+  thought?: string;
+  answer?: string;
+  tool?: string;
+  input?: Record<string, unknown>;
+}
+
+export function stripThinkBlocks(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
+function extractLabelled(text: string, label: string): string | null {
+  const match = new RegExp(`${label}\\s*:\\s*`, 'i').exec(text);
+  return match ? text.slice(match.index + match[0].length) : null;
+}
+
+export function parseAgentOutput(text: string, tools: AgentToolInfo[] = []): ParsedOutput {
+  const cleaned = stripThinkBlocks(text);
+  const finalMatch = /Final\s*Answer\s*:\s*([\s\S]*)$/i.exec(cleaned);
+  if (finalMatch) {
+    const before = cleaned.slice(0, finalMatch.index);
+    const thought = /Thought\s*:\s*([\s\S]*?)\s*$/i.exec(before)?.[1]?.trim();
+    return { kind: 'final', answer: finalMatch[1].trim(), thought: thought || undefined };
+  }
+
+  const actions = [...cleaned.matchAll(/Action\s*:\s*([^\n]+)/gi)];
+  if (actions.length === 0) return { kind: 'final', answer: cleaned };
+
+  const actionBlockStart = actions[actions.length - 1].index ?? 0;
+  const beforeAction = cleaned.slice(0, actionBlockStart);
+  const thoughtMatch = /Thought\s*:\s*([\s\S]*)/i.exec(beforeAction);
+  const toolName = actions[actions.length - 1][1].trim().replace(/^["']|["']$/g, '');
+
+  const inputText = extractLabelled(cleaned.slice(actionBlockStart), 'Action Input') ?? '';
+  const input = parseActionInput(inputText.trim(), toolName, tools);
+
+  return {
+    kind: 'action',
+    tool: toolName,
+    input,
+    thought: thoughtMatch?.[1]?.trim() || undefined,
+  };
+}
+
+function parseActionInput(
+  raw: string,
+  toolName: string,
+  tools: AgentToolInfo[],
+): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    /* fall through to plain-string handling */
+  }
+  const stripped = raw.replace(/^["']|["']$/g, '');
+  const declared = tools.find(
+    (t) => t.tool.name === toolName || `${t.pluginId}:${t.tool.name}` === toolName,
+  );
+  const firstRequired = Object.entries(declared?.tool.parameters ?? {}).find(
+    ([, schema]) => schema.required,
+  );
+  const key = firstRequired ? firstRequired[0] : 'input';
+  return { [key]: stripped };
+}
+
+function formatToolList(tools: AgentToolInfo[]): string {
+  if (tools.length === 0) return '(no tools are currently active)';
+  return tools
+    .map(({ pluginId, tool }) => {
+      const params = Object.entries(tool.parameters)
+        .map(([name, schema]) => `${name}${schema.required ? '' : '?'}: ${schema.type}`)
+        .join(', ');
+      return `- ${pluginId}:${tool.name}(${params}): ${tool.description}`;
+    })
+    .join('\n');
+}
+
+export function buildAgentMessages(input: string, tools: AgentToolInfo[]): ChatMessage[] {
+  const system = [
+    'You are ModelVerse Agent, a helpful assistant that answers questions by using tools step by step.',
+    '',
+    'Available tools:',
+    formatToolList(tools),
+    '',
+    'On each turn respond in EXACTLY one of these formats:',
+    '',
+    'Thought: <your reasoning about what to do next>',
+    `Action: <tool name, e.g. web-search:web_search>`,
+    'Action Input: <JSON object of tool parameters, e.g. {"query": "..."}>',
+    '',
+    'or, when you can answer without more information:',
+    '',
+    'Thought: <brief reasoning>',
+    'Final Answer: <the complete answer for the user>',
+    '',
+    'Rules:',
+    '- One Action per turn; you will receive an Observation with the result.',
+    '- Prefer tools over guessing when they can provide facts.',
+    '- Combine information from multiple tools when useful.',
+    '- Never invent tool results. Always wait for the Observation.',
+  ].join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: `Question: ${input}` },
+  ];
+}
+
+export function engineGenerateFn(
+  engine: LLMEngine,
+  options: GenerateOptions = {},
+): (messages: ChatMessage[]) => Promise<string> {
+  return async (messages: ChatMessage[]) => {
+    const result = await engine.generate(messages, options);
+    let output = '';
+    for await (const token of result.stream) output += token;
+    return output;
+  };
+}
+
+function truncate(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  return `${text.slice(0, limit)}\n... (truncated)`;
+}
+
+export async function runReActAgent(
+  input: string,
+  deps: AgentDeps,
+  options: AgentOptions = {},
+): Promise<AgentRunResult> {
+  const maxIterations = Math.max(1, options.maxIterations ?? DEFAULT_MAX_ITERATIONS);
+  const maxObservationChars = options.maxObservationChars ?? DEFAULT_MAX_OBSERVATION_CHARS;
+
+  const steps: AgentStep[] = [];
+  const tools = deps.listTools();
+
+  const resolveTool = (name: string): string | null => {
+    if (tools.some((t) => `${t.pluginId}:${t.tool.name}` === name)) return name;
+    const byShortName = tools.filter((t) => t.tool.name === name);
+    return byShortName.length === 1
+      ? `${byShortName[0].pluginId}:${byShortName[0].tool.name}`
+      : null;
+  };
+
+  const messages: ChatMessage[] = buildAgentMessages(input, tools);
+  let iterations = 0;
+  let stoppedReason: AgentRunResult['stoppedReason'] = 'max_iterations';
+  let lastAnswer = '';
+
+  while (iterations < maxIterations) {
+    iterations++;
+    const output = await deps.generate(messages);
+    const parsed = parseAgentOutput(output, tools);
+
+    if (parsed.kind === 'final') {
+      lastAnswer = parsed.answer ?? '';
+      if (parsed.thought) steps.push({ kind: 'thought', content: parsed.thought });
+      steps.push({ kind: 'final', answer: lastAnswer });
+      stoppedReason = 'completed';
+      break;
+    }
+
+    if (parsed.thought) steps.push({ kind: 'thought', content: parsed.thought });
+    const fullName = resolveTool(parsed.tool ?? '');
+    if (!fullName) {
+      steps.push({ kind: 'error', content: `Unknown tool: ${parsed.tool}` });
+      messages.push({ role: 'assistant', content: output });
+      messages.push({
+        role: 'user',
+        content: `Observation: Error - unknown tool "${parsed.tool}". Available tools: ${tools.map((t) => `${t.pluginId}:${t.tool.name}`).join(', ')}. Reply with a valid Action or a Final Answer.`,
+      });
+      continue;
+    }
+
+    steps.push({
+      kind: 'action',
+      tool: fullName,
+      input: parsed.input ?? {},
+      thought: parsed.thought,
+    });
+    const result = await deps.executeTool(fullName, parsed.input ?? {});
+    steps.push({ kind: 'observation', tool: fullName, result });
+
+    messages.push({ role: 'assistant', content: output });
+    messages.push({
+      role: 'user',
+      content: `Observation: ${
+        result.success
+          ? truncate(JSON.stringify(result.output), maxObservationChars)
+          : `Error - ${result.error}`
+      }\n\nContinue. Reply with Thought/Action/Action Input, or Final Answer if you have enough information.`,
+    });
+  }
+
+  if (stoppedReason !== 'completed' && iterations >= maxIterations) {
+    steps.push({
+      kind: 'error',
+      content: `Reached maximum iterations (${maxIterations}) without a final answer`,
+    });
+  }
+
+  if (lastAnswer === '') {
+    const lastFinal = [...steps].reverse().find((step) => step.kind === 'final');
+    lastAnswer = lastFinal ? (lastFinal as { answer: string }).answer : '';
+  }
+
+  return {
+    success: stoppedReason === 'completed' && lastAnswer.length > 0,
+    answer: lastAnswer,
+    steps,
+    iterations,
+    stoppedReason,
+  };
+}

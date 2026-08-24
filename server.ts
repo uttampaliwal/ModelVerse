@@ -14,6 +14,7 @@ import { RAGPlugin } from './src/plugins/rag';
 import { PythonPlugin } from './src/plugins/python';
 import { VisionPlugin } from './src/plugins/vision';
 import { VectorStorePlugin } from './src/plugins/vector-store';
+import { runReActAgent, engineGenerateFn } from './src/agent/react-agent';
 import {
   listProfiles,
   getActiveProfile,
@@ -732,6 +733,53 @@ app.post('/api/chat', (req: express.Request, res: express.Response) => {
   };
 
   requestQueue.enqueue(allMessages, opts, res);
+});
+
+app.post('/api/agent/run', async (req: express.Request, res: express.Response) => {
+  const body = req.body as { input?: string; maxIterations?: number };
+  const input = typeof body.input === 'string' ? body.input.trim() : '';
+  if (!input) {
+    return res.status(400).json({ error: 'Missing required field: input' });
+  }
+
+  const engine = engines.getActive();
+  if (!engine.running) {
+    return res.status(503).json({ error: 'Engine not running' });
+  }
+
+  const generate = engineGenerateFn(engine, {
+    temperature: settings.temperature,
+    topP: settings.topP,
+    topK: settings.topK,
+    repeatPenalty: settings.repeatPenalty,
+    maxTokens: settings.maxTokens,
+    contextSize: settings.contextSize,
+  });
+
+  const started = Date.now();
+  try {
+    const result = await runReActAgent(
+      input,
+      {
+        generate,
+        listTools: () => plugins.getAllTools(),
+        executeTool: (fullName, params) => plugins.executeTool(fullName, params),
+      },
+      {
+        maxIterations:
+          typeof body.maxIterations === 'number' && body.maxIterations > 0
+            ? Math.min(24, Math.floor(body.maxIterations))
+            : undefined,
+      },
+    );
+    log.server(
+      `Agent run completed (${result.stoppedReason}, ${result.iterations} iterations, ${Date.now() - started}ms)`,
+    );
+    res.json({ ...result });
+  } catch (e) {
+    log.error('Agent run failed', e as Error);
+    res.status(500).json({ error: (e as Error).message });
+  }
 });
 
 const PORT = process.env.PORT || settings.port;
