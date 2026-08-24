@@ -40,6 +40,15 @@ Persistent embedding store used by the Vector Store plugin:
 
 RAGAS-style evaluation harness over hybrid retrieval: recall@k, precision@k, MRR, context precision, faithfulness, and answer relevancy. CLI via `npm run eval` (see [Evaluation.md](Evaluation.md)).
 
+### Agent (`src/agent/react-agent.ts`)
+
+ReAct-style agent that plans and calls active plugin tools:
+
+- Loop: `Thought → Action → Action Input → Observation` repeated until `Final Answer:` or the iteration cap (default 8, max 24 via request).
+- Tools are listed dynamically from `PluginManager.getAllTools()` and executed through `plugins.executeTool()`; short names resolve to their unique plugin-qualified form.
+- Tolerant parser: strips `<think>` blocks, accepts JSON or plain-string action inputs (mapped onto the first required parameter), recovers from unknown tools, truncates oversized observations.
+- Endpoint: `POST /api/agent/run` with `{ input, maxIterations? }` returns `{ success, answer, steps[], iterations, stoppedReason }`; requires a running engine (503 otherwise).
+
 ### Config Schemas (`src/config-schemas.ts`)
 
 Zod schemas for validating settings, profiles, metadata, and plugin config. The `loadAndValidate()` helper reads a JSON file, validates it against a schema, and returns defaults on failure.

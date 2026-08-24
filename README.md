@@ -37,6 +37,13 @@
 - **Mermaid diagrams** — Render ````mermaid` code blocks inline
 - **Thinking extraction** — Parses `<think>` reasoning tags into collapsible blocks with timing info
 
+### Agentic Workflows
+
+- **ReAct-style agent** — Plans with Thought/Action/Observation loops over all active plugin tools (`POST /api/agent/run`)
+- **Tool orchestration** — Chains web search → RAG retrieval → Python execution → summarization in a single request
+- **Self-correcting** — Recovers from unknown tools and failed calls; configurable iteration cap (default 8)
+- **No framework lock-in** — Agent loop implemented in ~300 lines of TypeScript, no LangChain dependency
+
 ### Model Management
 
 - **Auto-scanning** — Detects models from 8 sources: LM Studio, Ollama, llama.cpp, GPT4All, Jan, Open WebUI, Transformers cache, custom paths
@@ -228,6 +235,7 @@ ModelVerse/
 | **Export**               | Markdown / JSON                                        | Markdown                 | Markdown      | ❌           | ❌         |
 | **Keyboard shortcuts**   | 6 shortcuts                                            | ❌                       | ❌            | ❌           | ❌         |
 | **Open source**          | ✅ MIT                                                 | ✅ MIT                   | ✅ MIT        | ❌           | ✅ AGPL    |
+| **Agentic workflows**    | ✅ ReAct loop over 7 plugin tools                      | ❌                       | ❌            | ❌           | ❌         |
 
 ---
 
