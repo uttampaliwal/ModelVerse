@@ -121,6 +121,26 @@ export const vectorRecordSchema = z.object({
 
 export const vectorRecordArraySchema = z.array(vectorRecordSchema);
 
+export const evalCorpusDocSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+});
+
+export const evalCaseSchema = z.object({
+  id: z.string(),
+  query: z.string(),
+  relevant_ids: z.array(z.string()).default([]),
+  answer: z.string().optional(),
+});
+
+export const evalDatasetSchema = z.object({
+  name: z.string(),
+  description: z.string().default(''),
+  top_k: z.number().int().positive().default(5),
+  corpus: z.array(evalCorpusDocSchema),
+  cases: z.array(evalCaseSchema).min(1),
+});
+
 export const packageJsonSchema = z.object({
   version: z.string().optional(),
 });
@@ -130,6 +150,9 @@ export type ServerSettings = z.output<typeof serverSettingsSchema>;
 export type Profile = z.output<typeof profileSchema>;
 export type ModelMetadata = z.output<typeof modelMetadataSchema>;
 export type ScannerConfig = z.output<typeof scannerConfigSchema>;
+export type EvalCorpusDoc = z.output<typeof evalCorpusDocSchema>;
+export type EvalCase = z.output<typeof evalCaseSchema>;
+export type EvalDataset = z.output<typeof evalDatasetSchema>;
 
 export function loadAndValidate<T>(
   schema: z.ZodType<T>,
