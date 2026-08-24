@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "benchmark": "node scripts/benchmark.mjs",
+    "eval": "node scripts/evaluate.mjs",
     "prepare": "husky"
   },
   "dependencies": {

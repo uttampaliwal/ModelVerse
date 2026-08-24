@@ -25,4 +25,6 @@ node_modules/.vite-temp/
 
 # Test & benchmark output
 benchmark-results.json
+eval-results.json
+.eval-store-*/
 coverage/

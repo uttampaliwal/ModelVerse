@@ -1,0 +1,109 @@
+{
+  "name": "modelverse-rag-eval-v1",
+  "description": "Seed RAG evaluation dataset: small curated corpus with gold labels and reference answers for measuring hybrid retrieval quality",
+  "top_k": 5,
+  "corpus": [
+    {
+      "id": "doc-paris",
+      "text": "Paris is the capital and largest city of France. It sits on the Seine river in western Europe and is known for the Eiffel Tower, the Louvre museum, and its cafe culture."
+    },
+    {
+      "id": "doc-tokyo",
+      "text": "Tokyo is the capital of Japan and the world's most populous metropolitan area. The city blends neon districts like Shibuya with tranquil shrines and cherry blossom parks."
+    },
+    {
+      "id": "doc-cairo",
+      "text": "Cairo is the capital of Egypt and the largest city in the Arab world. The Giza pyramid complex and the Great Sphinx lie on its outskirts."
+    },
+    {
+      "id": "doc-ev-batteries",
+      "text": "Electric cars use rechargeable lithium-ion battery packs instead of gasoline engines. Charging at home overnight typically covers daily commuting distances, while fast-charging stations refill most of a battery in about thirty minutes."
+    },
+    {
+      "id": "doc-ev-range",
+      "text": "Range anxiety describes the fear that an electric vehicle will run out of charge before reaching a charger. Modern electric cars regularly achieve ranges of 250 to 300 miles per full charge, reducing this concern for most drivers."
+    },
+    {
+      "id": "doc-llm-inference",
+      "text": "Local LLM inference runs language models directly on your own hardware. Quantization reduces model weights to 4-bit or 8-bit integers so large networks fit into consumer GPU memory with minimal quality loss."
+    },
+    {
+      "id": "doc-gguf",
+      "text": "GGUF is a binary file format used by llama.cpp to package quantized model weights and tokenizer metadata in a single file. A .gguf file also embeds model metadata such as parameter count, architecture, and context length."
+    },
+    {
+      "id": "doc-vector-search",
+      "text": "Vector search finds documents by comparing embedding vectors with cosine similarity instead of matching exact keywords. Hybrid retrieval combines semantic vector ranking with keyword matching, fusing both ranked lists using Reciprocal Rank Fusion."
+    },
+    {
+      "id": "doc-sourdough",
+      "text": "Sourdough bread rises through wild yeast and lactobacilli rather than commercial baker's yeast. A mature starter doubles in size within six hours when fed equal weights of flour and water."
+    },
+    {
+      "id": "doc-marathon",
+      "text": "A marathon covers 26.2 miles or 42.195 kilometers. Elite runners finish in just over two hours, while recreational runners commonly train for sixteen weeks before race day."
+    }
+  ],
+  "cases": [
+    {
+      "id": "q-capital-france",
+      "query": "What is the capital of France?",
+      "relevant_ids": ["doc-paris"],
+      "answer": "Paris is the capital of France. The city sits on the Seine river."
+    },
+    {
+      "id": "q-capital-japan",
+      "query": "Which city is the capital of Japan?",
+      "relevant_ids": ["doc-tokyo"],
+      "answer": "Tokyo is the capital of Japan."
+    },
+    {
+      "id": "q-capital-egypt",
+      "query": "Where are the pyramids located in Egypt?",
+      "relevant_ids": ["doc-cairo"],
+      "answer": "The Giza pyramids are located near Cairo, the capital of Egypt."
+    },
+    {
+      "id": "q-ev-charging",
+      "query": "How do electric cars charge their batteries?",
+      "relevant_ids": ["doc-ev-batteries"],
+      "answer": "Electric cars charge lithium-ion battery packs at home overnight or quickly at fast-charging stations."
+    },
+    {
+      "id": "q-ev-range",
+      "query": "How far can an electric car drive on one charge?",
+      "relevant_ids": ["doc-ev-range", "doc-ev-batteries"],
+      "answer": "Modern electric cars achieve ranges of 250 to 300 miles on a full charge."
+    },
+    {
+      "id": "q-local-inference",
+      "query": "How can I run large language models on my own GPU?",
+      "relevant_ids": ["doc-llm-inference", "doc-gguf"],
+      "answer": "You can run local LLM inference by loading quantized GGUF model files with llama.cpp so the network fits in consumer GPU memory."
+    },
+    {
+      "id": "q-hybrid-retrieval",
+      "query": "What is hybrid retrieval and reciprocal rank fusion?",
+      "relevant_ids": ["doc-vector-search"],
+      "answer": "Hybrid retrieval combines semantic vector search with keyword matching and fuses the two ranked lists using Reciprocal Rank Fusion."
+    },
+    {
+      "id": "q-sourdough-starter",
+      "query": "How does sourdough rise without yeast packets?",
+      "relevant_ids": ["doc-sourdough"],
+      "answer": "Sourdough rises from wild yeast and lactobacilli in a starter fed with flour and water."
+    },
+    {
+      "id": "q-marathon-distance",
+      "query": "How long is a marathon in kilometers?",
+      "relevant_ids": ["doc-marathon"],
+      "answer": "A marathon is 42.195 kilometers long, which equals 26.2 miles."
+    },
+    {
+      "id": "q-city-mix",
+      "query": "Which capital city has neon districts and cherry blossoms?",
+      "relevant_ids": ["doc-tokyo", "doc-paris"],
+      "answer": "Tokyo mixes neon districts like Shibuya with cherry blossom parks and quiet shrines."
+    }
+  ]
+}
