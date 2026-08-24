@@ -36,6 +36,10 @@ Persistent embedding store used by the Vector Store plugin:
 - Records persist as JSON validated by `vectorRecordArraySchema`; records from mismatched providers/dimensions are ignored at load and search time.
 - Retrieval is brute-force cosine over the in-memory corpus — fine at small N; an ANN/HNSW index can be swapped in behind the same interface if scale demands it.
 
+### Evaluation (`src/eval/`)
+
+RAGAS-style evaluation harness over hybrid retrieval: recall@k, precision@k, MRR, context precision, faithfulness, and answer relevancy. CLI via `npm run eval` (see [Evaluation.md](Evaluation.md)).
+
 ### Config Schemas (`src/config-schemas.ts`)
 
 Zod schemas for validating settings, profiles, metadata, and plugin config. The `loadAndValidate()` helper reads a JSON file, validates it against a schema, and returns defaults on failure.

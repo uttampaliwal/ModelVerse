@@ -198,9 +198,9 @@ ModelVerse/
 │   ├── src/               # 25 TypeScript modules
 │   └── vendor/            # Vendored libraries
 ├── profiles/              # Built-in profiles (JSON)
-├── scripts/               # Build/utility scripts
+├── scripts/               # Build/utility scripts + RAG eval dataset
 ├── tests/                 # Vitest tests
-├── docs/                  # Architecture, Plugin API, contributing guides
+├── docs/                  # Architecture, Evaluation, Plugin API, contributing guides
 └── .github/workflows/     # CI/CD
 ```
 
@@ -367,6 +367,7 @@ npm run format:fix   # Prettier auto-format
 npm test             # Run tests
 npm run typecheck    # TypeScript type check
 npm run benchmark    # Run performance benchmark
+npm run eval         # Run RAG evaluation harness (recall@k, faithfulness, ...)
 ```
 
 ---
