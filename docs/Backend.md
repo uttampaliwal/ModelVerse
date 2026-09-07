@@ -82,6 +82,7 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | Method | Path                         | Description                      |
 | ------ | ---------------------------- | -------------------------------- |
 | GET    | `/api/version`               | App version from package.json    |
+| GET    | `/api/update`                | Update check (cached 6h)         |
 | GET    | `/api/engines`               | Available engines                |
 | POST   | `/api/chat`                  | Send message, receive SSE stream |
 | POST   | `/api/server/start`          | Load a model                     |

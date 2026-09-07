@@ -21,6 +21,7 @@ import { ingestCorpus, runEvaluation, vectorStoreRetriever } from './src/eval/ru
 import { VectorStore } from './src/vector-store';
 import { createEmbeddingProvider } from './src/embeddings';
 import { cancelDownload, getDownload, listDownloads, startDownload } from './src/model-download';
+import { getUpdateInfo } from './src/update-checker';
 import {
   listProfiles,
   getActiveProfile,
@@ -45,6 +46,16 @@ import { log } from './src/logger';
 import { serverSettingsSchema, packageJsonSchema, loadAndValidate } from './src/config-schemas';
 
 export type ServerSettings = import('./src/config-schemas').ServerSettings;
+
+function getAppVersion(): string {
+  const pkg = loadAndValidate(
+    packageJsonSchema,
+    path.join(__dirname, 'package.json'),
+    { version: '0.0.0' },
+    'Package',
+  );
+  return typeof pkg.version === 'string' ? pkg.version : '0.0.0';
+}
 
 interface ChatMessageDTO {
   role: string;
@@ -379,13 +390,12 @@ app.use(
 );
 
 app.get('/api/version', (_req: express.Request, res: express.Response) => {
-  const pkg = loadAndValidate(
-    packageJsonSchema,
-    path.join(__dirname, 'package.json'),
-    { version: '0.0.0' },
-    'Package',
-  );
-  res.json({ version: pkg.version });
+  res.json({ version: getAppVersion() });
+});
+
+app.get('/api/update', async (_req: express.Request, res: express.Response) => {
+  const info = await getUpdateInfo(getAppVersion());
+  res.json(info);
 });
 
 app.get('/api/engines', (_req: express.Request, res: express.Response) => {

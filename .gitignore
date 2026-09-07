@@ -28,3 +28,5 @@ benchmark-results.json
 eval-results.json
 .eval-store-*/
 coverage/
+test-results/
+playwright-report/

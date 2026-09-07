@@ -253,9 +253,9 @@ ModelVerse/
 
 ### v0.2 — Stability & Polish
 
-- [ ] End-to-end test suite (Playwright)
+- [x] End-to-end test suite (Playwright)
 - [x] Error boundary UI for engine failures
-- [ ] Auto-update checker for new releases
+- [x] Auto-update checker for new releases
 - [x] Docker image for one-command deploy
 - [ ] Windows/Mac/Linux installers
 
@@ -367,7 +367,7 @@ Commit messages are linted by commitlint on commit.
 
 - **Unit tests** — Vitest (run `npm test`)
 - **Type checking** — `npm run typecheck` (dual tsconfig)
-- **End-to-end** — Planned (Playwright)
+- **End-to-end** — Playwright (run `npm run test:e2e`, auto-starts the server)
 
 ### Pull Request Process
 

@@ -2,9 +2,9 @@
 
 ## v0.2 — Stability & Polish
 
-- [ ] End-to-end test suite (Playwright)
+- [x] End-to-end test suite (Playwright)
 - [x] Error boundary UI for engine failures
-- [ ] Auto-update checker for new releases
+- [x] Auto-update checker for new releases
 - [x] Docker image for one-command deploy
 - [ ] Windows/Mac/Linux installers
 

@@ -128,6 +128,37 @@ export function stopStatusUpdates(): void {
 export function initStatusBar(): void {
   updateStatusBar();
   void fetchVersion();
+  const checkBtn = $('checkUpdateBtn');
+  checkBtn?.addEventListener('click', () => void checkForUpdates());
+}
+
+async function checkForUpdates(): Promise<void> {
+  const statusEl = $('updateStatus');
+  const btn = $('checkUpdateBtn') as HTMLButtonElement | null;
+  if (statusEl) statusEl.textContent = 'Checking…';
+  if (btn) btn.disabled = true;
+  try {
+    const data = await api<{
+      latest: string | null;
+      updateAvailable: boolean;
+      error?: string;
+    }>('/api/update');
+    if (data.updateAvailable && data.latest) {
+      if (statusEl)
+        statusEl.textContent = `v${data.latest} available — see GitHub releases to upgrade.`;
+      const { showToast } = await import('./toast.js');
+      showToast(`ModelVerse v${data.latest} is available`, 'info', { duration: 8000 });
+    } else if (data.error) {
+      if (statusEl) statusEl.textContent = 'Could not check (offline?)';
+    } else {
+      if (statusEl) statusEl.textContent = 'You are up to date.';
+    }
+  } catch (e) {
+    logError('Failed to check for updates', e);
+    if (statusEl) statusEl.textContent = 'Could not check (offline?)';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function fetchVersion(): Promise<void> {

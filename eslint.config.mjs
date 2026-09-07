@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 const root = import.meta.dirname;
 
@@ -28,11 +29,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ['tests/**/*.ts', 'vitest.config.ts'],
+    files: ['tests/**/*.ts', 'e2e/**/*.ts', 'vitest.config.ts', 'playwright.config.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
         project: false,
+      },
+      globals: {
+        ...globals.node,
       },
     },
     rules: {

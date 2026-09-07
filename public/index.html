@@ -1,591 +1,1464 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>ModelVerse</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1a1a2e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icons/icon.svg">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-  <style>
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  </style>
-  <link rel="stylesheet" href="css/variables.css?v=20260709a">
-  <link rel="stylesheet" href="css/base.css?v=20260709a">
-  <link rel="stylesheet" href="css/button.css?v=20260709a">
-  <link rel="stylesheet" href="css/sidebar.css?v=20260709a">
-  <link rel="stylesheet" href="css/chat.css?v=20260709a">
-  <link rel="stylesheet" href="css/message.css?v=20260709a">
-  <link rel="stylesheet" href="css/input.css?v=20260709a">
-  <link rel="stylesheet" href="css/modal.css?v=20260709a">
-  <link rel="stylesheet" href="css/settings.css?v=20260709a">
-  <link rel="stylesheet" href="css/toast.css?v=20260709a">
-  <link rel="stylesheet" href="css/status-bar.css?v=20260709a">
-  <link rel="stylesheet" href="css/polish.css?v=20260709a">
-  <link rel="stylesheet" href="css/responsive.css?v=20260709a">
-</head>
-<body>
-  <div class="app">
-    <aside class="sidebar" id="sidebar" role="complementary" aria-label="Sidebar">
-      <div class="sidebar-header">
-        <div class="logo" role="img" aria-label="ModelVerse">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>ModelVerse</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+    <style>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="css/variables.css?v=20260709a" />
+    <link rel="stylesheet" href="css/base.css?v=20260709a" />
+    <link rel="stylesheet" href="css/button.css?v=20260709a" />
+    <link rel="stylesheet" href="css/sidebar.css?v=20260709a" />
+    <link rel="stylesheet" href="css/chat.css?v=20260709a" />
+    <link rel="stylesheet" href="css/message.css?v=20260709a" />
+    <link rel="stylesheet" href="css/input.css?v=20260709a" />
+    <link rel="stylesheet" href="css/modal.css?v=20260709a" />
+    <link rel="stylesheet" href="css/settings.css?v=20260709a" />
+    <link rel="stylesheet" href="css/toast.css?v=20260709a" />
+    <link rel="stylesheet" href="css/status-bar.css?v=20260709a" />
+    <link rel="stylesheet" href="css/polish.css?v=20260709a" />
+    <link rel="stylesheet" href="css/responsive.css?v=20260709a" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Sidebar">
+        <div class="sidebar-header">
+          <div class="logo" role="img" aria-label="ModelVerse">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span>ModelVerse</span>
+          </div>
+          <div class="sidebar-header-actions">
+            <button
+              class="icon-btn mobile-only"
+              id="menuBtn"
+              title="Menu"
+              aria-label="Open navigation menu"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn"
+              id="collapseBtn"
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn"
+              id="newChatBtn"
+              title="New Chat"
+              aria-label="Start a new chat conversation"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label-row">
+            <label class="section-label">Model</label>
+            <button
+              class="icon-btn icon-btn-sm"
+              id="refreshModelsBtn"
+              title="Refresh model list"
+              aria-label="Refresh model list"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </button>
+          </div>
+          <select
+            id="modelSelect"
+            class="model-select"
+            aria-label="Select a model"
+            style="display: none"
+          >
+            <option value="">Select a model...</option>
+          </select>
+          <div class="model-list" id="modelList" role="listbox" aria-label="Available models">
+            <div class="model-empty">Loading models...</div>
+          </div>
+          <div class="model-info" id="modelInfo" aria-live="polite"></div>
+          <div class="server-controls" role="group" aria-label="Server controls">
+            <button
+              id="stopBtn"
+              class="btn btn-danger btn-full"
+              disabled
+              aria-label="Stop the inference server"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+              </svg>
+              Stop Server
+            </button>
+          </div>
+          <div class="status-indicator" id="statusIndicator" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="status-text">Disconnected</span>
+            <span class="loading-dots" style="display: none" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </span>
+          </div>
+          <div
+            class="loading-progress"
+            id="loadingProgress"
+            style="display: none"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div class="loading-progress-bar" id="loadingProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="sidebar-section sidebar-history">
+          <div class="section-label-row">
+            <label class="section-label" for="convSearch">Conversations</label>
+            <div class="section-label-actions">
+              <button
+                class="icon-btn icon-btn-sm"
+                id="newFolderBtn"
+                title="New folder"
+                aria-label="Create a new folder"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                  />
+                  <line x1="12" y1="11" x2="12" y2="17" />
+                  <line x1="9" y1="14" x2="15" y2="14" />
+                </svg>
+              </button>
+              <button
+                class="icon-btn icon-btn-sm"
+                id="exportBtn"
+                title="Export conversation"
+                aria-label="Export current conversation"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="conv-search" role="search">
+            <svg
+              class="conv-search-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              id="convSearch"
+              class="conv-search-input"
+              placeholder="Search conversations..."
+              aria-label="Search conversations by name or content"
+            />
+          </div>
+          <div
+            id="conversationList"
+            class="conversation-list"
+            role="listbox"
+            aria-label="Saved conversations"
+          ></div>
+        </div>
+
+        <div class="sidebar-footer">
+          <span class="version-badge" id="versionBadge" title="ModelVerse version"></span>
+          <button
+            class="icon-btn"
+            id="settingsBtn"
+            title="Settings"
+            aria-label="Open settings dialog"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+          </button>
+          <a
+            href="https://github.com/uttampaliwal/ModelVerse"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="icon-btn"
+            title="GitHub"
+            aria-label="View source code on GitHub"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+              />
+            </svg>
+          </a>
+        </div>
+        <div
+          class="sidebar-resize-handle"
+          id="sidebarResizeHandle"
+          role="separator"
+          aria-label="Resize sidebar"
+          tabindex="0"
+        ></div>
+        <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+      </aside>
+
+      <main class="main" role="main" aria-label="Chat interface">
+        <button
+          class="sidebar-expand-btn"
+          id="sidebarExpandBtn"
+          title="Expand sidebar"
+          aria-label="Expand sidebar"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <polyline points="9 18 15 12 9 6" />
           </svg>
-          <span>ModelVerse</span>
-        </div>
-        <div class="sidebar-header-actions">
-          <button class="icon-btn mobile-only" id="menuBtn" title="Menu" aria-label="Open navigation menu">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </button>
-          <button class="icon-btn" id="collapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <button class="icon-btn" id="newChatBtn" title="New Chat" aria-label="Start a new chat conversation">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="section-label-row">
-          <label class="section-label">Model</label>
-          <button class="icon-btn icon-btn-sm" id="refreshModelsBtn" title="Refresh model list" aria-label="Refresh model list">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-          </button>
-        </div>
-        <select id="modelSelect" class="model-select" aria-label="Select a model" style="display:none">
-          <option value="">Select a model...</option>
-        </select>
-        <div class="model-list" id="modelList" role="listbox" aria-label="Available models">
-          <div class="model-empty">Loading models...</div>
-        </div>
-        <div class="model-info" id="modelInfo" aria-live="polite"></div>
-        <div class="server-controls" role="group" aria-label="Server controls">
-          <button id="stopBtn" class="btn btn-danger btn-full" disabled aria-label="Stop the inference server">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-            Stop Server
-          </button>
-        </div>
-        <div class="status-indicator" id="statusIndicator" role="status" aria-live="polite">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span class="status-text">Disconnected</span>
-          <span class="loading-dots" style="display:none" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </span>
-        </div>
-        <div class="loading-progress" id="loadingProgress" style="display:none" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="loading-progress-bar" id="loadingProgressBar"></div>
-        </div>
-      </div>
-
-      <div class="sidebar-section sidebar-history">
-        <div class="section-label-row">
-          <label class="section-label" for="convSearch">Conversations</label>
-          <div class="section-label-actions">
-            <button class="icon-btn icon-btn-sm" id="newFolderBtn" title="New folder" aria-label="Create a new folder">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-            </button>
-            <button class="icon-btn icon-btn-sm" id="exportBtn" title="Export conversation" aria-label="Export current conversation">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <div class="chat-container" id="chatContainer" role="region" aria-label="Chat messages">
+          <div class="chat-header">
+            <span id="chatTitle" class="chat-title" aria-live="polite"></span>
+            <button
+              class="restart-btn hidden"
+              id="restartBtn"
+              title="Restart conversation"
+              aria-label="Clear conversation and start over"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
             </button>
           </div>
-        </div>
-        <div class="conv-search" role="search">
-          <svg class="conv-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="convSearch" class="conv-search-input" placeholder="Search conversations..." aria-label="Search conversations by name or content">
-        </div>
-        <div id="conversationList" class="conversation-list" role="listbox" aria-label="Saved conversations"></div>
-      </div>
+          <div class="welcome-screen" id="welcomeScreen" role="status">
+            <div class="welcome-greeting">
+              <h1 id="welcomeGreeting">Good evening</h1>
+              <p id="welcomeSubtitle">Ready to chat</p>
+            </div>
 
-      <div class="sidebar-footer">
-        <span class="version-badge" id="versionBadge" title="ModelVerse version"></span>
-        <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Open settings dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </button>
-        <a href="https://github.com/uttampaliwal/ModelVerse" target="_blank" rel="noopener noreferrer" class="icon-btn" title="GitHub" aria-label="View source code on GitHub">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-          </svg>
-        </a>
-      </div>
-      <div class="sidebar-resize-handle" id="sidebarResizeHandle" role="separator" aria-label="Resize sidebar" tabindex="0"></div>
-      <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
-    </aside>
-
-    <main class="main" role="main" aria-label="Chat interface">
-      <button class="sidebar-expand-btn" id="sidebarExpandBtn" title="Expand sidebar" aria-label="Expand sidebar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-      <div class="chat-container" id="chatContainer" role="region" aria-label="Chat messages">
-        <div class="chat-header">
-          <span id="chatTitle" class="chat-title" aria-live="polite"></span>
-          <button class="restart-btn hidden" id="restartBtn" title="Restart conversation" aria-label="Clear conversation and start over">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          </button>
-        </div>
-        <div class="welcome-screen" id="welcomeScreen" role="status">
-          <div class="welcome-greeting">
-            <h1 id="welcomeGreeting">Good evening</h1>
-            <p id="welcomeSubtitle">Ready to chat</p>
-          </div>
-
-          <div class="welcome-grid">
-            <div class="welcome-section welcome-recent">
-              <h2 class="welcome-section-title">Recent</h2>
-              <div id="recentChatsList" class="welcome-recent-list">
-                <div class="welcome-empty-text">No recent chats</div>
+            <div class="welcome-grid">
+              <div class="welcome-section welcome-recent">
+                <h2 class="welcome-section-title">Recent</h2>
+                <div id="recentChatsList" class="welcome-recent-list">
+                  <div class="welcome-empty-text">No recent chats</div>
+                </div>
               </div>
-            </div>
 
-            <div class="welcome-section welcome-suggest">
-              <h2 class="welcome-section-title">Suggestions</h2>
-              <div id="suggestedPromptsList" class="welcome-suggest-list">
-                <button class="welcome-suggest-btn" data-prompt="Explain this code">Explain this code</button>
-                <button class="welcome-suggest-btn" data-prompt="Summarize PDF">Summarize PDF</button>
-                <button class="welcome-suggest-btn" data-prompt="Write SQL query">Write SQL query</button>
-                <button class="welcome-suggest-btn" data-prompt="Debug this error">Debug this error</button>
-              </div>
-            </div>
-
-            <div class="welcome-section welcome-shortcuts">
-              <h2 class="welcome-section-title">Shortcuts</h2>
-              <div class="welcome-shortcuts-list">
-                <div class="welcome-shortcut"><kbd>Enter</kbd><span>Send message</span></div>
-                <div class="welcome-shortcut"><kbd>Shift+Enter</kbd><span>New line</span></div>
-                <div class="welcome-shortcut"><kbd>Ctrl+K</kbd><span>Search chats</span></div>
-                <div class="welcome-shortcut"><kbd>Ctrl+N</kbd><span>New chat</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="messages" id="messages" role="log" aria-label="Chat message history" aria-live="polite"></div>
-        <button class="scroll-bottom-btn" id="scrollBottomBtn" title="Scroll to bottom" aria-label="Scroll to latest message">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-        </button>
-      </div>
-
-      <div class="input-area" role="region" aria-label="Message input">
-        <div class="model-badge" id="modelBadge" aria-live="polite"></div>
-        <div class="input-container">
-          <button class="icon-btn attach-btn" id="attachBtn" title="Attach file" aria-label="Attach files to message">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-            </svg>
-          </button>
-          <input type="file" id="fileInput" multiple accept="image/*,.txt,.md,.markdown,.csv,.tsv,.json,.xml,.yaml,.yml,.log,.py,.js,.ts,.jsx,.tsx,.html,.css,.pdf,.docx,.doc,.xlsx,.xls,.zip" hidden aria-label="Upload files">
-          <div class="input-text-area">
-            <div class="attachment-preview" id="attachmentPreview" style="display:none" aria-label="Attached files">
-              <div id="attachmentList" role="list" aria-label="Pending attachments"></div>
-            </div>
-            <textarea id="userInput" placeholder="Type a message... (Enter to send, Shift+Enter for new line)" rows="1" aria-label="Type your message" aria-describedby="inputHelp"></textarea>
-            <span id="inputHelp" class="sr-only">Press Enter to send, Shift+Enter for new line</span>
-          </div>
-          <div class="input-actions">
-            <button id="sendBtn" class="icon-btn send-btn" disabled aria-label="Send message">
-              <span class="btn-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </span>
-              <span class="btn-label">Send</span>
-            </button>
-            <button id="stopGenerateBtn" class="icon-btn stop-btn" style="display:none" aria-label="Stop generating response">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="input-footer" aria-live="polite">
-          <span id="tokenCount"></span>
-          <span id="latency"></span>
-        </div>
-      </div>
-
-      <!-- Status Bar -->
-      <div class="status-bar" id="statusBar" role="status" aria-label="System status">
-        <div class="status-bar-item" id="statusModel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          <span>No model</span>
-        </div>
-        <div class="status-bar-divider"></div>
-        <div class="status-bar-item" id="statusGpu">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
-          <span>GPU: --</span>
-        </div>
-        <div class="status-bar-divider"></div>
-        <div class="status-bar-item" id="statusRam">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M10 14h0M14 14h0M18 14h0"/></svg>
-          <span>RAM: --</span>
-        </div>
-        <div class="status-bar-divider"></div>
-        <div class="status-bar-item" id="statusSpeed">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span>-- tok/s</span>
-        </div>
-        <div class="status-bar-divider"></div>
-        <div class="status-bar-item" id="statusContext">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>Context: -- / --</span>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="shortcutsTitle">Keyboard Shortcuts</h3>
-        <button class="icon-btn" aria-label="Close keyboard shortcuts dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" role="list">
-        <div class="shortcut-row" role="listitem"><kbd aria-label="Enter key">Enter</kbd><span>Send message</span></div>
-        <div class="shortcut-row" role="listitem"><kbd aria-label="Shift plus Enter keys">Shift+Enter</kbd><span>New line</span></div>
-        <div class="shortcut-row" role="listitem"><kbd aria-label="Control plus Shift plus C keys">Ctrl+Shift+C</kbd><span>Clear chat</span></div>
-        <div class="shortcut-row" role="listitem"><kbd aria-label="Control plus Shift plus N keys">Ctrl+Shift+N</kbd><span>New conversation</span></div>
-        <div class="shortcut-row" role="listitem"><kbd aria-label="Control plus Shift plus S keys">Ctrl+Shift+S</kbd><span>Toggle sidebar</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal modal-settings">
-      <div class="modal-header">
-        <h3 id="settingsTitle">Settings</h3>
-        <button class="icon-btn" aria-label="Close settings dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="settings-layout">
-        <nav class="settings-nav" role="tablist" aria-label="Settings categories">
-          <button class="settings-nav-item active" data-category="general" role="tab" aria-selected="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            General
-          </button>
-          <button class="settings-nav-item" data-category="appearance" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-            Appearance
-          </button>
-          <button class="settings-nav-item" data-category="models" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            Models
-          </button>
-          <button class="settings-nav-item" data-category="performance" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Performance
-          </button>
-          <button class="settings-nav-item" data-category="generation" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            Generation
-          </button>
-          <button class="settings-nav-item" data-category="presets" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            Presets
-          </button>
-          <button class="settings-nav-item" data-category="about" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            About
-          </button>
-        </nav>
-        <div class="settings-content">
-          <!-- General -->
-          <div class="settings-category active" id="settingsGeneral" role="tabpanel">
-            <h4 class="settings-category-title">General Settings</h4>
-            <div class="settings-group">
-              <label for="systemPrompt">System Prompt</label>
-              <textarea id="systemPrompt" rows="4" placeholder="Enter system prompt...">You are a helpful assistant.</textarea>
-            </div>
-          </div>
-
-          <!-- Appearance -->
-          <div class="settings-category" id="settingsAppearance" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">Appearance</h4>
-            <div class="settings-group">
-              <label>Theme</label>
-              <div class="theme-grid" id="themeGrid">
-                <button class="theme-option active" data-theme="dark" aria-label="Dark theme">
-                  <div class="theme-preview dark-preview"></div>
-                  <span class="theme-name">Dark</span>
-                </button>
-                <button class="theme-option" data-theme="light" aria-label="Light theme">
-                  <div class="theme-preview light-preview"></div>
-                  <span class="theme-name">Light</span>
-                </button>
-                <button class="theme-option" data-theme="oled" aria-label="OLED theme">
-                  <div class="theme-preview oled-preview"></div>
-                  <span class="theme-name">OLED</span>
-                </button>
-                <button class="theme-option" data-theme="dracula" aria-label="Dracula theme">
-                  <div class="theme-preview dracula-preview"></div>
-                  <span class="theme-name">Dracula</span>
-                </button>
-                <button class="theme-option" data-theme="nord" aria-label="Nord theme">
-                  <div class="theme-preview nord-preview"></div>
-                  <span class="theme-name">Nord</span>
-                </button>
-                <button class="theme-option" data-theme="catppuccin" aria-label="Catppuccin theme">
-                  <div class="theme-preview catppuccin-preview"></div>
-                  <span class="theme-name">Catppuccin</span>
-                </button>
-                <button class="theme-option" data-theme="gruvbox" aria-label="Gruvbox theme">
-                  <div class="theme-preview gruvbox-preview"></div>
-                  <span class="theme-name">Gruvbox</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Models -->
-          <div class="settings-category" id="settingsModels" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">Model Settings</h4>
-            <div class="settings-group">
-              <label for="contextSize">Context Size</label>
-              <input type="number" id="contextSize" min="512" max="131072" step="512" value="4096">
-              <span class="settings-hint">Number of tokens the model can remember</span>
-            </div>
-            <div class="settings-group">
-              <label for="gpuLayers">GPU Layers</label>
-              <input type="number" id="gpuLayers" min="0" max="200" value="99">
-              <span class="settings-hint">Layers to offload to GPU (higher = faster, uses more VRAM)</span>
-            </div>
-            <div class="settings-group">
-              <label for="threads">Threads</label>
-              <input type="number" id="threads" min="1" max="32" value="4">
-              <span class="settings-hint">CPU threads for inference</span>
-            </div>
-          </div>
-
-          <!-- Performance -->
-          <div class="settings-category" id="settingsPerformance" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">Performance Settings</h4>
-            <div class="settings-group">
-              <label for="maxTokens">Max Tokens</label>
-              <input type="number" id="maxTokens" min="64" max="8192" value="4096">
-              <span class="settings-hint">Maximum tokens to generate in response</span>
-            </div>
-          </div>
-
-          <!-- Generation -->
-          <div class="settings-category" id="settingsGeneration" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">Generation Parameters</h4>
-            <div class="settings-group">
-              <label for="temperature">Temperature</label>
-              <div class="settings-slider">
-                <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" aria-describedby="temperatureVal">
-                <span class="settings-value" id="temperatureVal" aria-live="polite">0.7</span>
-              </div>
-              <span class="settings-hint">Higher = more creative, lower = more focused</span>
-            </div>
-            <div class="settings-group">
-              <label for="topP">Top P</label>
-              <div class="settings-slider">
-                <input type="range" id="topP" min="0" max="1" step="0.05" value="0.9" aria-describedby="topPVal">
-                <span class="settings-value" id="topPVal" aria-live="polite">0.9</span>
-              </div>
-              <span class="settings-hint">Nucleus sampling threshold</span>
-            </div>
-            <div class="settings-group">
-              <label for="topK">Top K</label>
-              <div class="settings-slider">
-                <input type="range" id="topK" min="1" max="100" step="1" value="40" aria-describedby="topKVal">
-                <span class="settings-value" id="topKVal" aria-live="polite">40</span>
-              </div>
-              <span class="settings-hint">Limit vocabulary to top K tokens</span>
-            </div>
-            <div class="settings-group">
-              <label for="repeatPenalty">Repeat Penalty</label>
-              <div class="settings-slider">
-                <input type="range" id="repeatPenalty" min="0" max="2" step="0.05" value="1.1" aria-describedby="repeatPenaltyVal">
-                <span class="settings-value" id="repeatPenaltyVal" aria-live="polite">1.1</span>
-              </div>
-              <span class="settings-hint">Penalize repeated tokens (1.0 = disabled)</span>
-            </div>
-          </div>
-
-          <!-- Presets -->
-          <div class="settings-category" id="settingsPresets" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">Presets</h4>
-            <div class="settings-group">
-              <label for="presetSelect">Load Preset</label>
-              <div class="preset-row">
-                <select id="presetSelect" aria-label="Select a preset">
-                  <option value="">Select preset...</option>
-                </select>
-                <div class="preset-actions">
-                  <button class="icon-btn" id="savePresetBtn" title="Save current settings" aria-label="Save current settings as preset">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <div class="welcome-section welcome-suggest">
+                <h2 class="welcome-section-title">Suggestions</h2>
+                <div id="suggestedPromptsList" class="welcome-suggest-list">
+                  <button class="welcome-suggest-btn" data-prompt="Explain this code">
+                    Explain this code
                   </button>
-                  <button class="icon-btn" id="deletePresetBtn" title="Delete preset" aria-label="Delete selected preset">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <button class="welcome-suggest-btn" data-prompt="Summarize PDF">
+                    Summarize PDF
                   </button>
+                  <button class="welcome-suggest-btn" data-prompt="Write SQL query">
+                    Write SQL query
+                  </button>
+                  <button class="welcome-suggest-btn" data-prompt="Debug this error">
+                    Debug this error
+                  </button>
+                </div>
+              </div>
+
+              <div class="welcome-section welcome-shortcuts">
+                <h2 class="welcome-section-title">Shortcuts</h2>
+                <div class="welcome-shortcuts-list">
+                  <div class="welcome-shortcut"><kbd>Enter</kbd><span>Send message</span></div>
+                  <div class="welcome-shortcut"><kbd>Shift+Enter</kbd><span>New line</span></div>
+                  <div class="welcome-shortcut"><kbd>Ctrl+K</kbd><span>Search chats</span></div>
+                  <div class="welcome-shortcut"><kbd>Ctrl+N</kbd><span>New chat</span></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- About -->
-          <div class="settings-category" id="settingsAbout" role="tabpanel" style="display:none">
-            <h4 class="settings-category-title">About</h4>
-            <div class="settings-about">
-              <div class="settings-about-item">
-                <span class="settings-about-label">Version</span>
-                <span class="settings-about-value" id="settingsVersion"></span>
+          <div
+            class="messages"
+            id="messages"
+            role="log"
+            aria-label="Chat message history"
+            aria-live="polite"
+          ></div>
+          <button
+            class="scroll-bottom-btn"
+            id="scrollBottomBtn"
+            title="Scroll to bottom"
+            aria-label="Scroll to latest message"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <polyline points="7 13 12 18 17 13" />
+              <polyline points="7 6 12 11 17 6" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="input-area" role="region" aria-label="Message input">
+          <div class="model-badge" id="modelBadge" aria-live="polite"></div>
+          <div class="input-container">
+            <button
+              class="icon-btn attach-btn"
+              id="attachBtn"
+              title="Attach file"
+              aria-label="Attach files to message"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+                />
+              </svg>
+            </button>
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              accept="image/*,.txt,.md,.markdown,.csv,.tsv,.json,.xml,.yaml,.yml,.log,.py,.js,.ts,.jsx,.tsx,.html,.css,.pdf,.docx,.doc,.xlsx,.xls,.zip"
+              hidden
+              aria-label="Upload files"
+            />
+            <div class="input-text-area">
+              <div
+                class="attachment-preview"
+                id="attachmentPreview"
+                style="display: none"
+                aria-label="Attached files"
+              >
+                <div id="attachmentList" role="list" aria-label="Pending attachments"></div>
               </div>
-              <div class="settings-about-item">
-                <span class="settings-about-label">Documentation</span>
-                <a href="https://github.com/uttampaliwal/ModelVerse" target="_blank" rel="noopener">GitHub</a>
-              </div>
+              <textarea
+                id="userInput"
+                placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                rows="1"
+                aria-label="Type your message"
+                aria-describedby="inputHelp"
+              ></textarea>
+              <span id="inputHelp" class="sr-only"
+                >Press Enter to send, Shift+Enter for new line</span
+              >
+            </div>
+            <div class="input-actions">
+              <button id="sendBtn" class="icon-btn send-btn" disabled aria-label="Send message">
+                <span class="btn-icon" aria-hidden="true">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                </span>
+                <span class="btn-label">Send</span>
+              </button>
+              <button
+                id="stopGenerateBtn"
+                class="icon-btn stop-btn"
+                style="display: none"
+                aria-label="Stop generating response"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                </svg>
+              </button>
             </div>
           </div>
+          <div class="input-footer" aria-live="polite">
+            <span id="tokenCount"></span>
+            <span id="latency"></span>
+          </div>
+        </div>
 
-          <div class="settings-footer">
-            <button id="applySettings" class="btn btn-primary">Apply Settings</button>
+        <!-- Status Bar -->
+        <div class="status-bar" id="statusBar" role="status" aria-label="System status">
+          <div class="status-bar-item" id="statusModel">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              />
+            </svg>
+            <span>No model</span>
+          </div>
+          <div class="status-bar-divider"></div>
+          <div class="status-bar-item" id="statusGpu">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+              <rect x="9" y="9" width="6" height="6" />
+              <line x1="9" y1="1" x2="9" y2="4" />
+              <line x1="15" y1="1" x2="15" y2="4" />
+              <line x1="9" y1="20" x2="9" y2="23" />
+              <line x1="15" y1="20" x2="15" y2="23" />
+              <line x1="20" y1="9" x2="23" y2="9" />
+              <line x1="20" y1="14" x2="23" y2="14" />
+              <line x1="1" y1="9" x2="4" y2="9" />
+              <line x1="1" y1="14" x2="4" y2="14" />
+            </svg>
+            <span>GPU: --</span>
+          </div>
+          <div class="status-bar-divider"></div>
+          <div class="status-bar-item" id="statusRam">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <path d="M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M10 14h0M14 14h0M18 14h0" />
+            </svg>
+            <span>RAM: --</span>
+          </div>
+          <div class="status-bar-divider"></div>
+          <div class="status-bar-item" id="statusSpeed">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span>-- tok/s</span>
+          </div>
+          <div class="status-bar-divider"></div>
+          <div class="status-bar-item" id="statusContext">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>Context: -- / --</span>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div
+      class="modal-overlay"
+      id="shortcutsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcutsTitle"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="shortcutsTitle">Keyboard Shortcuts</h3>
+          <button class="icon-btn" aria-label="Close keyboard shortcuts dialog">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" role="list">
+          <div class="shortcut-row" role="listitem">
+            <kbd aria-label="Enter key">Enter</kbd><span>Send message</span>
+          </div>
+          <div class="shortcut-row" role="listitem">
+            <kbd aria-label="Shift plus Enter keys">Shift+Enter</kbd><span>New line</span>
+          </div>
+          <div class="shortcut-row" role="listitem">
+            <kbd aria-label="Control plus Shift plus C keys">Ctrl+Shift+C</kbd
+            ><span>Clear chat</span>
+          </div>
+          <div class="shortcut-row" role="listitem">
+            <kbd aria-label="Control plus Shift plus N keys">Ctrl+Shift+N</kbd
+            ><span>New conversation</span>
+          </div>
+          <div class="shortcut-row" role="listitem">
+            <kbd aria-label="Control plus Shift plus S keys">Ctrl+Shift+S</kbd
+            ><span>Toggle sidebar</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="exportTitle">Export Conversation</h3>
-        <button class="icon-btn" id="exportCloseBtn" aria-label="Close export dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div
+      class="modal-overlay"
+      id="settingsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
+    >
+      <div class="modal modal-settings">
+        <div class="modal-header">
+          <h3 id="settingsTitle">Settings</h3>
+          <button class="icon-btn" aria-label="Close settings dialog">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="settings-layout">
+          <nav class="settings-nav" role="tablist" aria-label="Settings categories">
+            <button
+              class="settings-nav-item active"
+              data-category="general"
+              role="tab"
+              aria-selected="true"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+              General
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="appearance"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="13.5" cy="6.5" r="2.5" />
+                <circle cx="17.5" cy="10.5" r="2.5" />
+                <circle cx="8.5" cy="7.5" r="2.5" />
+                <circle cx="6.5" cy="12" r="2.5" />
+                <path
+                  d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
+                />
+              </svg>
+              Appearance
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="models"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+              </svg>
+              Models
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="performance"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              Performance
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="generation"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
+              </svg>
+              Generation
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="presets"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Presets
+            </button>
+            <button
+              class="settings-nav-item"
+              data-category="about"
+              role="tab"
+              aria-selected="false"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              About
+            </button>
+          </nav>
+          <div class="settings-content">
+            <!-- General -->
+            <div class="settings-category active" id="settingsGeneral" role="tabpanel">
+              <h4 class="settings-category-title">General Settings</h4>
+              <div class="settings-group">
+                <label for="systemPrompt">System Prompt</label>
+                <textarea id="systemPrompt" rows="4" placeholder="Enter system prompt...">
+You are a helpful assistant.</textarea>
+              </div>
+            </div>
+
+            <!-- Appearance -->
+            <div
+              class="settings-category"
+              id="settingsAppearance"
+              role="tabpanel"
+              style="display: none"
+            >
+              <h4 class="settings-category-title">Appearance</h4>
+              <div class="settings-group">
+                <label>Theme</label>
+                <div class="theme-grid" id="themeGrid">
+                  <button class="theme-option active" data-theme="dark" aria-label="Dark theme">
+                    <div class="theme-preview dark-preview"></div>
+                    <span class="theme-name">Dark</span>
+                  </button>
+                  <button class="theme-option" data-theme="light" aria-label="Light theme">
+                    <div class="theme-preview light-preview"></div>
+                    <span class="theme-name">Light</span>
+                  </button>
+                  <button class="theme-option" data-theme="oled" aria-label="OLED theme">
+                    <div class="theme-preview oled-preview"></div>
+                    <span class="theme-name">OLED</span>
+                  </button>
+                  <button class="theme-option" data-theme="dracula" aria-label="Dracula theme">
+                    <div class="theme-preview dracula-preview"></div>
+                    <span class="theme-name">Dracula</span>
+                  </button>
+                  <button class="theme-option" data-theme="nord" aria-label="Nord theme">
+                    <div class="theme-preview nord-preview"></div>
+                    <span class="theme-name">Nord</span>
+                  </button>
+                  <button
+                    class="theme-option"
+                    data-theme="catppuccin"
+                    aria-label="Catppuccin theme"
+                  >
+                    <div class="theme-preview catppuccin-preview"></div>
+                    <span class="theme-name">Catppuccin</span>
+                  </button>
+                  <button class="theme-option" data-theme="gruvbox" aria-label="Gruvbox theme">
+                    <div class="theme-preview gruvbox-preview"></div>
+                    <span class="theme-name">Gruvbox</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Models -->
+            <div
+              class="settings-category"
+              id="settingsModels"
+              role="tabpanel"
+              style="display: none"
+            >
+              <h4 class="settings-category-title">Model Settings</h4>
+              <div class="settings-group">
+                <label for="contextSize">Context Size</label>
+                <input
+                  type="number"
+                  id="contextSize"
+                  min="512"
+                  max="131072"
+                  step="512"
+                  value="4096"
+                />
+                <span class="settings-hint">Number of tokens the model can remember</span>
+              </div>
+              <div class="settings-group">
+                <label for="gpuLayers">GPU Layers</label>
+                <input type="number" id="gpuLayers" min="0" max="200" value="99" />
+                <span class="settings-hint"
+                  >Layers to offload to GPU (higher = faster, uses more VRAM)</span
+                >
+              </div>
+              <div class="settings-group">
+                <label for="threads">Threads</label>
+                <input type="number" id="threads" min="1" max="32" value="4" />
+                <span class="settings-hint">CPU threads for inference</span>
+              </div>
+            </div>
+
+            <!-- Performance -->
+            <div
+              class="settings-category"
+              id="settingsPerformance"
+              role="tabpanel"
+              style="display: none"
+            >
+              <h4 class="settings-category-title">Performance Settings</h4>
+              <div class="settings-group">
+                <label for="maxTokens">Max Tokens</label>
+                <input type="number" id="maxTokens" min="64" max="8192" value="4096" />
+                <span class="settings-hint">Maximum tokens to generate in response</span>
+              </div>
+            </div>
+
+            <!-- Generation -->
+            <div
+              class="settings-category"
+              id="settingsGeneration"
+              role="tabpanel"
+              style="display: none"
+            >
+              <h4 class="settings-category-title">Generation Parameters</h4>
+              <div class="settings-group">
+                <label for="temperature">Temperature</label>
+                <div class="settings-slider">
+                  <input
+                    type="range"
+                    id="temperature"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value="0.7"
+                    aria-describedby="temperatureVal"
+                  />
+                  <span class="settings-value" id="temperatureVal" aria-live="polite">0.7</span>
+                </div>
+                <span class="settings-hint">Higher = more creative, lower = more focused</span>
+              </div>
+              <div class="settings-group">
+                <label for="topP">Top P</label>
+                <div class="settings-slider">
+                  <input
+                    type="range"
+                    id="topP"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.9"
+                    aria-describedby="topPVal"
+                  />
+                  <span class="settings-value" id="topPVal" aria-live="polite">0.9</span>
+                </div>
+                <span class="settings-hint">Nucleus sampling threshold</span>
+              </div>
+              <div class="settings-group">
+                <label for="topK">Top K</label>
+                <div class="settings-slider">
+                  <input
+                    type="range"
+                    id="topK"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value="40"
+                    aria-describedby="topKVal"
+                  />
+                  <span class="settings-value" id="topKVal" aria-live="polite">40</span>
+                </div>
+                <span class="settings-hint">Limit vocabulary to top K tokens</span>
+              </div>
+              <div class="settings-group">
+                <label for="repeatPenalty">Repeat Penalty</label>
+                <div class="settings-slider">
+                  <input
+                    type="range"
+                    id="repeatPenalty"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value="1.1"
+                    aria-describedby="repeatPenaltyVal"
+                  />
+                  <span class="settings-value" id="repeatPenaltyVal" aria-live="polite">1.1</span>
+                </div>
+                <span class="settings-hint">Penalize repeated tokens (1.0 = disabled)</span>
+              </div>
+            </div>
+
+            <!-- Presets -->
+            <div
+              class="settings-category"
+              id="settingsPresets"
+              role="tabpanel"
+              style="display: none"
+            >
+              <h4 class="settings-category-title">Presets</h4>
+              <div class="settings-group">
+                <label for="presetSelect">Load Preset</label>
+                <div class="preset-row">
+                  <select id="presetSelect" aria-label="Select a preset">
+                    <option value="">Select preset...</option>
+                  </select>
+                  <div class="preset-actions">
+                    <button
+                      class="icon-btn"
+                      id="savePresetBtn"
+                      title="Save current settings"
+                      aria-label="Save current settings as preset"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                      </svg>
+                    </button>
+                    <button
+                      class="icon-btn"
+                      id="deletePresetBtn"
+                      title="Delete preset"
+                      aria-label="Delete selected preset"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path
+                          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- About -->
+            <div class="settings-category" id="settingsAbout" role="tabpanel" style="display: none">
+              <h4 class="settings-category-title">About</h4>
+              <div class="settings-about">
+                <div class="settings-about-item">
+                  <span class="settings-about-label">Version</span>
+                  <span class="settings-about-value" id="settingsVersion"></span>
+                </div>
+                <div class="settings-about-item">
+                  <span class="settings-about-label">Updates</span>
+                  <span class="settings-about-value">
+                    <button class="btn btn-secondary btn-sm" id="checkUpdateBtn">
+                      Check for updates
+                    </button>
+                    <span id="updateStatus" aria-live="polite"></span>
+                  </span>
+                </div>
+                <div class="settings-about-item">
+                  <span class="settings-about-label">Documentation</span>
+                  <a
+                    href="https://github.com/uttampaliwal/ModelVerse"
+                    target="_blank"
+                    rel="noopener"
+                    >GitHub</a
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-footer">
+              <button id="applySettings" class="btn btn-primary">Apply Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal-overlay"
+      id="exportModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="exportTitle"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="exportTitle">Export Conversation</h3>
+          <button class="icon-btn" id="exportCloseBtn" aria-label="Close export dialog">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="export-options" role="group" aria-label="Export format options">
+            <button class="export-option" data-format="markdown" aria-label="Export as Markdown">
+              <span class="export-label">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Markdown
+              </span>
+              <span class="export-hint">Readable text format</span>
+            </button>
+            <button class="export-option" data-format="json" aria-label="Export as JSON">
+              <span class="export-label">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+                JSON
+              </span>
+              <span class="export-hint">Machine-readable format</span>
+            </button>
+            <button
+              class="export-option"
+              data-format="backup"
+              aria-label="Back up all conversations"
+            >
+              <span class="export-label">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                  <polyline points="7 3 7 8 15 8" />
+                </svg>
+                Backup all
+              </span>
+              <span class="export-hint">Every conversation, folder and preset</span>
+            </button>
+            <button
+              class="export-option"
+              data-format="restore"
+              aria-label="Restore from backup file"
+            >
+              <span class="export-label">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                Restore backup
+              </span>
+              <span class="export-hint">Merge a backup file back in</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div
+      class="image-viewer-overlay"
+      id="imageViewer"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image viewer"
+      style="display: none"
+    >
+      <div class="image-viewer-toolbar">
+        <button
+          class="image-viewer-btn"
+          id="imageViewerZoomIn"
+          title="Zoom in"
+          aria-label="Zoom in"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        </button>
+        <button
+          class="image-viewer-btn"
+          id="imageViewerZoomOut"
+          title="Zoom out"
+          aria-label="Zoom out"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        </button>
+        <button
+          class="image-viewer-btn"
+          id="imageViewerReset"
+          title="Reset zoom"
+          aria-label="Reset zoom"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+        </button>
+        <div class="image-viewer-separator"></div>
+        <button
+          class="image-viewer-btn"
+          id="imageViewerDownload"
+          title="Download image"
+          aria-label="Download image"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </button>
+        <button
+          class="image-viewer-btn"
+          id="imageViewerOpenOriginal"
+          title="Open original"
+          aria-label="Open original image"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </button>
+        <div class="image-viewer-separator"></div>
+        <button
+          class="image-viewer-btn image-viewer-close"
+          id="imageViewerClose"
+          title="Close (Esc)"
+          aria-label="Close image viewer"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
-      <div class="modal-body">
-        <div class="export-options" role="group" aria-label="Export format options">
-          <button class="export-option" data-format="markdown" aria-label="Export as Markdown">
-            <span class="export-label">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              Markdown
-            </span>
-            <span class="export-hint">Readable text format</span>
-          </button>
-          <button class="export-option" data-format="json" aria-label="Export as JSON">
-            <span class="export-label">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              JSON
-            </span>
-            <span class="export-hint">Machine-readable format</span>
-          </button>
-          <button class="export-option" data-format="backup" aria-label="Back up all conversations">
-            <span class="export-label">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Backup all
-            </span>
-            <span class="export-hint">Every conversation, folder and preset</span>
-          </button>
-          <button class="export-option" data-format="restore" aria-label="Restore from backup file">
-            <span class="export-label">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-              Restore backup
-            </span>
-            <span class="export-hint">Merge a backup file back in</span>
-          </button>
+      <div class="image-viewer-container" id="imageViewerContainer">
+        <img class="image-viewer-img" id="imageViewerImg" src="" alt="" draggable="false" />
+      </div>
+      <div class="image-viewer-caption" id="imageViewerCaption"></div>
+    </div>
+
+    <!-- Command Palette -->
+    <div
+      class="command-overlay"
+      id="commandPalette"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
+      style="display: none"
+    >
+      <div class="command-modal">
+        <div class="command-input-wrap">
+          <svg
+            class="command-input-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="4 7 4 4 7 4" />
+            <polyline points="17 4 20 4 20 7" />
+            <polyline points="20 17 20 20 17 20" />
+            <polyline points="7 20 4 20 4 17" />
+            <line x1="12" y1="8" x2="12" y2="16" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+          </svg>
+          <input
+            type="text"
+            id="commandInput"
+            class="command-input"
+            placeholder="Type a command..."
+            autocomplete="off"
+            aria-label="Command"
+          />
+          <kbd class="command-kbd">Esc</kbd>
+        </div>
+        <div class="command-list" id="commandList" role="listbox">
+          <div class="command-empty">Type to find a command</div>
+        </div>
+        <div class="command-footer">
+          <span class="command-hint"><kbd>↑↓</kbd> Navigate</span>
+          <span class="command-hint"><kbd>Enter</kbd> Execute</span>
+          <span class="command-hint"><kbd>Esc</kbd> Close</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Image Viewer Modal -->
-  <div class="image-viewer-overlay" id="imageViewer" role="dialog" aria-modal="true" aria-label="Image viewer" style="display:none">
-    <div class="image-viewer-toolbar">
-      <button class="image-viewer-btn" id="imageViewerZoomIn" title="Zoom in" aria-label="Zoom in">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      </button>
-      <button class="image-viewer-btn" id="imageViewerZoomOut" title="Zoom out" aria-label="Zoom out">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      </button>
-      <button class="image-viewer-btn" id="imageViewerReset" title="Reset zoom" aria-label="Reset zoom">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-      </button>
-      <div class="image-viewer-separator"></div>
-      <button class="image-viewer-btn" id="imageViewerDownload" title="Download image" aria-label="Download image">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-      <button class="image-viewer-btn" id="imageViewerOpenOriginal" title="Open original" aria-label="Open original image">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </button>
-      <div class="image-viewer-separator"></div>
-      <button class="image-viewer-btn image-viewer-close" id="imageViewerClose" title="Close (Esc)" aria-label="Close image viewer">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="image-viewer-container" id="imageViewerContainer">
-      <img class="image-viewer-img" id="imageViewerImg" src="" alt="" draggable="false">
-    </div>
-    <div class="image-viewer-caption" id="imageViewerCaption"></div>
-  </div>
-
-  <!-- Command Palette -->
-  <div class="command-overlay" id="commandPalette" role="dialog" aria-modal="true" aria-label="Command palette" style="display:none">
-    <div class="command-modal">
-      <div class="command-input-wrap">
-        <svg class="command-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 7 4"/><polyline points="17 4 20 4 20 7"/><polyline points="20 17 20 20 17 20"/><polyline points="7 20 4 20 4 17"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        <input type="text" id="commandInput" class="command-input" placeholder="Type a command..." autocomplete="off" aria-label="Command">
-        <kbd class="command-kbd">Esc</kbd>
-      </div>
-      <div class="command-list" id="commandList" role="listbox">
-        <div class="command-empty">Type to find a command</div>
-      </div>
-      <div class="command-footer">
-        <span class="command-hint"><kbd>↑↓</kbd> Navigate</span>
-        <span class="command-hint"><kbd>Enter</kbd> Execute</span>
-        <span class="command-hint"><kbd>Esc</kbd> Close</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search Dialog -->
-  <div class="search-overlay" id="searchDialog" role="dialog" aria-modal="true" aria-label="Search conversations" style="display:none">
-    <div class="search-modal">
-      <div class="search-header">
-        <div class="search-input-wrap">
-          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search conversations, messages, code..." autocomplete="off" aria-label="Search">
-          <kbd class="search-kbd">Esc</kbd>
+    <!-- Search Dialog -->
+    <div
+      class="search-overlay"
+      id="searchDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search conversations"
+      style="display: none"
+    >
+      <div class="search-modal">
+        <div class="search-header">
+          <div class="search-input-wrap">
+            <svg
+              class="search-icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Search conversations, messages, code..."
+              autocomplete="off"
+              aria-label="Search"
+            />
+            <kbd class="search-kbd">Esc</kbd>
+          </div>
+          <div class="search-filters">
+            <button class="search-filter active" data-filter="all">All</button>
+            <button class="search-filter" data-filter="titles">Titles</button>
+            <button class="search-filter" data-filter="messages">Messages</button>
+            <button class="search-filter" data-filter="code">Code</button>
+          </div>
         </div>
-        <div class="search-filters">
-          <button class="search-filter active" data-filter="all">All</button>
-          <button class="search-filter" data-filter="titles">Titles</button>
-          <button class="search-filter" data-filter="messages">Messages</button>
-          <button class="search-filter" data-filter="code">Code</button>
+        <div class="search-results" id="searchResults" role="listbox">
+          <div class="search-empty">Type to search across all conversations</div>
+        </div>
+        <div class="search-footer">
+          <span class="search-hint"><kbd>↑↓</kbd> Navigate</span>
+          <span class="search-hint"><kbd>Enter</kbd> Open</span>
+          <span class="search-hint"><kbd>Esc</kbd> Close</span>
         </div>
       </div>
-      <div class="search-results" id="searchResults" role="listbox">
-        <div class="search-empty">Type to search across all conversations</div>
-      </div>
-      <div class="search-footer">
-        <span class="search-hint"><kbd>↑↓</kbd> Navigate</span>
-        <span class="search-hint"><kbd>Enter</kbd> Open</span>
-        <span class="search-hint"><kbd>Esc</kbd> Close</span>
-      </div>
     </div>
-  </div>
 
-  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
-  <script type="module" src="src/main.js?v=20260709a"></script>
-</body>
+    <script type="module" src="src/main.js?v=20260709a"></script>
+  </body>
 </html>
