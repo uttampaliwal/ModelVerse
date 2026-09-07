@@ -34,16 +34,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run package
       - run: npm test
       - uses: actions/upload-artifact@v4
         with:
           name: modelverse-release-${{ matrix.os }}
-          path: |
-            server.js
-            public/
-            package.json
-            node_modules/
+          path: dist/*.zip
 
   release:
     needs: [changelog, build]
@@ -57,7 +53,4 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           body: ${{ needs.changelog.outputs.changelog }}
-          files: |
-            server.js
-            public/
-            package.json
+          files: '*.zip'

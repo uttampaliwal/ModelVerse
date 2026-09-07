@@ -115,6 +115,10 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Release archives
+
+Grab `modelverse-<version>-<os>-<arch>.zip` from [Releases](https://github.com/uttampaliwal/ModelVerse/releases), extract, and run `./start.sh` (or `start.bat` on Windows). Launchers install production dependencies on first run (Node.js 20+ required).
+
 ### Docker
 
 ```bash
@@ -257,7 +261,7 @@ ModelVerse/
 - [x] Error boundary UI for engine failures
 - [x] Auto-update checker for new releases
 - [x] Docker image for one-command deploy
-- [ ] Windows/Mac/Linux installers
+- [x] Windows/Mac/Linux installers (portable zips via `npm run package`; see Releases)
 
 ### v0.3 — Intelligence
 

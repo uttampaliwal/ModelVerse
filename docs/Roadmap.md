@@ -6,7 +6,7 @@
 - [x] Error boundary UI for engine failures
 - [x] Auto-update checker for new releases
 - [x] Docker image for one-command deploy
-- [ ] Windows/Mac/Linux installers
+- [x] Windows/Mac/Linux installers (portable zips via `npm run package`; see Releases)
 
 ## v0.3 — Intelligence
 

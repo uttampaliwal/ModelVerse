@@ -22,6 +22,7 @@
     "test:watch": "vitest",
     "benchmark": "node scripts/benchmark.mjs",
     "eval": "node scripts/evaluate.mjs",
+    "package": "node scripts/package.mjs",
     "prepare": "husky"
   },
   "dependencies": {

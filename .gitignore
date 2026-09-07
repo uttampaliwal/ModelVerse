@@ -30,3 +30,6 @@ eval-results.json
 coverage/
 test-results/
 playwright-report/
+
+# Release staging
+dist/
