@@ -189,7 +189,6 @@ export class LlamaCppEngine extends LLMEngine {
   };
 
   private process: ChildProcess | null = null;
-  private currentModel: string | null = null;
   private startPromise: Promise<{ success: boolean; port: number }> | null = null;
   private stopPromise: Promise<void> | null = null;
 
@@ -280,7 +279,6 @@ export class LlamaCppEngine extends LLMEngine {
           stderrOutput += output;
           if (!started && serverReadyPatterns.some((p) => output.toLowerCase().includes(p))) {
             started = true;
-            this.currentModel = modelPath;
             try {
               proc.stdout?.removeAllListeners('data');
               proc.stderr?.removeAllListeners('data');
@@ -315,7 +313,6 @@ export class LlamaCppEngine extends LLMEngine {
           cleanup();
           if (this.process === proc) {
             this.process = null;
-            this.currentModel = null;
           }
           if (!started) {
             const detail = stderrOutput.trim().split('\n').slice(-10).join('\n');
@@ -351,7 +348,6 @@ export class LlamaCppEngine extends LLMEngine {
     const p = (async () => {
       if (this.process) {
         await this.killProcess();
-        this.currentModel = null;
       }
       this._running = false;
     })();

@@ -1,0 +1,19 @@
+{
+  "name": "ModelVerse",
+  "short_name": "ModelVerse",
+  "description": "Modern Web UI for local LLM inference",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

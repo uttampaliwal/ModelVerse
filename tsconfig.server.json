@@ -6,6 +6,11 @@
     "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // noImplicitReturns is intentionally off: Express handlers idiomatically
+    // `return res.json(...)` for early exits while falling off the end otherwise.
+    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

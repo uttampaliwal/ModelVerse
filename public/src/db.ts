@@ -128,8 +128,6 @@ function txDone(store: IDBObjectStore): Promise<void> {
   });
 }
 
-// ---- Folders ----------------------------------------------------------------
-
 function folderTx(db: IDBDatabase, mode: IDBTransactionMode): IDBObjectStore {
   return db.transaction(STORE_FOLDERS, mode).objectStore(STORE_FOLDERS);
 }
@@ -152,4 +150,76 @@ export async function deleteFolderById(id: string): Promise<void> {
   const store = folderTx(db, 'readwrite');
   store.delete(id);
   await txDone(store);
+}
+
+// ---- Full backup / restore --------------------------------------------------
+
+const MAX_BACKUP_CONVERSATIONS = 5000;
+
+export interface DatabaseBackup {
+  version: 1;
+  app: 'modelverse';
+  exportedAt: string;
+  conversations: Conversation[];
+  presets: Record<string, Preset>;
+  folders: Folder[];
+}
+
+/** Export every conversation, preset, and folder for backup. */
+export async function exportDatabase(): Promise<DatabaseBackup> {
+  const [conversations, presets, folders] = await Promise.all([
+    getAllConversations(),
+    getPresets(),
+    getAllFolders(),
+  ]);
+  return {
+    version: 1,
+    app: 'modelverse',
+    exportedAt: new Date().toISOString(),
+    conversations,
+    presets,
+    folders,
+  };
+}
+
+function isBackup(value: unknown): value is DatabaseBackup {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return (
+    v.app === 'modelverse' &&
+    Array.isArray(v.conversations) &&
+    v.conversations.length <= MAX_BACKUP_CONVERSATIONS &&
+    (v.presets === undefined || typeof v.presets === 'object') &&
+    (v.folders === undefined || Array.isArray(v.folders))
+  );
+}
+
+/**
+ * Restore a backup. Conversations/folders merge by id (backup wins);
+ * returns counts so the UI can confirm before reloading.
+ */
+export async function importDatabase(data: unknown): Promise<{
+  conversations: number;
+  folders: number;
+  presets: number;
+}> {
+  if (!isBackup(data)) throw new Error('Not a ModelVerse backup file');
+  const conversations = data.conversations.filter(
+    (c): c is Conversation => !!c && typeof c.id === 'string' && Array.isArray(c.messages),
+  );
+  const folders = (data.folders ?? []).filter(
+    (f): f is Folder => !!f && typeof f.id === 'string' && typeof f.name === 'string',
+  );
+  const presets: Record<string, Preset> =
+    data.presets && typeof data.presets === 'object' ? data.presets : {};
+
+  if (conversations.length > 0) await putConversations(conversations);
+  if (folders.length > 0) await putFolders(folders);
+  const presetNames = Object.keys(presets);
+  if (presetNames.length > 0) await putPresets(presets);
+  return {
+    conversations: conversations.length,
+    folders: folders.length,
+    presets: presetNames.length,
+  };
 }

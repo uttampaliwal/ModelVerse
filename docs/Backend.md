@@ -99,6 +99,10 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | POST   | `/api/plugins/toggle`        | Toggle plugin                    |
 | GET    | `/api/plugins/tools`         | List plugin tools                |
 | POST   | `/api/plugins/tools/execute` | Execute a tool                   |
+| POST   | `/api/models/download`       | Download a model from HF (202)   |
+| GET    | `/api/models/download`       | List downloads + progress        |
+| GET    | `/api/models/download/:id`   | Download progress                |
+| DELETE | `/api/models/download/:id`   | Cancel a download                |
 | POST   | `/api/agent/run`             | Agent (functions/React modes)    |
 | POST   | `/api/agent/rag-chat`        | Cited multi-turn RAG chat        |
 | POST   | `/api/eval/ab`               | Compare retrieval modes          |

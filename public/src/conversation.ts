@@ -10,7 +10,13 @@ import {
   type ContentPart,
   type ExportFormat,
 } from './types.js';
-import { getAllConversations, putConversations, deleteConversationById } from './db.js';
+import {
+  getAllConversations,
+  putConversations,
+  deleteConversationById,
+  exportDatabase,
+  importDatabase,
+} from './db.js';
 import { clearPendingAttachments } from './attachments.js';
 import { logError } from './logger.js';
 import { AppState, setCurrentConvId } from './state.js';
@@ -514,6 +520,47 @@ export function exportConversation(format: ExportFormat): void {
       `${conv.title.replace(/[^a-z0-9]/gi, '_')}.json`,
       'application/json',
     );
+  }
+}
+
+// ---- Full backup / restore --------------------------------------------------
+
+/** Download every conversation, preset, and folder as one backup JSON file. */
+export async function exportAllConversations(): Promise<void> {
+  try {
+    const backup = await exportDatabase();
+    if (backup.conversations.length === 0) {
+      showToast('Nothing to back up yet', 'info');
+      return;
+    }
+    const date = backup.exportedAt.slice(0, 10);
+    downloadFile(
+      JSON.stringify(backup, null, 2),
+      `modelverse-backup-${date}.json`,
+      'application/json',
+    );
+    showToast(`Backed up ${backup.conversations.length} conversation(s)`, 'success');
+  } catch (e) {
+    logError('exportAllConversations', e);
+    showToast('Backup failed', 'error');
+  }
+}
+
+/** Restore conversations/folders/presets from a backup file, then reload. */
+export async function importBackupFromFile(file: File): Promise<void> {
+  try {
+    const text = await file.text();
+    const data: unknown = JSON.parse(text);
+    const counts = await importDatabase(data);
+    await loadConversations();
+    showToast(
+      `Restored ${counts.conversations} conversation(s), ${counts.folders} folder(s)`,
+      'success',
+    );
+    window.location.reload();
+  } catch (e) {
+    logError('importBackupFromFile', e);
+    showToast((e as Error).message || 'Restore failed', 'error');
   }
 }
 

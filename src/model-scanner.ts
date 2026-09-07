@@ -63,17 +63,35 @@ function getHomeDir(): string {
   return os.homedir();
 }
 
-function scanDirectory(dir: string, extensions: string[], depth = 0): string[] {
+function scanDirectory(dir: string, extensions: string[], depth = 0, root?: string): string[] {
   const results: string[] = [];
   if (depth > 6) return results;
+  const jail = root ?? path.resolve(dir);
 
   try {
     const items = fs.readdirSync(dir, { withFileTypes: true });
     for (const item of items) {
       if (item.name.startsWith('.') || item.name === 'node_modules') continue;
       const fullPath = path.join(dir, item.name);
+      // Never follow symlinks that escape the scan root (symlink jail).
+      if (item.isSymbolicLink()) {
+        try {
+          const real = fs.realpathSync(fullPath);
+          const rel = path.relative(jail, real);
+          if (rel.startsWith('..') || path.isAbsolute(rel)) continue;
+          const stats = fs.statSync(real);
+          if (stats.isDirectory()) {
+            results.push(...scanDirectory(real, extensions, depth + 1, jail));
+          } else if (extensions.some((ext) => item.name.toLowerCase().endsWith(ext))) {
+            results.push(real);
+          }
+        } catch {
+          /* ignore: broken symlink */
+        }
+        continue;
+      }
       if (item.isDirectory()) {
-        results.push(...scanDirectory(fullPath, extensions, depth + 1));
+        results.push(...scanDirectory(fullPath, extensions, depth + 1, jail));
       } else if (extensions.some((ext) => item.name.toLowerCase().endsWith(ext))) {
         results.push(fullPath);
       }
@@ -446,9 +464,16 @@ export function getScannerConfig(): ScannerConfig {
 }
 
 export function updateScannerConfig(updates: Partial<ScannerConfig>): ScannerConfig {
-  const config = { ...loadConfig(), ...updates };
-  saveConfig(config);
-  return config;
+  const merged = { ...loadConfig(), ...updates };
+  // Validate the merged config so unknown sources or malformed paths can never
+  // be persisted; fall back to the current config on failure.
+  const parsed = scannerConfigSchema.safeParse(merged);
+  if (!parsed.success) {
+    log.error('Scanner config update rejected: ' + parsed.error.message);
+    return loadConfig();
+  }
+  saveConfig(parsed.data);
+  return parsed.data;
 }
 
 export function getAvailableSources(): Array<{ id: ModelSource; name: string; detected: boolean }> {

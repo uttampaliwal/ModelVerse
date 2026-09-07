@@ -20,6 +20,7 @@ import { loadEvalDataset } from './src/eval/dataset';
 import { ingestCorpus, runEvaluation, vectorStoreRetriever } from './src/eval/runner';
 import { VectorStore } from './src/vector-store';
 import { createEmbeddingProvider } from './src/embeddings';
+import { cancelDownload, getDownload, listDownloads, startDownload } from './src/model-download';
 import {
   listProfiles,
   getActiveProfile,
@@ -704,6 +705,38 @@ app.post('/api/scanner/config', (req: express.Request, res: express.Response) =>
   const updates = req.body as Partial<import('./src/model-scanner').ScannerConfig>;
   const config = updateScannerConfig(updates);
   res.json({ success: true, config });
+});
+
+// --- Model downloads (Hugging Face → local ./models) ---
+
+app.post('/api/models/download', async (req: express.Request, res: express.Response) => {
+  const body = req.body as { repo?: unknown; file?: unknown; filename?: unknown };
+  try {
+    const id = await startDownload({
+      repo: typeof body.repo === 'string' ? body.repo : '',
+      file: typeof body.file === 'string' ? body.file : '',
+      filename: typeof body.filename === 'string' ? body.filename : undefined,
+    });
+    res.status(202).json({ id, status: 'downloading' });
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
+  }
+});
+
+app.get('/api/models/download', (_req: express.Request, res: express.Response) => {
+  res.json({ downloads: listDownloads() });
+});
+
+app.get('/api/models/download/:id', (req: express.Request, res: express.Response) => {
+  const progress = getDownload(req.params.id as string);
+  if (!progress) return res.status(404).json({ error: 'Download not found' });
+  res.json(progress);
+});
+
+app.delete('/api/models/download/:id', (req: express.Request, res: express.Response) => {
+  const ok = cancelDownload(req.params.id as string);
+  if (!ok) return res.status(404).json({ error: 'Active download not found' });
+  res.json({ success: true });
 });
 
 // --- Plugin API ---

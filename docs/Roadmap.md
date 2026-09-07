@@ -3,9 +3,9 @@
 ## v0.2 — Stability & Polish
 
 - [ ] End-to-end test suite (Playwright)
-- [ ] Error boundary UI for engine failures
+- [x] Error boundary UI for engine failures
 - [ ] Auto-update checker for new releases
-- [ ] Docker image for one-command deploy
+- [x] Docker image for one-command deploy
 - [ ] Windows/Mac/Linux installers
 
 ## v0.3 — Intelligence

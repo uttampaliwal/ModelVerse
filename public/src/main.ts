@@ -20,6 +20,8 @@ import {
   saveConversations,
   renderConversation,
   exportConversation,
+  exportAllConversations,
+  importBackupFromFile,
   newConversation,
   selectConversation,
   loadConversations,
@@ -104,6 +106,14 @@ function updateWelcomeScreen(): void {
 }
 
 async function init(): Promise<void> {
+  const { initErrorBoundary } = await import('./error-boundary.js');
+  initErrorBoundary();
+
+  // PWA: register the service worker for offline static assets (best-effort).
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch((e) => logError('init:serviceWorker', e));
+  }
+
   await loadConversations().catch((e) => logError('init:loadConversations', e));
   setupVirtualScroll();
 
@@ -248,8 +258,14 @@ async function init(): Promise<void> {
   if (exportModal) {
     exportModal.querySelectorAll('.export-option').forEach((opt) => {
       opt.addEventListener('click', () => {
-        const format = (opt as HTMLElement).dataset.format as ExportFormat;
-        exportConversation(format);
+        const format = (opt as HTMLElement).dataset.format as ExportFormat | 'backup' | 'restore';
+        if (format === 'backup') {
+          void exportAllConversations();
+        } else if (format === 'restore') {
+          backupFileInput.click();
+        } else {
+          exportConversation(format);
+        }
         exportModal.classList.remove('active');
       });
     });
@@ -259,6 +275,20 @@ async function init(): Promise<void> {
     const closeBtn = exportModal.querySelector('#exportCloseBtn');
     if (closeBtn) closeBtn.addEventListener('click', () => exportModal.classList.remove('active'));
   }
+
+  // Hidden file picker for backup restore (triggered from the export modal).
+  const backupFileInput = document.createElement('input');
+  backupFileInput.type = 'file';
+  backupFileInput.accept = 'application/json,.json';
+  backupFileInput.hidden = true;
+  document.body.appendChild(backupFileInput);
+  backupFileInput.addEventListener('change', () => {
+    const file = backupFileInput.files?.[0];
+    backupFileInput.value = '';
+    if (!file) return;
+    if (!confirm(`Restore backup from ${file.name}? Current chats merge by id.`)) return;
+    void importBackupFromFile(file);
+  });
 
   el.menuBtn?.addEventListener('click', () => {
     el.sidebar.classList.toggle('open');

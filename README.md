@@ -115,6 +115,15 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Docker
+
+```bash
+docker build -t modelverse .
+docker run -p 3000:3000 -v modelverse-models:/app/models modelverse
+```
+
+The UI shell works offline after first load (service worker); chat still needs a running backend.
+
 ### Configuration
 
 Edit `settings.json` in the project root to set your default engine and port:
@@ -245,9 +254,9 @@ ModelVerse/
 ### v0.2 — Stability & Polish
 
 - [ ] End-to-end test suite (Playwright)
-- [ ] Error boundary UI for engine failures
+- [x] Error boundary UI for engine failures
 - [ ] Auto-update checker for new releases
-- [ ] Docker image for one-command deploy
+- [x] Docker image for one-command deploy
 - [ ] Windows/Mac/Linux installers
 
 ### v0.3 — Intelligence
@@ -309,7 +318,9 @@ Pull the latest changes and rebuild: `git pull && npm install && npm run build`.
 ## Known Limitations
 
 - **Single-user** — No multi-user or authentication support yet (planned for v0.4)
-- **No built-in model downloads** — You must provide your own models. Auto-download is not yet integrated.
+- **Model downloads** — `POST /api/models/download` fetches `.gguf`/`.bin`/`.safetensors` files from Hugging Face into `./models` with progress (`GET /api/models/download/:id`) and cancellation
+- **Backup** — Full IndexedDB backup/restore (conversations + folders + presets) from the export dialog; per-conversation Markdown/JSON export still available
+- **PWA** — Installable manifest + service worker for the offline UI shell; chat requires a running backend, and PNG icons are not yet bundled (SVG only)
 - **RAG is keyword-based** — The RAG plugin uses keyword search only; enable the Vector Store plugin for semantic and hybrid (RRF-fused) retrieval instead. The MiniLM provider downloads its ONNX model (~25MB) on first use, then runs fully offline.
 - **Transformers.js engine is a stub** — The Transformers.js backend does not yet perform real inference. Contributions welcome.
 - **Ollama model scanning** — Requires Ollama to be running locally for manifest-based detection.
