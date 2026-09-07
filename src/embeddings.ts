@@ -109,3 +109,24 @@ export function cosineSimilarity(a: number[], b: number[], dimension: number): n
   for (let i = 0; i < length; i++) dot += a[i] * b[i];
   return dot;
 }
+
+let warmupStarted = false;
+
+/**
+ * Best-effort background warmup of the MiniLM ONNX model (~25MB one-time
+ * download, then offline). Safe to call multiple times; subsequent calls
+ * are no-ops once warming has started. Never throws.
+ */
+export function warmupMiniLM(): Promise<void> {
+  if (warmupStarted) return Promise.resolve();
+  warmupStarted = true;
+  try {
+    const provider = new TransformersEmbeddingProvider();
+    return provider
+      .embed(['ModelVerse embedding warmup'])
+      .then(() => undefined)
+      .catch(() => undefined);
+  } catch {
+    return Promise.resolve();
+  }
+}

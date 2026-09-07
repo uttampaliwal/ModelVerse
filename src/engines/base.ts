@@ -104,10 +104,36 @@ export interface GenerateOptions {
   repeatPenalty?: number;
   maxTokens?: number;
   contextSize?: number;
+  /**
+   * Native function-calling tool specs (OpenAI `tools` format).
+   * When present and the engine reports supportsTools(), the engine issues a
+   * NON-STREAMING request so tool_calls can be parsed reliably, and returns
+   * them alongside a text stream of the assistant content.
+   */
+  tools?: FunctionToolSpec[];
+  toolChoice?: 'auto' | 'none';
+}
+
+export interface FunctionToolSpec {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, { type: string; description?: string }>;
+    required?: string[];
+  };
+}
+
+export interface EngineToolCall {
+  id?: string;
+  name: string;
+  arguments: Record<string, unknown>;
 }
 
 export interface GenerateResult {
   stream: AsyncGenerator<string>;
+  /** Populated only when the request carried `tools` on a supporting engine. */
+  toolCalls?: EngineToolCall[];
 }
 
 export interface HealthStatus {
@@ -147,6 +173,11 @@ export abstract class LLMEngine {
   abstract listModels(): Promise<ModelInfo[]>;
   abstract generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult>;
   abstract health(): Promise<HealthStatus>;
+
+  /** Whether generate() honors `options.tools` for native function calling. */
+  supportsTools(): boolean {
+    return false;
+  }
 }
 
 export type EngineConstructor = new () => LLMEngine;

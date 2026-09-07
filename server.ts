@@ -14,7 +14,12 @@ import { RAGPlugin } from './src/plugins/rag';
 import { PythonPlugin } from './src/plugins/python';
 import { VisionPlugin } from './src/plugins/vision';
 import { VectorStorePlugin } from './src/plugins/vector-store';
-import { runReActAgent, engineGenerateFn } from './src/agent/react-agent';
+import { runFunctionAgent, runReActAgent, engineGenerateFn } from './src/agent/react-agent';
+import { faithfulness } from './src/eval/metrics';
+import { loadEvalDataset } from './src/eval/dataset';
+import { ingestCorpus, runEvaluation, vectorStoreRetriever } from './src/eval/runner';
+import { VectorStore } from './src/vector-store';
+import { createEmbeddingProvider } from './src/embeddings';
 import {
   listProfiles,
   getActiveProfile,
@@ -831,7 +836,7 @@ app.post('/api/chat', (req: express.Request, res: express.Response) => {
 });
 
 app.post('/api/agent/run', async (req: express.Request, res: express.Response) => {
-  const body = req.body as { input?: string; maxIterations?: number };
+  const body = req.body as { input?: string; maxIterations?: number; mode?: string };
   const input = typeof body.input === 'string' ? body.input.trim() : '';
   if (!input) {
     return res.status(400).json({ error: 'Missing required field: input' });
@@ -841,23 +846,54 @@ app.post('/api/agent/run', async (req: express.Request, res: express.Response) =
       error: `Input too long (max ${CHAT_LIMITS.agentInputMaxChars} chars)`,
     });
   }
+  const mode = body.mode === 'react' || body.mode === 'functions' ? body.mode : 'auto';
 
   const engine = engines.getActive();
   if (!engine.running) {
     return res.status(503).json({ error: 'Engine not running' });
   }
 
-  const generate = engineGenerateFn(engine, {
+  const baseOptions: GenerateOptions = {
     temperature: settings.temperature,
     topP: settings.topP,
     topK: settings.topK,
     repeatPenalty: settings.repeatPenalty,
     maxTokens: settings.maxTokens,
     contextSize: settings.contextSize,
-  });
+  };
+  const maxIterations =
+    typeof body.maxIterations === 'number' && body.maxIterations > 0
+      ? Math.min(24, Math.floor(body.maxIterations))
+      : undefined;
 
   const started = Date.now();
   try {
+    // Native function calling when the engine supports it (auto default);
+    // ReAct text loop otherwise. Explicit mode=react forces the fallback.
+    const useFunctions = mode === 'functions' || (mode === 'auto' && engine.supportsTools());
+    if (useFunctions && engine.supportsTools() && plugins.getAllTools().length > 0) {
+      const result = await runFunctionAgent(
+        input,
+        {
+          engine,
+          options: baseOptions,
+          listTools: () => plugins.getAllTools(),
+          executeTool: (fullName, params) => plugins.executeTool(fullName, params),
+        },
+        { maxIterations },
+      );
+      log.server(
+        `Agent run (functions) completed (${result.stoppedReason}, ${result.iterations} iterations, ${result.toolCalls} tool calls, ${Date.now() - started}ms)`,
+      );
+      res.json({ ...result, mode: 'functions' });
+      return;
+    }
+    if (mode === 'functions') {
+      return res.status(400).json({
+        error: `Active engine (${engines.getActiveId()}) does not support native function calling`,
+      });
+    }
+    const generate = engineGenerateFn(engine, baseOptions);
     const result = await runReActAgent(
       input,
       {
@@ -865,19 +901,281 @@ app.post('/api/agent/run', async (req: express.Request, res: express.Response) =
         listTools: () => plugins.getAllTools(),
         executeTool: (fullName, params) => plugins.executeTool(fullName, params),
       },
-      {
-        maxIterations:
-          typeof body.maxIterations === 'number' && body.maxIterations > 0
-            ? Math.min(24, Math.floor(body.maxIterations))
-            : undefined,
-      },
+      { maxIterations },
     );
     log.server(
-      `Agent run completed (${result.stoppedReason}, ${result.iterations} iterations, ${Date.now() - started}ms)`,
+      `Agent run (react) completed (${result.stoppedReason}, ${result.iterations} iterations, ${Date.now() - started}ms)`,
     );
-    res.json({ ...result });
+    res.json({ ...result, mode: 'react' });
   } catch (e) {
     log.error('Agent run failed', e as Error);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+// --- RAG chat (multi-turn, cited) ---
+
+interface RagChatMessageDTO {
+  role: string;
+  content: unknown;
+}
+
+function extractRagQuery(body: { input?: unknown; messages?: RagChatMessageDTO[] }): string | null {
+  if (typeof body.input === 'string' && body.input.trim()) return body.input.trim();
+  if (Array.isArray(body.messages)) {
+    for (let i = body.messages.length - 1; i >= 0; i--) {
+      const m = body.messages[i];
+      if (m && m.role === 'user' && typeof m.content === 'string' && m.content.trim()) {
+        return m.content.trim();
+      }
+    }
+  }
+  return null;
+}
+
+app.post('/api/agent/rag-chat', async (req: express.Request, res: express.Response) => {
+  const body = req.body as {
+    input?: unknown;
+    messages?: RagChatMessageDTO[];
+    topK?: unknown;
+    mode?: unknown;
+    prompt?: unknown;
+  };
+  const query = extractRagQuery(body);
+  if (!query) {
+    return res.status(400).json({ error: 'Provide input or messages with a user turn' });
+  }
+  if (query.length > CHAT_LIMITS.agentInputMaxChars) {
+    return res.status(400).json({
+      error: `Input too long (max ${CHAT_LIMITS.agentInputMaxChars} chars)`,
+    });
+  }
+  const topK = clampNumber(body.topK ?? 5, 5, 1, 20);
+  const mode = body.mode === 'semantic' || body.mode === 'keyword' ? body.mode : 'hybrid';
+
+  const engine = engines.getActive();
+  if (!engine.running) {
+    return res.status(503).json({ error: 'Engine not running' });
+  }
+
+  try {
+    // Prefer the semantic vector store; fall back to keyword RAG when empty.
+    let hits: Array<{ id: string; text: string; score: number }> = [];
+    let retrievalMode = mode;
+    const vectorResult = await plugins.executeTool('vector-store:vector_search', {
+      query,
+      top_k: topK,
+      mode,
+    });
+    if (vectorResult.success && Array.isArray(vectorResult.output)) {
+      hits = (vectorResult.output as Array<{ id: string; text: string; score: number }>).slice(
+        0,
+        topK,
+      );
+    }
+    if (hits.length === 0) {
+      const ragResult = await plugins.executeTool('rag:search_knowledge', {
+        query,
+        top_k: topK,
+      });
+      if (ragResult.success && Array.isArray(ragResult.output)) {
+        hits = (ragResult.output as Array<{ id: string; content: string }>).map((r) => ({
+          id: r.id,
+          text: r.content,
+          score: 1,
+        }));
+        retrievalMode = 'keyword';
+      }
+    }
+
+    const contextBlock =
+      hits.length > 0
+        ? hits.map((h) => `[${h.id}] ${h.text}`).join('\n\n')
+        : '(no retrieved context)';
+    const history =
+      Array.isArray(body.messages) && body.messages.length > 0
+        ? (body.messages as ChatMessage[])
+            .filter((m) => m && (m.role === 'user' || m.role === 'assistant'))
+            .slice(-10)
+            .map(
+              (m) =>
+                `${m.role === 'user' ? 'User' : 'Assistant'}: ${String(m.content).slice(0, 4000)}`,
+            )
+            .join('\n')
+        : `User: ${query}`;
+    const promptName = typeof body.prompt === 'string' ? body.prompt : 'rag-qa';
+    const promptTemplate = loadPromptTemplate(promptName);
+    const prompt = (promptTemplate ?? DEFAULT_RAG_PROMPT)
+      .replace('{{context}}', contextBlock)
+      .replace('{{input}}', `${history}\n\nCurrent question: ${query}`);
+
+    const result = await engine.generate(
+      [
+        {
+          role: 'system',
+          content:
+            'You answer using retrieved context with [doc-id] citations. Never invent sources.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      {
+        temperature: settings.temperature,
+        topP: settings.topP,
+        topK: settings.topK,
+        repeatPenalty: settings.repeatPenalty,
+        maxTokens: settings.maxTokens,
+        contextSize: settings.contextSize,
+        toolChoice: 'none',
+      },
+    );
+    let answer = '';
+    for await (const token of result.stream) answer += token;
+    answer = answer.trim();
+
+    res.json({
+      answer,
+      citations: hits.map((h) => ({ id: h.id, score: h.score, text: h.text.slice(0, 500) })),
+      faithfulness: answer
+        ? faithfulness(
+            hits.map((h) => h.text),
+            answer,
+          )
+        : 0,
+      retrievalMode,
+      prompt: promptTemplate ? promptName : 'default',
+    });
+  } catch (e) {
+    log.error('RAG chat failed', e as Error);
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+// --- Prompt library (file-based, prompts/*.json with {name, description, template}) ---
+
+const PROMPTS_DIR = path.join(__dirname, 'prompts');
+const DEFAULT_RAG_PROMPT =
+  'Answer the question using ONLY the context below. Cite sources inline as [doc-id]. If the context does not contain the answer, say so honestly.\n\nContext:\n{{context}}\n\nQuestion: {{input}}\n\nAnswer (with citations):';
+
+function loadPromptTemplate(name: string): string | null {
+  if (!name || name.includes('..') || name.includes('/') || name.includes('\\')) return null;
+  try {
+    const file = path.join(PROMPTS_DIR, `${name}.json`);
+    if (!fs.existsSync(file)) return null;
+    const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as {
+      template?: unknown;
+    };
+    return typeof raw.template === 'string' ? raw.template : null;
+  } catch {
+    return null;
+  }
+}
+
+function listPrompts(): Array<{ name: string; description: string }> {
+  try {
+    if (!fs.existsSync(PROMPTS_DIR)) return [];
+    return fs
+      .readdirSync(PROMPTS_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => {
+        try {
+          const raw = JSON.parse(fs.readFileSync(path.join(PROMPTS_DIR, f), 'utf-8')) as {
+            name?: unknown;
+            description?: unknown;
+          };
+          return {
+            name: typeof raw.name === 'string' ? raw.name : f.replace(/\.json$/, ''),
+            description: typeof raw.description === 'string' ? raw.description : '',
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((p): p is { name: string; description: string } => p !== null);
+  } catch {
+    return [];
+  }
+}
+
+app.get('/api/prompts', (_req: express.Request, res: express.Response) => {
+  res.json({ prompts: listPrompts() });
+});
+
+app.get('/api/prompts/:name', (req: express.Request, res: express.Response) => {
+  const template = loadPromptTemplate(req.params.name as string);
+  if (!template) return res.status(404).json({ error: 'Prompt not found' });
+  res.json({ name: req.params.name, template });
+});
+
+// --- Eval A/B comparison (retrieval modes/providers over the seed dataset) ---
+
+app.post('/api/eval/ab', async (req: express.Request, res: express.Response) => {
+  const body = req.body as {
+    modeA?: unknown;
+    modeB?: unknown;
+    provider?: unknown;
+    topK?: unknown;
+  };
+  const validModes = new Set(['hybrid', 'semantic', 'keyword']);
+  const modeA =
+    typeof body.modeA === 'string' && validModes.has(body.modeA) ? body.modeA : 'hybrid';
+  const modeB =
+    typeof body.modeB === 'string' && validModes.has(body.modeB) ? body.modeB : 'keyword';
+  const providerId = body.provider === 'minilm' ? 'minilm' : 'hash';
+
+  try {
+    const dataset = loadEvalDataset(
+      path.join(__dirname, 'scripts', 'data', 'rag-eval-dataset.json'),
+    );
+    const topK = clampNumber(body.topK ?? dataset.top_k, dataset.top_k, 1, 20);
+    const provider = createEmbeddingProvider(providerId, 256);
+
+    async function runOnce(mode: string): Promise<import('./src/eval/runner').EvalReport> {
+      const storePath = path.join(
+        fs.mkdtempSync(path.join(os.tmpdir(), 'modelverse-eval-')),
+        'store.json',
+      );
+      try {
+        const store = new VectorStore(storePath, provider);
+        await ingestCorpus(store, dataset.corpus);
+        return await runEvaluation(
+          { ...dataset, top_k: topK },
+          vectorStoreRetriever(store, mode as 'hybrid' | 'semantic' | 'keyword'),
+          { embed: (texts) => provider.embed(texts) },
+        );
+      } finally {
+        try {
+          fs.rmSync(path.dirname(storePath), { recursive: true, force: true });
+        } catch {
+          /* ignore temp cleanup */
+        }
+      }
+    }
+
+    const [reportA, reportB] = await Promise.all([runOnce(modeA), runOnce(modeB)]);
+    const delta = (key: keyof typeof reportA.aggregate): number =>
+      reportA.aggregate[key] - reportB.aggregate[key];
+    res.json({
+      provider: provider.name,
+      topK,
+      a: { mode: modeA, aggregate: reportA.aggregate, caseCount: reportA.case_count },
+      b: { mode: modeB, aggregate: reportB.aggregate, caseCount: reportB.case_count },
+      delta: {
+        recall_at_k: delta('recall_at_k'),
+        precision_at_k: delta('precision_at_k'),
+        hit_rate_at_k: delta('hit_rate_at_k'),
+        mrr_at_k: delta('mrr_at_k'),
+        context_precision_at_k: delta('context_precision_at_k'),
+        faithfulness: delta('faithfulness'),
+      },
+      winner:
+        reportA.aggregate.recall_at_k === reportB.aggregate.recall_at_k
+          ? 'tie'
+          : reportA.aggregate.recall_at_k > reportB.aggregate.recall_at_k
+            ? 'a'
+            : 'b',
+    });
+  } catch (e) {
+    log.error('Eval A/B failed', e as Error);
     res.status(500).json({ error: (e as Error).message });
   }
 });
@@ -886,6 +1184,14 @@ const PORT = process.env.PORT || settings.port;
 const server = app.listen(PORT, () => {
   console.log(`\n  ModelVerse  ->  http://localhost:${PORT}`);
   console.log(`  Engine: ${engines.getActive().name}\n`);
+  // Best-effort background warmup of the MiniLM embedding model so the first
+  // semantic search does not pay the ~25MB download + load latency inline.
+  setImmediate(() => {
+    import('./src/embeddings')
+      .then((m) => m.warmupMiniLM())
+      .then(() => log.server('Embedding warmup complete'))
+      .catch(() => undefined);
+  });
 });
 
 server.on('error', (err) => {

@@ -1,0 +1,5 @@
+{
+  "name": "code-review",
+  "description": "Review code for correctness, security, and clarity",
+  "template": "Review the following code for correctness, security issues, and clarity. List findings as: [severity] file:line — issue + suggested fix. If no issues, say so.\n\nCode:\n{{input}}\n\nReview:"
+}

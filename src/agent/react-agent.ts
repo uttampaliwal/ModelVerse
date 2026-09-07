@@ -1,5 +1,16 @@
-import type { ChatMessage, GenerateOptions, LLMEngine } from '../engines/base';
+import type {
+  ChatMessage,
+  EngineToolCall,
+  FunctionToolSpec,
+  GenerateOptions,
+  LLMEngine,
+} from '../engines/base';
 import type { ToolDefinition, ToolResult } from '../plugins/base';
+import { toFunctionToolSpecs as convertToFunctionSpecs } from '../engines/function-tools';
+
+export function toFunctionToolSpecs(tools: AgentToolInfo[]): FunctionToolSpec[] {
+  return convertToFunctionSpecs(tools);
+}
 
 export interface AgentToolInfo {
   pluginId: string;
@@ -319,6 +330,164 @@ export async function runReActAgent(
     answer: lastAnswer,
     steps,
     iterations,
+    stoppedReason,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Native function-calling agent — uses engine.generate() with `tools` so the
+// model itself decides when to call tools (no Thought/Action text parsing).
+// Falls back to runReActAgent when the engine reports supportsTools() === false.
+// ---------------------------------------------------------------------------
+
+export interface FunctionAgentDeps {
+  engine: LLMEngine;
+  options?: GenerateOptions;
+  listTools: () => AgentToolInfo[];
+  executeTool: (fullName: string, params: Record<string, unknown>) => Promise<ToolResult>;
+}
+
+export interface FunctionAgentResult {
+  success: boolean;
+  answer: string;
+  steps: AgentStep[];
+  iterations: number;
+  toolCalls: number;
+  stoppedReason: 'completed' | 'max_iterations';
+}
+
+export async function runFunctionAgent(
+  input: string,
+  deps: FunctionAgentDeps,
+  options: AgentOptions = {},
+): Promise<FunctionAgentResult> {
+  const maxIterations = Math.min(24, Math.max(1, options.maxIterations ?? DEFAULT_MAX_ITERATIONS));
+  const maxObservationChars = options.maxObservationChars ?? DEFAULT_MAX_OBSERVATION_CHARS;
+  const maxContextChars = options.maxContextChars ?? DEFAULT_MAX_CONTEXT_CHARS;
+
+  const tools = deps.listTools();
+  const specs = convertToFunctionSpecs(tools);
+  const resolveTool = (name: string): string | null => {
+    if (tools.some((t) => `${t.pluginId}:${t.tool.name}` === name)) return name;
+    const byShortName = tools.filter((t) => t.tool.name === name);
+    return byShortName.length === 1
+      ? `${byShortName[0].pluginId}:${byShortName[0].tool.name}`
+      : null;
+  };
+
+  const messages: ChatMessage[] = [
+    {
+      role: 'system',
+      content: [
+        'You are ModelVerse Agent. You have function tools available — call them when facts are needed instead of guessing.',
+        'Combine information from multiple tools when useful, then answer the user directly.',
+      ].join('\n'),
+    },
+    { role: 'user', content: input },
+  ];
+
+  const steps: AgentStep[] = [];
+  let iterations = 0;
+  let toolCalls = 0;
+  let stoppedReason: FunctionAgentResult['stoppedReason'] = 'max_iterations';
+  let lastAnswer = '';
+
+  while (iterations < maxIterations) {
+    iterations++;
+    if (totalContextChars(messages) > maxContextChars) {
+      steps.push({
+        kind: 'error',
+        content: `Context budget exceeded (${maxContextChars} chars). Stopping.`,
+      });
+      break;
+    }
+
+    let text = '';
+    let calls: EngineToolCall[];
+    try {
+      const result = await deps.engine.generate(messages, {
+        ...(deps.options ?? {}),
+        tools: specs,
+      });
+      for await (const token of result.stream) text += token;
+      calls = result.toolCalls ?? [];
+    } catch (e) {
+      const message = (e as Error).message || 'generate failed';
+      steps.push({ kind: 'error', content: `Generate failed: ${message}` });
+      messages.push({
+        role: 'user',
+        content: `Observation: Error - generate failed (${message}). Answer directly if you can.`,
+      });
+      continue;
+    }
+
+    if (calls.length === 0) {
+      lastAnswer = text.trim();
+      if (lastAnswer) {
+        steps.push({ kind: 'final', answer: lastAnswer });
+        stoppedReason = 'completed';
+      } else {
+        steps.push({ kind: 'error', content: 'Empty response with no tool calls' });
+      }
+      break;
+    }
+
+    messages.push({
+      role: 'assistant',
+      content:
+        text || calls.map((c) => `Call ${c.name}(${JSON.stringify(c.arguments)})`).join('\n'),
+    });
+
+    for (const call of calls) {
+      toolCalls++;
+      const fullName = resolveTool(call.name);
+      if (!fullName) {
+        const content = `Unknown tool "${call.name}". Available: ${tools.map((t) => `${t.pluginId}:${t.tool.name}`).join(', ')}`;
+        steps.push({ kind: 'error', content });
+        messages.push({ role: 'user', content: `Observation: Error - ${content}` });
+        continue;
+      }
+      const inputError = validateAgentToolInput(tools, fullName, call.arguments);
+      if (inputError) {
+        steps.push({ kind: 'error', content: inputError });
+        messages.push({
+          role: 'user',
+          content: `Observation: Error - ${inputError}. Proceed with what you have or answer directly.`,
+        });
+        continue;
+      }
+      steps.push({ kind: 'action', tool: fullName, input: call.arguments });
+      let result: ToolResult;
+      try {
+        result = await deps.executeTool(fullName, call.arguments);
+      } catch (e) {
+        result = { success: false, error: (e as Error).message || 'tool execution failed' };
+      }
+      steps.push({ kind: 'observation', tool: fullName, result });
+      messages.push({
+        role: 'user',
+        content: `Observation (${fullName}): ${
+          result.success
+            ? truncate(JSON.stringify(result.output), maxObservationChars)
+            : `Error - ${result.error}`
+        }`,
+      });
+    }
+  }
+
+  if (stoppedReason !== 'completed' && iterations >= maxIterations) {
+    steps.push({
+      kind: 'error',
+      content: `Reached maximum iterations (${maxIterations}) without a final answer`,
+    });
+  }
+
+  return {
+    success: stoppedReason === 'completed' && lastAnswer.length > 0,
+    answer: lastAnswer,
+    steps,
+    iterations,
+    toolCalls,
     stoppedReason,
   };
 }

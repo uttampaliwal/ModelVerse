@@ -1,6 +1,6 @@
 {
-  "name": "modelverse-rag-eval-v1",
-  "description": "Seed RAG evaluation dataset: small curated corpus with gold labels and reference answers for measuring hybrid retrieval quality",
+  "name": "modelverse-rag-eval-v2",
+  "description": "RAG evaluation dataset v2: curated corpus with gold labels covering paraphrase, negation/distractor, multi-hop, numeric, and multi-gold cases for hybrid retrieval",
   "top_k": 5,
   "corpus": [
     {
@@ -42,6 +42,86 @@
     {
       "id": "doc-marathon",
       "text": "A marathon covers 26.2 miles or 42.195 kilometers. Elite runners finish in just over two hours, while recreational runners commonly train for sixteen weeks before race day."
+    },
+    {
+      "id": "doc-paris-louvre",
+      "text": "The Louvre museum sits in central Paris on the Seine's right bank. Its glass pyramid entrance leads to collections spanning Egyptian antiquities, Renaissance painting, and the Mona Lisa."
+    },
+    {
+      "id": "doc-lyon",
+      "text": "Lyon is France's gastronomic capital and a major city in the Auvergne-Rhone-Alpes region. It is not the national capital; that distinction belongs to Paris."
+    },
+    {
+      "id": "doc-tokyo-pop",
+      "text": "The Greater Tokyo Area holds roughly 37 million residents, making it the most populous metropolitan area on earth. The 23 special wards alone house about 14 million people."
+    },
+    {
+      "id": "doc-kyoto",
+      "text": "Kyoto was Japan's imperial capital for over a thousand years until 1868, when the capital moved to Tokyo. Today Kyoto is famed for temples, geisha districts, and autumn foliage."
+    },
+    {
+      "id": "doc-cairo-nile",
+      "text": "The Nile river flows north through Cairo before fanning into the delta. Felucca sailboats and dinner cruises carry tourists along the Cairo waterfront each evening."
+    },
+    {
+      "id": "doc-giza-hours",
+      "text": "The Giza pyramid complex near Cairo opens daily from 8am to 4pm, with the Great Pyramid interior admitting a limited number of visitors per day by timed ticket."
+    },
+    {
+      "id": "doc-ev-cost",
+      "text": "Charging an electric car at home costs roughly 10 to 15 cents per kilowatt-hour in most regions, so a full 60 kWh charge runs about 6 to 9 dollars. Public fast chargers cost two to three times more."
+    },
+    {
+      "id": "doc-ev-models",
+      "text": "Long-range electric models such as the Tesla Model 3 Long Range and Hyundai Ioniq 6 advertise EPA ranges above 300 miles, while budget models cluster near 200 miles per charge."
+    },
+    {
+      "id": "doc-quantization",
+      "text": "Quantization maps 16-bit floating point weights to 4-bit or 8-bit integers using per-group scale factors. Four-bit quantization shrinks a model to roughly one quarter of its original size with small accuracy loss."
+    },
+    {
+      "id": "doc-ollama",
+      "text": "Ollama serves local models through a REST API on port 11434. Running ollama serve starts the daemon, after which ollama run pulls and chats with models like llama3 directly from the terminal."
+    },
+    {
+      "id": "doc-rag-chunking",
+      "text": "Chunking splits long documents into overlapping passages, typically 500 to 1000 characters with 10 to 20 percent overlap. Overlap preserves sentence context that would otherwise be cut at chunk boundaries."
+    },
+    {
+      "id": "doc-bm25",
+      "text": "BM25 ranks keyword matches using term frequency, document length normalization, and inverse document frequency. It remains the standard baseline that semantic search must beat in retrieval benchmarks."
+    },
+    {
+      "id": "doc-sourdough-hydration",
+      "text": "Sourdough hydration expresses water weight as a percentage of flour weight. Most beginner recipes use 70 to 75 percent hydration, while wetter 80 percent doughs yield open crumbs but are harder to shape."
+    },
+    {
+      "id": "doc-marathon-training",
+      "text": "First-time marathon training plans span 16 to 20 weeks with peak weeks near 40 miles. Plans alternate long slow runs, tempo sessions, and rest days to build endurance without injury."
+    },
+    {
+      "id": "doc-attention",
+      "text": "Transformer attention computes query-key dot products scaled by the square root of head dimension, then applies softmax to weight value vectors. Multi-head attention runs this process in parallel subspaces."
+    },
+    {
+      "id": "doc-embeddings-dim",
+      "text": "Common embedding dimensions range from 384 for MiniLM to 1536 for large cloud models. Higher dimensions capture finer distinctions but cost more storage and slow down similarity search."
+    },
+    {
+      "id": "doc-python-gil",
+      "text": "The Python Global Interpreter Lock allows only one thread to execute bytecode at a time. CPU-bound threads therefore gain little from threading, while I/O-bound code and multiprocessing sidestep the lock."
+    },
+    {
+      "id": "doc-sse",
+      "text": "Server-Sent Events stream text from server to browser over a single HTTP connection using the text/event-stream content type. Each event is a data: line terminated by a blank line, and the client reconnects automatically."
+    },
+    {
+      "id": "doc-websockets",
+      "text": "WebSockets open a bidirectional channel suited to chat and collaboration, while Server-Sent Events are simpler for one-way server-to-client streams such as token output. SSE reconnects natively; WebSockets need manual reconnection."
+    },
+    {
+      "id": "doc-quant-memory",
+      "text": "Estimate VRAM as parameters times bytes per weight: an 8B model at 4-bit needs about 4 to 5 GB for weights plus 1 to 2 GB for context and overhead. Add context memory linearly with sequence length."
     }
   ],
   "cases": [
@@ -104,6 +184,138 @@
       "query": "Which capital city has neon districts and cherry blossoms?",
       "relevant_ids": ["doc-tokyo", "doc-paris"],
       "answer": "Tokyo mixes neon districts like Shibuya with cherry blossom parks and quiet shrines."
+    },
+    {
+      "id": "q-louvre-location",
+      "query": "Where is the Louvre museum located?",
+      "relevant_ids": ["doc-paris-louvre"],
+      "answer": "The Louvre sits in central Paris on the Seine's right bank, entered through a glass pyramid."
+    },
+    {
+      "id": "q-lyon-capital",
+      "query": "Is Lyon the capital of France?",
+      "relevant_ids": ["doc-lyon", "doc-paris"],
+      "answer": "No. Lyon is a major French city but the national capital is Paris."
+    },
+    {
+      "id": "q-tokyo-population",
+      "query": "How many people live in the Tokyo metropolitan area?",
+      "relevant_ids": ["doc-tokyo-pop"],
+      "answer": "The Greater Tokyo Area holds roughly 37 million residents."
+    },
+    {
+      "id": "q-kyoto-capital",
+      "query": "Is Kyoto still the capital of Japan?",
+      "relevant_ids": ["doc-kyoto", "doc-tokyo"],
+      "answer": "No. Kyoto was the imperial capital until 1868; the capital moved to Tokyo."
+    },
+    {
+      "id": "q-nile-cairo",
+      "query": "Which river flows through Cairo?",
+      "relevant_ids": ["doc-cairo-nile", "doc-cairo"],
+      "answer": "The Nile flows north through Cairo toward its delta."
+    },
+    {
+      "id": "q-giza-hours",
+      "query": "When can you visit the Giza pyramids?",
+      "relevant_ids": ["doc-giza-hours", "doc-cairo"],
+      "answer": "The Giza complex near Cairo opens daily from 8am to 4pm with timed tickets for the interior."
+    },
+    {
+      "id": "q-ev-cost",
+      "query": "How much does it cost to charge an electric car at home?",
+      "relevant_ids": ["doc-ev-cost", "doc-ev-batteries"],
+      "answer": "A full 60 kWh home charge costs about 6 to 9 dollars at typical residential rates."
+    },
+    {
+      "id": "q-ev-models",
+      "query": "Which electric cars have more than 300 miles of range?",
+      "relevant_ids": ["doc-ev-models", "doc-ev-range"],
+      "answer": "Long-range models like the Tesla Model 3 Long Range and Hyundai Ioniq 6 exceed 300 miles of EPA range."
+    },
+    {
+      "id": "q-quant-bits",
+      "query": "What does 4-bit quantization do to model size?",
+      "relevant_ids": ["doc-quantization", "doc-llm-inference"],
+      "answer": "Four-bit quantization shrinks weights to roughly one quarter of their 16-bit size with small accuracy loss."
+    },
+    {
+      "id": "q-ollama-serve",
+      "query": "How do I start serving models with Ollama?",
+      "relevant_ids": ["doc-ollama"],
+      "answer": "Run ollama serve to start the daemon on port 11434, then ollama run to chat with a model."
+    },
+    {
+      "id": "q-chunk-overlap",
+      "query": "Why use overlap when chunking documents for retrieval?",
+      "relevant_ids": ["doc-rag-chunking", "doc-vector-search"],
+      "answer": "Overlap of 10 to 20 percent preserves sentence context that chunk boundaries would otherwise cut."
+    },
+    {
+      "id": "q-bm25",
+      "query": "What is BM25 in search?",
+      "relevant_ids": ["doc-bm25"],
+      "answer": "BM25 ranks keyword matches with term frequency, length normalization, and inverse document frequency."
+    },
+    {
+      "id": "q-hydration",
+      "query": "What hydration percentage should beginner sourdough use?",
+      "relevant_ids": ["doc-sourdough-hydration", "doc-sourdough"],
+      "answer": "Beginners should use 70 to 75 percent hydration; wetter doughs are harder to shape."
+    },
+    {
+      "id": "q-marathon-training",
+      "query": "How long does first-marathon training take?",
+      "relevant_ids": ["doc-marathon-training", "doc-marathon"],
+      "answer": "First-time plans span 16 to 20 weeks with peak weeks near 40 miles."
+    },
+    {
+      "id": "q-attention",
+      "query": "How does transformer attention compute weights?",
+      "relevant_ids": ["doc-attention"],
+      "answer": "Attention takes scaled query-key dot products, applies softmax, and weights value vectors."
+    },
+    {
+      "id": "q-embedding-dim",
+      "query": "What embedding dimension should I choose for semantic search?",
+      "relevant_ids": ["doc-embeddings-dim", "doc-vector-search"],
+      "answer": "MiniLM uses 384 dimensions; larger models reach 1536 but cost more storage and slower search."
+    },
+    {
+      "id": "q-python-gil",
+      "query": "What is the Python Global Interpreter Lock?",
+      "relevant_ids": ["doc-python-gil"],
+      "answer": "The GIL lets only one thread run bytecode at a time, limiting CPU-bound threading."
+    },
+    {
+      "id": "q-sse",
+      "query": "How do Server-Sent Events deliver streaming text?",
+      "relevant_ids": ["doc-sse"],
+      "answer": "SSE streams text/event-stream over one HTTP connection as data: lines with automatic reconnection."
+    },
+    {
+      "id": "q-sse-vs-ws",
+      "query": "Should I use SSE or WebSockets for token streaming?",
+      "relevant_ids": ["doc-sse", "doc-websockets"],
+      "answer": "SSE is simpler for one-way token streams with native reconnect; WebSockets suit bidirectional chat."
+    },
+    {
+      "id": "q-vram-math",
+      "query": "How much VRAM for an 8B model at 4-bit quantization?",
+      "relevant_ids": ["doc-quant-memory", "doc-quantization", "doc-gguf"],
+      "answer": "About 4 to 5 GB for weights plus 1 to 2 GB of context and overhead."
+    },
+    {
+      "id": "q-paris-paraphrase",
+      "query": "France's capital city is which one?",
+      "relevant_ids": ["doc-paris"],
+      "answer": "Paris is the capital and largest city of France."
+    },
+    {
+      "id": "q-ev-range-paraphrase",
+      "query": "Will my EV make it 300 miles on a charge?",
+      "relevant_ids": ["doc-ev-range"],
+      "answer": "Modern electric cars regularly achieve 250 to 300 miles per full charge."
     }
   ]
 }

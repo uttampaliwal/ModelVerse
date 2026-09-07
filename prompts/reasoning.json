@@ -1,0 +1,5 @@
+{
+  "name": "reasoning",
+  "description": "Step-by-step reasoning with explicit assumptions",
+  "template": "Think through the following problem step by step. State your assumptions explicitly, show each reasoning step, then give the final answer separately.\n\nProblem: {{input}}\n\nReasoning:"
+}

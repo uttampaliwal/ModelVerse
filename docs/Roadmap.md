@@ -10,11 +10,11 @@
 
 ## v0.3 — Intelligence
 
-- [ ] Tool-use support for LLM function calling
-- [ ] Multi-turn RAG (chat over documents)
+- [x] Tool-use support for LLM function calling
+- [x] Multi-turn RAG (chat over documents)
 - [ ] Custom plugin SDK / remote plugin API
-- [ ] A/B comparison between models
-- [ ] Prompt template library
+- [ ] A/B comparison between models (retrieval A/B via `POST /api/eval/ab` done)
+- [x] Prompt template library
 
 ## v0.4 — Collaboration
 

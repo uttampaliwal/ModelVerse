@@ -42,12 +42,20 @@ RAGAS-style evaluation harness over hybrid retrieval: recall@k, precision@k, MRR
 
 ### Agent (`src/agent/react-agent.ts`)
 
-ReAct-style agent that plans and calls active plugin tools:
+Two agent modes share the same plugin tools:
 
-- Loop: `Thought → Action → Action Input → Observation` repeated until `Final Answer:` or the iteration cap (default 8, max 24 via request).
-- Tools are listed dynamically from `PluginManager.getAllTools()` and executed through `plugins.executeTool()`; short names resolve to their unique plugin-qualified form.
-- Tolerant parser: strips `<think>` blocks, accepts JSON or plain-string action inputs (mapped onto the first required parameter), recovers from unknown tools, truncates oversized observations.
-- Endpoint: `POST /api/agent/run` with `{ input, maxIterations? }` returns `{ success, answer, steps[], iterations, stoppedReason }`; requires a running engine (503 otherwise).
+- **Native function calling** (`runFunctionAgent`, default when the engine reports `supportsTools()`): plugin tools are converted to OpenAI-compatible specs (`src/engines/function-tools.ts`) and sent as `tools` with `tool_choice: auto` on llamacpp, ollama, lmstudio, openai, and vllm. Tools-mode requests are non-streaming so `tool_calls` parse reliably; results ride alongside the text stream in `GenerateResult.toolCalls`. KoboldCpp and Transformers.js report `supportsTools() === false`.
+- **ReAct fallback** (`runReActAgent`): `Thought → Action → Action Input → Observation` text loop until `Final Answer:` or the iteration cap (default 8, max 24 via request).
+- Both modes validate tool inputs, survive generate/tool throws, enforce a context budget, and truncate oversized observations.
+- Endpoint: `POST /api/agent/run` with `{ input, maxIterations?, mode?: 'auto' | 'react' | 'functions' }` returns `{ success, answer, steps[], iterations, stoppedReason, mode }`; requires a running engine (503 otherwise).
+
+### RAG chat (`POST /api/agent/rag-chat`)
+
+Multi-turn cited chat over documents: accepts `{ input }` or `{ messages[] }` plus `{ topK?, mode?: 'hybrid' | 'semantic' | 'keyword', prompt? }`. Retrieves from the vector store (semantic/hybrid with RRF) with keyword-RAG fallback, injects `[doc-id]` context, generates with the active engine, and returns `{ answer, citations[], faithfulness, retrievalMode }`. Prompt templates live in `prompts/*.json` (`GET /api/prompts`, `GET /api/prompts/:name`).
+
+### Eval A/B (`POST /api/eval/ab`)
+
+Compares two retrieval modes over the seed dataset: `{ modeA?, modeB?, provider?: 'hash' | 'minilm', topK? }` returns per-mode aggregates, deltas, and a winner by recall@k.
 
 ### Config Schemas (`src/config-schemas.ts`)
 
@@ -91,6 +99,11 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | POST   | `/api/plugins/toggle`        | Toggle plugin                    |
 | GET    | `/api/plugins/tools`         | List plugin tools                |
 | POST   | `/api/plugins/tools/execute` | Execute a tool                   |
+| POST   | `/api/agent/run`             | Agent (functions/React modes)    |
+| POST   | `/api/agent/rag-chat`        | Cited multi-turn RAG chat        |
+| POST   | `/api/eval/ab`               | Compare retrieval modes          |
+| GET    | `/api/prompts`               | List prompt templates            |
+| GET    | `/api/prompts/:name`         | Get a prompt template            |
 | GET    | `/api/metadata`              | Get model metadata               |
 | PUT    | `/api/metadata`              | Update model metadata            |
 | DELETE | `/api/metadata/:id`          | Delete metadata                  |

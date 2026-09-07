@@ -1,0 +1,5 @@
+{
+  "name": "summarize",
+  "description": "Concise summary with key points preserved",
+  "template": "Summarize the following text concisely. Preserve key facts, numbers, and names. End with 3 bullet-point takeaways.\n\nText:\n{{input}}\n\nSummary:"
+}

@@ -9,6 +9,7 @@ import {
   detectCapabilitiesFromName,
 } from './base';
 import { openaiStreamToGenerator } from './stream-utils';
+import { parseOpenAIToolCalls, toOpenAITools, toolsResult } from './function-tools';
 
 export interface OpenAIConfig extends EngineConfig {
   apiKey: string;
@@ -65,6 +66,9 @@ export class OpenAIEngine extends LLMEngine {
 
   async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
     const model = this._activeModel || this.engineConfig.model;
+    if (options?.tools && options.tools.length > 0 && options.toolChoice !== 'none') {
+      return this.generateWithTools(model, messages, options);
+    }
     const res = await fetch(`${this.engineConfig.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -87,6 +91,49 @@ export class OpenAIEngine extends LLMEngine {
     }
 
     return { stream: openaiStreamToGenerator(res) };
+  }
+
+  override supportsTools(): boolean {
+    return true;
+  }
+
+  private async generateWithTools(
+    model: string,
+    messages: ChatMessage[],
+    options: GenerateOptions,
+  ): Promise<GenerateResult> {
+    const res = await fetch(`${this.engineConfig.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.engineConfig.apiKey}`,
+      },
+      signal: AbortSignal.timeout(OpenAIEngine.FETCH_TIMEOUT_MS),
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: options?.temperature ?? 0.7,
+        top_p: options?.topP ?? 0.9,
+        max_tokens: options?.maxTokens ?? 4096,
+        stream: false,
+        tools: toOpenAITools(options.tools ?? []),
+        tool_choice: 'auto',
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`OpenAI error ${res.status}`);
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{
+        message?: {
+          content?: string | null;
+          tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }>;
+        };
+      }>;
+    };
+    const message = data.choices?.[0]?.message;
+    return toolsResult(message?.content ?? '', parseOpenAIToolCalls(message?.tool_calls));
   }
 
   async health(): Promise<HealthStatus> {

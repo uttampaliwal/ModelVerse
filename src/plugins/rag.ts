@@ -8,7 +8,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { documentChunkArraySchema, loadAndValidate } from '../config-schemas';
-import { chunkText } from '../vector-store';
+import { chunkText, DEFAULT_CHUNK_OVERLAP } from '../vector-store';
 
 interface DocumentChunk {
   id: string;
@@ -99,7 +99,7 @@ class IngestDocumentTool implements ToolDefinition {
     const source = (params.source as string) || 'direct';
     const chunkSize = (params.chunk_size as number) || 1000;
 
-    const chunks = chunkText(content, chunkSize, 0);
+    const chunks = chunkText(content, chunkSize, DEFAULT_CHUNK_OVERLAP);
 
     const ids = chunks.map((c) => store!.add(c, { source, ingestedAt: new Date().toISOString() }));
 

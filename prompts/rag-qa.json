@@ -1,0 +1,5 @@
+{
+  "name": "rag-qa",
+  "description": "Answer using only retrieved context, with [doc-id] citations",
+  "template": "Answer the question using ONLY the context below. Cite sources inline as [doc-id]. If the context does not contain the answer, say so honestly instead of guessing.\n\nContext:\n{{context}}\n\nQuestion: {{input}}\n\nAnswer (with citations):"
+}

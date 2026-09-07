@@ -12,6 +12,7 @@ import {
   type EngineConfig,
 } from './base';
 import { openaiStreamToGenerator } from './stream-utils';
+import { parseOpenAIToolCalls, toOpenAITools, toolsResult } from './function-tools';
 import { log } from '../logger';
 import { getOrCreateMetadata } from '../model-metadata';
 
@@ -417,6 +418,37 @@ export class LlamaCppEngine extends LLMEngine {
       throw new Error('Engine not running');
     }
 
+    if (options?.tools && options.tools.length > 0 && options.toolChoice !== 'none') {
+      const res = await fetch(`http://127.0.0.1:${this.engineConfig.port}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(LlamaCppEngine.FETCH_TIMEOUT_MS),
+        body: JSON.stringify({
+          messages,
+          temperature: options?.temperature ?? 0.7,
+          top_p: options?.topP ?? 0.9,
+          max_tokens: options?.maxTokens ?? 4096,
+          stream: false,
+          tools: toOpenAITools(options.tools),
+          tool_choice: 'auto',
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`LLM error ${res.status}: ${err}`);
+      }
+      const data = (await res.json()) as {
+        choices?: Array<{
+          message?: {
+            content?: string | null;
+            tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }>;
+          };
+        }>;
+      };
+      const message = data.choices?.[0]?.message;
+      return toolsResult(message?.content ?? '', parseOpenAIToolCalls(message?.tool_calls));
+    }
+
     const res = await fetch(`http://127.0.0.1:${this.engineConfig.port}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -438,6 +470,10 @@ export class LlamaCppEngine extends LLMEngine {
     }
 
     return { stream: openaiStreamToGenerator(res) };
+  }
+
+  override supportsTools(): boolean {
+    return true;
   }
 
   async health(): Promise<HealthStatus> {

@@ -9,6 +9,7 @@ import {
   detectCapabilitiesFromName,
 } from './base';
 import { ollamaStreamToGenerator } from './stream-utils';
+import { parseOllamaToolCalls, toOpenAITools, toolsResult } from './function-tools';
 
 export interface OllamaConfig extends EngineConfig {
   baseUrl: string;
@@ -60,6 +61,36 @@ export class OllamaEngine extends LLMEngine {
 
   async generate(messages: ChatMessage[], options?: GenerateOptions): Promise<GenerateResult> {
     const model = this._activeModel || 'llama3';
+    if (options?.tools && options.tools.length > 0 && options.toolChoice !== 'none') {
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(OllamaEngine.FETCH_TIMEOUT_MS),
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          tools: toOpenAITools(options.tools),
+          options: {
+            temperature: options?.temperature,
+            top_p: options?.topP,
+            num_predict: options?.maxTokens,
+            num_ctx: options?.contextSize,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`Ollama error ${res.status}`);
+      const data = (await res.json()) as {
+        message?: {
+          content?: string;
+          tool_calls?: Array<{ function?: { name?: string; arguments?: Record<string, unknown> } }>;
+        };
+      };
+      return toolsResult(
+        data.message?.content ?? '',
+        parseOllamaToolCalls(data.message?.tool_calls),
+      );
+    }
     const res = await fetch(`${this.engineConfig.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,6 +115,10 @@ export class OllamaEngine extends LLMEngine {
     }
 
     return { stream: ollamaStreamToGenerator(res) };
+  }
+
+  override supportsTools(): boolean {
+    return true;
   }
 
   async health(): Promise<HealthStatus> {

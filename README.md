@@ -40,6 +40,7 @@
 ### Agentic Workflows
 
 - **ReAct-style agent** — Plans with Thought/Action/Observation loops over all active plugin tools (`POST /api/agent/run`)
+- **Native function calling** — OpenAI-compatible `tools` passthrough on 5 engines (llamacpp, ollama, lmstudio, openai, vllm) with ReAct fallback; `mode: auto | react | functions`
 - **Tool orchestration** — Chains web search → RAG retrieval → Python execution → summarization in a single request
 - **Self-correcting** — Recovers from unknown tools and failed calls; configurable iteration cap (default 8)
 - **No framework lock-in** — Agent loop implemented in ~300 lines of TypeScript, no LangChain dependency
@@ -251,11 +252,11 @@ ModelVerse/
 
 ### v0.3 — Intelligence
 
-- [ ] Tool-use support for LLM function calling
-- [ ] Multi-turn RAG (chat over documents)
+- [x] Tool-use support for LLM function calling
+- [x] Multi-turn RAG (chat over documents)
 - [ ] Custom plugin SDK / remote plugin API
-- [ ] A/B comparison between models
-- [ ] Prompt template library
+- [ ] A/B comparison between models (retrieval A/B via `POST /api/eval/ab` done)
+- [x] Prompt template library
 
 ### v0.4 — Collaboration
 
