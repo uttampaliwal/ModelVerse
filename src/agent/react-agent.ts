@@ -15,6 +15,7 @@ export interface AgentDeps {
 export interface AgentOptions {
   maxIterations?: number;
   maxObservationChars?: number;
+  maxContextChars?: number;
 }
 
 export type AgentStep =
@@ -34,6 +35,7 @@ export interface AgentRunResult {
 
 const DEFAULT_MAX_ITERATIONS = 8;
 const DEFAULT_MAX_OBSERVATION_CHARS = 4000;
+const DEFAULT_MAX_CONTEXT_CHARS = 60000;
 
 interface ParsedOutput {
   kind: 'final' | 'action';
@@ -160,6 +162,35 @@ export function engineGenerateFn(
   };
 }
 
+export function validateAgentToolInput(
+  tools: AgentToolInfo[],
+  fullName: string,
+  input: Record<string, unknown>,
+): string | null {
+  const entry = tools.find((t) => `${t.pluginId}:${t.tool.name}` === fullName);
+  if (!entry) return `Unknown tool: ${fullName}`;
+  for (const [name, schema] of Object.entries(entry.tool.parameters ?? {})) {
+    const value = input[name];
+    if (schema.required && (value === undefined || value === null || value === '')) {
+      return `Missing required parameter "${name}" for tool ${fullName}`;
+    }
+    if (value !== undefined && value !== null) {
+      const actual = Array.isArray(value) ? 'array' : typeof value;
+      if (schema.type === 'number' && actual === 'string' && !Number.isNaN(Number(value))) {
+        continue;
+      }
+      if (schema.type !== 'any' && actual !== schema.type) {
+        return `Invalid type for "${name}": expected ${schema.type}, got ${actual}`;
+      }
+    }
+  }
+  return null;
+}
+
+function totalContextChars(messages: ChatMessage[]): number {
+  return messages.reduce((sum, m) => sum + (m.content?.length ?? 0), 0);
+}
+
 function truncate(text: string, limit: number): string {
   if (text.length <= limit) return text;
   return `${text.slice(0, limit)}\n... (truncated)`;
@@ -170,8 +201,9 @@ export async function runReActAgent(
   deps: AgentDeps,
   options: AgentOptions = {},
 ): Promise<AgentRunResult> {
-  const maxIterations = Math.max(1, options.maxIterations ?? DEFAULT_MAX_ITERATIONS);
+  const maxIterations = Math.min(24, Math.max(1, options.maxIterations ?? DEFAULT_MAX_ITERATIONS));
   const maxObservationChars = options.maxObservationChars ?? DEFAULT_MAX_OBSERVATION_CHARS;
+  const maxContextChars = options.maxContextChars ?? DEFAULT_MAX_CONTEXT_CHARS;
 
   const steps: AgentStep[] = [];
   const tools = deps.listTools();
@@ -191,7 +223,26 @@ export async function runReActAgent(
 
   while (iterations < maxIterations) {
     iterations++;
-    const output = await deps.generate(messages);
+    // Token/context guard: stop before the prompt grows unbounded.
+    if (totalContextChars(messages) > maxContextChars) {
+      steps.push({
+        kind: 'error',
+        content: `Context budget exceeded (${maxContextChars} chars). Stopping to avoid unbounded growth.`,
+      });
+      break;
+    }
+    let output: string;
+    try {
+      output = await deps.generate(messages);
+    } catch (e) {
+      const message = (e as Error).message || 'generate failed';
+      steps.push({ kind: 'error', content: `Generate failed: ${message}` });
+      messages.push({
+        role: 'user',
+        content: `Observation: Error - generate failed (${message}). Reply with a valid Action or a Final Answer.`,
+      });
+      continue;
+    }
     const parsed = parseAgentOutput(output, tools);
 
     if (parsed.kind === 'final') {
@@ -214,13 +265,30 @@ export async function runReActAgent(
       continue;
     }
 
+    const toolInput = parsed.input ?? {};
+    const inputError = validateAgentToolInput(tools, fullName, toolInput);
+    if (inputError) {
+      steps.push({ kind: 'error', content: inputError });
+      messages.push({ role: 'assistant', content: output });
+      messages.push({
+        role: 'user',
+        content: `Observation: Error - ${inputError}. Reply with a corrected Action or a Final Answer.`,
+      });
+      continue;
+    }
+
     steps.push({
       kind: 'action',
       tool: fullName,
-      input: parsed.input ?? {},
+      input: toolInput,
       thought: parsed.thought,
     });
-    const result = await deps.executeTool(fullName, parsed.input ?? {});
+    let result: ToolResult;
+    try {
+      result = await deps.executeTool(fullName, toolInput);
+    } catch (e) {
+      result = { success: false, error: (e as Error).message || 'tool execution failed' };
+    }
     steps.push({ kind: 'observation', tool: fullName, result });
 
     messages.push({ role: 'assistant', content: output });

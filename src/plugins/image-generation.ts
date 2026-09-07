@@ -25,28 +25,18 @@ class ImageGeneratorTool implements ToolDefinition {
 
   execute(params: Record<string, unknown>): Promise<ToolResult> {
     const prompt = params.prompt as string;
-    const width = (params.width as number) || 512;
-    const height = (params.height as number) || 512;
-    const steps = (params.steps as number) || 30;
-
-    // Placeholder - real implementation would call SD API, ComfyUI, or local model
-    const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <rect width="100%" height="100%" fill="#1a1a2e"/>
-      <text x="50%" y="50%" fill="#e94560" font-family="monospace" font-size="14" text-anchor="middle" dy=".3em">
-        Image Generation
-      </text>
-      <text x="50%" y="60%" fill="#888" font-family="monospace" font-size="10" text-anchor="middle" dy=".3em">
-        ${prompt.substring(0, 40)}${prompt.length > 40 ? '...' : ''}
-      </text>
-    </svg>`;
-
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: prompt (string)',
+      });
+    }
+    // No image backend is configured in this build — fail honestly instead of
+    // returning a placeholder so agents cannot mistake it for a real render.
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'svg',
-        data: placeholderSvg,
-        metadata: { prompt, width, height, steps },
-      },
+      success: false,
+      error:
+        'Image generation is not configured (not_configured). Configure a Stable Diffusion / DALL-E / ComfyUI provider to enable generate_image.',
     });
   }
 }

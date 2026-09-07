@@ -17,6 +17,8 @@ export class KoboldCppEngine extends LLMEngine {
   readonly id = 'koboldcpp';
   readonly name = 'KoboldCpp';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: KoboldCppConfig = {
     baseUrl: process.env.KOBOLDCPP_HOST || 'http://127.0.0.1:5001',
   };
@@ -46,6 +48,7 @@ export class KoboldCppEngine extends LLMEngine {
     const res = await fetch(`${this.engineConfig.baseUrl}/api/v1/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(KoboldCppEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         prompt,
         max_length: options?.maxTokens ?? 1024,
@@ -65,7 +68,9 @@ export class KoboldCppEngine extends LLMEngine {
 
   async health(): Promise<HealthStatus> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/api/v1/model`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/v1/model`, {
+        signal: AbortSignal.timeout(KoboldCppEngine.FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         return { status: 'ok', engine: this.id };
       }

@@ -62,6 +62,24 @@ function sendSSE(res: express.Response, data: object): void {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+// Phase 0 guardrails: caps prevent hung/oversized generations from blocking decisions.
+export const CHAT_LIMITS = {
+  maxMessages: 100,
+  maxContentChars: 50000,
+  maxTokensMin: 1,
+  maxTokensMax: 32000,
+  contextMin: 512,
+  contextMax: 131072,
+  requestTimeoutMs: 300000, // 5 min per generation
+  agentInputMaxChars: 10000,
+};
+
+export function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(n)));
+}
+
 class RequestQueue {
   private entries: QueueEntry[] = [];
   private currentId: string | null = null;
@@ -143,17 +161,50 @@ class RequestQueue {
       const result = await engine.generate(entry.messages, entry.options);
 
       try {
-        for await (const token of result.stream) {
-          if (token) {
-            entry.res.write(
-              `data: ${JSON.stringify({ choices: [{ delta: { content: token } }] })}\n\n`,
-            );
+        let timedOut = false;
+        const timer = setTimeout(() => {
+          timedOut = true;
+          try {
+            sendSSE(entry.res, { error: 'Generation timed out after 5 minutes' });
+            entry.res.end();
+          } catch {
+            /* ignore: client may already be gone */
           }
+        }, CHAT_LIMITS.requestTimeoutMs);
+        try {
+          for await (const token of result.stream) {
+            if (entry.status === 'cancelled' || timedOut) break;
+            if (token) {
+              const ok = entry.res.write(
+                `data: ${JSON.stringify({ choices: [{ delta: { content: token } }] })}\n\n`,
+              );
+              if (!ok) break; // client disconnected / backpressure
+            }
+          }
+        } finally {
+          clearTimeout(timer);
         }
-        entry.res.write('data: [DONE]\n\n');
-        entry.res.end();
-        entry.status = 'completed';
-        log.server('Stream complete');
+        if (entry.status === 'cancelled') {
+          entry.error = 'Cancelled';
+          log.server('Stream cancelled (' + entry.id + ')');
+          try {
+            entry.res.end();
+          } catch {
+            /* ignore */
+          }
+        } else if (timedOut) {
+          entry.status = 'failed';
+          entry.error = 'Generation timed out';
+        } else {
+          try {
+            entry.res.write('data: [DONE]\n\n');
+            entry.res.end();
+          } catch {
+            /* ignore */
+          }
+          entry.status = 'completed';
+          log.server('Stream complete');
+        }
       } catch (streamErr) {
         log.error('Stream error', streamErr as Error);
         if (!entry.res.headersSent) {
@@ -217,12 +268,21 @@ class RequestQueue {
   }
 
   cancel(id: string): boolean {
-    const entry = this.entries.find((e) => e.id === id && e.status === 'queued');
-    if (!entry) return false;
+    const entry = this.entries.find((e) => e.id === id);
+    if (!entry || entry.status === 'completed' || entry.status === 'failed') return false;
+    if (entry.status === 'queued') {
+      entry.status = 'cancelled';
+      try {
+        entry.res.end();
+      } catch {
+        /* ignore */
+      }
+      const idx = this.entries.indexOf(entry);
+      if (idx !== -1) this.entries.splice(idx, 1);
+      return true;
+    }
+    // Running: flag cancellation; processEntry loop observes it and cleans up.
     entry.status = 'cancelled';
-    entry.res.end();
-    const idx = this.entries.indexOf(entry);
-    if (idx !== -1) this.entries.splice(idx, 1);
     return true;
   }
 }
@@ -679,8 +739,16 @@ app.get('/api/plugins/tools', (_req: express.Request, res: express.Response) => 
 
 app.post('/api/plugins/tools/execute', async (req: express.Request, res: express.Response) => {
   const { tool, params } = req.body as { tool: string; params: Record<string, unknown> };
+  if (typeof tool !== 'string' || !tool.trim()) {
+    return res.status(400).json({ success: false, error: 'Missing required field: tool' });
+  }
   try {
     const result = await plugins.executeTool(tool, params || {});
+    // Honest status codes: misconfiguration / validation failures are 400,
+    // so agents and UI never mistake them for successful observations.
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
@@ -711,6 +779,24 @@ app.post('/api/chat', (req: express.Request, res: express.Response) => {
   if (!engine.running) {
     return res.status(503).json({ error: 'Engine not running' });
   }
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'messages must be a non-empty array' });
+  }
+  if (messages.length > CHAT_LIMITS.maxMessages) {
+    return res.status(400).json({ error: `Too many messages (max ${CHAT_LIMITS.maxMessages})` });
+  }
+  const validRoles = new Set(['system', 'user', 'assistant']);
+  for (const m of messages) {
+    if (!m || typeof m.role !== 'string' || !validRoles.has(m.role)) {
+      return res.status(400).json({ error: 'Each message needs a valid role' });
+    }
+    const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content ?? '');
+    if (content.length > CHAT_LIMITS.maxContentChars) {
+      return res.status(400).json({
+        error: `Message content too long (max ${CHAT_LIMITS.maxContentChars} chars)`,
+      });
+    }
+  }
 
   const hasSystem = messages.length > 0 && messages[0].role === 'system';
   const allMessages = sanitizeMessages(
@@ -719,9 +805,18 @@ app.post('/api/chat', (req: express.Request, res: express.Response) => {
 
   // Prefer per-request values from the UI so a generation uses the context
   // size the user currently has set, falling back to saved server settings.
-  const reqMaxTokens = typeof body.maxTokens === 'number' ? body.maxTokens : settings.maxTokens;
-  const reqContextSize =
-    typeof body.contextSize === 'number' ? body.contextSize : settings.contextSize;
+  const reqMaxTokens = clampNumber(
+    body.maxTokens ?? settings.maxTokens,
+    settings.maxTokens,
+    CHAT_LIMITS.maxTokensMin,
+    CHAT_LIMITS.maxTokensMax,
+  );
+  const reqContextSize = clampNumber(
+    body.contextSize ?? settings.contextSize,
+    settings.contextSize,
+    CHAT_LIMITS.contextMin,
+    CHAT_LIMITS.contextMax,
+  );
 
   const opts: GenerateOptions = {
     temperature: settings.temperature,
@@ -740,6 +835,11 @@ app.post('/api/agent/run', async (req: express.Request, res: express.Response) =
   const input = typeof body.input === 'string' ? body.input.trim() : '';
   if (!input) {
     return res.status(400).json({ error: 'Missing required field: input' });
+  }
+  if (input.length > CHAT_LIMITS.agentInputMaxChars) {
+    return res.status(400).json({
+      error: `Input too long (max ${CHAT_LIMITS.agentInputMaxChars} chars)`,
+    });
   }
 
   const engine = engines.getActive();

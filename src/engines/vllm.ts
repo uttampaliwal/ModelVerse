@@ -19,6 +19,8 @@ export class VLLMEngine extends LLMEngine {
   readonly id = 'vllm';
   readonly name = 'vLLM';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: VLLMConfig = {
     baseUrl: process.env.VLLM_HOST || 'http://127.0.0.1:8000',
     model: 'default',
@@ -40,7 +42,9 @@ export class VLLMEngine extends LLMEngine {
 
   async listModels(): Promise<ModelInfo[]> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`, {
+        signal: AbortSignal.timeout(VLLMEngine.FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) return [];
       const data = (await res.json()) as { data: Array<{ id: string; owned_by: string }> };
       return data.data.map((m) => ({
@@ -61,6 +65,7 @@ export class VLLMEngine extends LLMEngine {
     const res = await fetch(`${this.engineConfig.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(VLLMEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         model,
         messages,
@@ -80,7 +85,9 @@ export class VLLMEngine extends LLMEngine {
 
   async health(): Promise<HealthStatus> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`, {
+        signal: AbortSignal.timeout(VLLMEngine.FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         return { status: 'ok', engine: this.id };
       }

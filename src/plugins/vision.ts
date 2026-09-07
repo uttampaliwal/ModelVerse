@@ -20,16 +20,17 @@ class AnalyzeImageTool implements ToolDefinition {
 
   execute(params: Record<string, unknown>): Promise<ToolResult> {
     const image = params.image as string;
+    if (typeof image !== 'string' || !image.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: image (string)',
+      });
+    }
     const prompt = (params.prompt as string) || 'Describe this image in detail';
 
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'analysis',
-        note: 'Vision analysis requires a vision-capable model (LLaVA, GPT-4V, Qwen-VL, etc.)',
-        prompt,
-        imageProvided: !!image,
-      },
+      success: false,
+      error: `Vision analysis is not configured (not_configured) for prompt "${prompt.slice(0, 80)}". Configure a vision-capable model (LLaVA, GPT-4V, Qwen-VL, etc.) to enable analyze_image.`,
     });
   }
 }
@@ -44,13 +45,16 @@ class OCRExtractTool implements ToolDefinition {
 
   execute(params: Record<string, unknown>): Promise<ToolResult> {
     const image = params.image as string;
+    if (typeof image !== 'string' || !image.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: image (string)',
+      });
+    }
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'text',
-        note: 'OCR requires Tesseract or similar OCR engine configured',
-        imageProvided: !!image,
-      },
+      success: false,
+      error:
+        'OCR is not configured (not_configured). Configure Tesseract or similar OCR engine to enable ocr_extract.',
     });
   }
 }
@@ -66,13 +70,18 @@ class DescribeChartTool implements ToolDefinition {
     },
   };
 
-  execute(_params: Record<string, unknown>): Promise<ToolResult> {
+  execute(params: Record<string, unknown>): Promise<ToolResult> {
+    const image = params.image as string;
+    if (typeof image !== 'string' || !image.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: image (string)',
+      });
+    }
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'chart_analysis',
-        note: 'Chart analysis requires a vision-capable model',
-      },
+      success: false,
+      error:
+        'Chart analysis is not configured (not_configured). Configure a vision-capable model to enable describe_chart.',
     });
   }
 }

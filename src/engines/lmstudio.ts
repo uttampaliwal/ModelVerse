@@ -18,6 +18,8 @@ export class LMStudioEngine extends LLMEngine {
   readonly id = 'lmstudio';
   readonly name = 'LM Studio';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: LMStudioConfig = {
     baseUrl: process.env.LMSTUDIO_HOST || 'http://127.0.0.1:1234',
   };
@@ -38,7 +40,9 @@ export class LMStudioEngine extends LLMEngine {
 
   async listModels(): Promise<ModelInfo[]> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`, {
+        signal: AbortSignal.timeout(LMStudioEngine.FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) return [];
       const data = (await res.json()) as { data: Array<{ id: string; owned_by: string }> };
       return data.data.map((m) => ({
@@ -58,6 +62,7 @@ export class LMStudioEngine extends LLMEngine {
     const res = await fetch(`${this.engineConfig.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(LMStudioEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         messages,
         temperature: options?.temperature ?? 0.7,
@@ -78,7 +83,9 @@ export class LMStudioEngine extends LLMEngine {
 
   async health(): Promise<HealthStatus> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/v1/models`, {
+        signal: AbortSignal.timeout(LMStudioEngine.FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         return { status: 'ok', engine: this.id };
       }

@@ -17,13 +17,16 @@ class TextToSpeechTool implements ToolDefinition {
 
   execute(params: Record<string, unknown>): Promise<ToolResult> {
     const text = params.text as string;
+    if (typeof text !== 'string' || !text.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: text (string)',
+      });
+    }
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'audio',
-        text,
-        note: 'TTS requires piper, espeak, or OpenAI TTS API configured',
-      },
+      success: false,
+      error:
+        'Text-to-speech is not configured (not_configured). Configure piper, espeak, or OpenAI TTS to enable text_to_speech.',
     });
   }
 }
@@ -42,13 +45,16 @@ class SpeechToTextTool implements ToolDefinition {
 
   execute(params: Record<string, unknown>): Promise<ToolResult> {
     const audioPath = params.audio_path as string;
+    if (typeof audioPath !== 'string' || !audioPath.trim()) {
+      return Promise.resolve({
+        success: false,
+        error: 'Missing required parameter: audio_path (string)',
+      });
+    }
     return Promise.resolve({
-      success: true,
-      output: {
-        format: 'text',
-        audioPath,
-        note: 'STT requires whisper.cpp or OpenAI Whisper API configured',
-      },
+      success: false,
+      error:
+        'Speech-to-text is not configured (not_configured). Configure whisper.cpp or OpenAI Whisper to enable speech_to_text.',
     });
   }
 }

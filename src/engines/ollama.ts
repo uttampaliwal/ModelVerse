@@ -18,6 +18,8 @@ export class OllamaEngine extends LLMEngine {
   readonly id = 'ollama';
   readonly name = 'Ollama';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: OllamaConfig = {
     baseUrl: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434',
   };
@@ -38,7 +40,9 @@ export class OllamaEngine extends LLMEngine {
 
   async listModels(): Promise<ModelInfo[]> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`, {
+        signal: AbortSignal.timeout(OllamaEngine.FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) return [];
       const data = (await res.json()) as { models: Array<{ name: string; size: number }> };
       return data.models.map((m) => ({
@@ -59,6 +63,7 @@ export class OllamaEngine extends LLMEngine {
     const res = await fetch(`${this.engineConfig.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(OllamaEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         model,
         messages,
@@ -83,7 +88,9 @@ export class OllamaEngine extends LLMEngine {
 
   async health(): Promise<HealthStatus> {
     try {
-      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`);
+      const res = await fetch(`${this.engineConfig.baseUrl}/api/tags`, {
+        signal: AbortSignal.timeout(OllamaEngine.FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         return { status: 'ok', engine: this.id };
       }

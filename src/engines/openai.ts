@@ -20,6 +20,8 @@ export class OpenAIEngine extends LLMEngine {
   readonly id = 'openai';
   readonly name = 'OpenAI';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: OpenAIConfig = {
     apiKey: process.env.OPENAI_API_KEY || '',
     baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
@@ -44,6 +46,7 @@ export class OpenAIEngine extends LLMEngine {
     try {
       const res = await fetch(`${this.engineConfig.baseUrl}/models`, {
         headers: { Authorization: `Bearer ${this.engineConfig.apiKey}` },
+        signal: AbortSignal.timeout(OpenAIEngine.FETCH_TIMEOUT_MS),
       });
       if (!res.ok) return [];
       const data = (await res.json()) as { data: Array<{ id: string; owned_by: string }> };
@@ -68,6 +71,7 @@ export class OpenAIEngine extends LLMEngine {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.engineConfig.apiKey}`,
       },
+      signal: AbortSignal.timeout(OpenAIEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         model,
         messages,
@@ -85,10 +89,23 @@ export class OpenAIEngine extends LLMEngine {
     return { stream: openaiStreamToGenerator(res) };
   }
 
-  health(): Promise<HealthStatus> {
+  async health(): Promise<HealthStatus> {
     if (!this.engineConfig.apiKey) {
       return Promise.resolve({ status: 'error', engine: this.id, detail: 'No API key configured' });
     }
-    return Promise.resolve({ status: 'ok', engine: this.id });
+    try {
+      const res = await fetch(`${this.engineConfig.baseUrl}/models`, {
+        headers: { Authorization: `Bearer ${this.engineConfig.apiKey}` },
+        signal: AbortSignal.timeout(OpenAIEngine.FETCH_TIMEOUT_MS),
+      });
+      if (res.ok) return { status: 'ok', engine: this.id };
+      return { status: 'error', engine: this.id, detail: `HTTP ${res.status}` };
+    } catch (e) {
+      return {
+        status: 'error',
+        engine: this.id,
+        detail: (e as Error).name === 'TimeoutError' ? 'Timed out' : 'Cannot reach OpenAI',
+      };
+    }
   }
 }

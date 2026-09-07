@@ -7,7 +7,6 @@ import {
   type HealthStatus,
   type EngineConfig,
 } from './base';
-import { toGenerator } from './stream-utils';
 
 export interface TransformersConfig extends EngineConfig {
   model: string;
@@ -28,8 +27,7 @@ export class TransformersEngine extends LLMEngine {
   }
 
   async start(_modelPath: string): Promise<{ success: boolean; port?: number }> {
-    this._running = true;
-    return Promise.resolve({ success: true });
+    return Promise.resolve({ success: false });
   }
 
   stop(): Promise<{ success: boolean }> {
@@ -42,11 +40,18 @@ export class TransformersEngine extends LLMEngine {
   }
 
   generate(_messages: ChatMessage[], _options?: GenerateOptions): Promise<GenerateResult> {
-    const text = `[Transformers.js] Model: ${this.engineConfig.model}\n\nPrompt received. Full implementation requires @huggingface/transformers.\n`;
-    return Promise.resolve({ stream: toGenerator(text) });
+    return Promise.reject(
+      new Error(
+        'Transformers.js engine is not implemented (not_configured). Full implementation requires @huggingface/transformers inference wiring.',
+      ),
+    );
   }
 
   health(): Promise<HealthStatus> {
-    return Promise.resolve({ status: 'ok', engine: this.id });
+    return Promise.resolve({
+      status: 'error',
+      engine: this.id,
+      detail: 'Not implemented (not_configured)',
+    });
   }
 }

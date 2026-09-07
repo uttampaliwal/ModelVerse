@@ -1,72 +1,85 @@
 import { spawn } from 'node:child_process';
-import { createServer } from 'node:http';
 import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+const PORT = 9999;
+const BASE = `http://127.0.0.1:${PORT}`;
 
-function request(method, path, body) {
-  return new Promise((resolve, reject) => {
-    const options = { hostname: '127.0.0.1', port: 9999, path, method, headers: {} };
-    if (body) {
-      options.headers['Content-Type'] = 'application/json';
-      options.headers['Content-Length'] = Buffer.byteLength(body);
-    }
-    const req = createServer(options, (res) => {
-      let data = '';
-      res.on('data', (c) => (data += c));
-      res.on('end', () => resolve({ status: res.statusCode, body: data }));
-    });
-    req.on('error', reject);
-    if (body) req.write(body);
-    req.end();
+async function request(method, path, body) {
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body,
+    signal: AbortSignal.timeout(15000),
   });
+  const text = await res.text();
+  return { status: res.status, body: text };
 }
 
 async function measure(label, fn) {
   const start = process.hrtime.bigint();
-  await fn();
+  const result = await fn();
   const end = process.hrtime.bigint();
   const ms = Number(end - start) / 1e6;
-  console.log(`  ${label}: ${ms.toFixed(2)}ms`);
+  console.log(`  ${label}: ${ms.toFixed(2)}ms (status ${result.status})`);
+  return result;
+}
+
+function waitForServer(server) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        resolve();
+      }
+    };
+    server.stdout.on('data', (data) => {
+      const text = data.toString();
+      process.stdout.write(text);
+      if (/ModelVerse|listening|http:\/\/localhost/i.test(text)) finish();
+    });
+    setTimeout(finish, 4000);
+  });
 }
 
 async function main() {
   if (!existsSync(resolve(root, 'server.js'))) {
     console.log('Building...');
-    spawn('npm', ['run', 'build'], { stdio: 'inherit', cwd: root });
+    await new Promise((resolvePromise, rejectPromise) => {
+      const child = spawn('npm', ['run', 'build'], { stdio: 'inherit', cwd: root, shell: true });
+      child.on('exit', (code) =>
+        code === 0 ? resolvePromise() : rejectPromise(new Error(`build exited ${code}`)),
+      );
+      child.on('error', rejectPromise);
+    });
   }
 
   console.log('\nStarting server...');
   const server = spawn('node', ['server.js'], {
     cwd: root,
     stdio: ['pipe', 'pipe', 'inherit'],
-    env: { ...process.env, PORT: '9999' },
+    env: { ...process.env, PORT: String(PORT) },
   });
 
-  // wait for server to start
-  await new Promise((resolve) => {
-    server.stdout.on('data', (data) => {
-      if (data.toString().includes('listening') || data.toString().includes('port')) resolve();
-      // also resolve after 3s regardless
-      setTimeout(resolve, 3000);
-    });
-    setTimeout(resolve, 3000);
-  });
+  await waitForServer(server);
 
   console.log('\nBenchmark results:');
   console.log('-----------------');
 
-  await measure('GET /', () => request('GET', '/'));
-  await measure('GET /api/profiles', () => request('GET', '/api/profiles'));
-  await measure('GET /api/models', () => request('GET', '/api/models'));
-  await measure('GET /api/settings', () => request('GET', '/api/settings'));
+  try {
+    await measure('GET /', () => request('GET', '/'));
+    await measure('GET /api/profiles', () => request('GET', '/api/profiles'));
+    await measure('GET /api/models', () => request('GET', '/api/models'));
+    await measure('GET /api/settings', () => request('GET', '/api/settings'));
+  } finally {
+    server.kill();
+  }
 
   console.log('-----------------\n');
-
-  server.kill();
   process.exit(0);
 }
 

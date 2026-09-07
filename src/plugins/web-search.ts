@@ -20,7 +20,7 @@ class WebSearchTool implements ToolDefinition {
 
     try {
       const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
       const data = (await res.json()) as {
         AbstractText?: string;
         RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>;

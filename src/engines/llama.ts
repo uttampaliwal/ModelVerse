@@ -174,6 +174,8 @@ export class LlamaCppEngine extends LLMEngine {
   readonly id = 'llamacpp';
   readonly name = 'llama.cpp';
 
+  private static readonly FETCH_TIMEOUT_MS = 30000;
+
   protected engineConfig: LlamaCppConfig = {
     binPath: path.join(process.cwd(), 'bin'),
     modelsPath:
@@ -418,6 +420,7 @@ export class LlamaCppEngine extends LLMEngine {
     const res = await fetch(`http://127.0.0.1:${this.engineConfig.port}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(LlamaCppEngine.FETCH_TIMEOUT_MS),
       body: JSON.stringify({
         messages,
         temperature: options?.temperature ?? 0.7,
@@ -442,7 +445,9 @@ export class LlamaCppEngine extends LLMEngine {
       return { status: 'stopped', engine: this.id };
     }
     try {
-      const res = await fetch(`http://127.0.0.1:${this.engineConfig.port}/health`);
+      const res = await fetch(`http://127.0.0.1:${this.engineConfig.port}/health`, {
+        signal: AbortSignal.timeout(LlamaCppEngine.FETCH_TIMEOUT_MS),
+      });
       if (res.ok) {
         return { status: 'ok', engine: this.id };
       }

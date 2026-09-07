@@ -25,6 +25,7 @@ jobs:
       - run: npm run format
       - run: npm run build
       - run: npm test
+      - run: npm run eval -- --fail-under 0.9
       - run: npm run test:coverage
       - run: npm audit --audit-level=high
         continue-on-error: true

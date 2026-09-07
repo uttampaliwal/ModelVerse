@@ -172,8 +172,19 @@ class PluginManager {
   async executeTool(fullName: string, params: Record<string, unknown>): Promise<ToolResult> {
     const tool = this.tools.get(fullName);
     if (!tool) return { success: false, error: `Tool not found: ${fullName}` };
+    const validationError = validateToolParams(tool, params);
+    if (validationError) return { success: false, error: validationError };
     try {
-      return await tool.execute(params);
+      const result = await tool.execute(params);
+      // Guard against dishonest stubs: a result without output AND without
+      // error but marked success is treated as not-configured.
+      if (result.success && result.output === undefined && result.error === undefined) {
+        return {
+          success: false,
+          error: `Tool ${fullName} returned no output (not_configured)`,
+        };
+      }
+      return result;
     } catch (e) {
       return { success: false, error: (e as Error).message };
     }
@@ -212,3 +223,31 @@ class PluginManager {
 }
 
 export const plugins = new PluginManager();
+
+/** Validate required params + basic types before dispatching to a tool. */
+export function validateToolParams(
+  tool: ToolDefinition,
+  params: Record<string, unknown>,
+): string | null {
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return `Invalid params for ${tool.name}: expected an object`;
+  }
+  for (const [name, schema] of Object.entries(tool.parameters ?? {})) {
+    const value = params[name];
+    if (schema.required && (value === undefined || value === null || value === '')) {
+      return `Missing required parameter: ${name} (${schema.type}) for tool ${tool.name}`;
+    }
+    if (value !== undefined && value !== null) {
+      const actual = Array.isArray(value) ? 'array' : typeof value;
+      // Allow numeric strings for number params (LLMs often emit strings);
+      // otherwise enforce the declared type strictly.
+      if (schema.type === 'number' && actual === 'string' && !Number.isNaN(Number(value))) {
+        continue;
+      }
+      if (schema.type !== 'any' && actual !== schema.type) {
+        return `Invalid type for parameter "${name}": expected ${schema.type}, got ${actual}`;
+      }
+    }
+  }
+  return null;
+}
