@@ -273,7 +273,7 @@ ModelVerse/
 
 ### v0.4 — Collaboration
 
-- [ ] Multi-user with authentication
+- [x] Multi-user with authentication (API-level; per-user server stores still open)
 - [ ] Shared conversation links
 - [ ] Collaborative prompt editing
 - [ ] Usage analytics dashboard
@@ -321,7 +321,7 @@ Pull the latest changes and rebuild: `git pull && npm install && npm run build`.
 
 ## Known Limitations
 
-- **Single-user** — No multi-user or authentication support yet (planned for v0.4)
+- **Conversations are per-browser** — Multi-user auth now protects the API, but chat history still lives in per-browser IndexedDB (no server-side per-user stores yet)
 - **Model downloads** — `POST /api/models/download` fetches `.gguf`/`.bin`/`.safetensors` files from Hugging Face into `./models` with progress (`GET /api/models/download/:id`) and cancellation
 - **Backup** — Full IndexedDB backup/restore (conversations + folders + presets) from the export dialog; per-conversation Markdown/JSON export still available
 - **PWA** — Installable manifest + service worker for the offline UI shell; chat requires a running backend, and PNG icons are not yet bundled (SVG only)

@@ -23,6 +23,22 @@ import { createEmbeddingProvider } from './src/embeddings';
 import { cancelDownload, getDownload, listDownloads, startDownload } from './src/model-download';
 import { getUpdateInfo } from './src/update-checker';
 import {
+  authenticateUser,
+  deleteUser,
+  isAuthEnabled,
+  listUsers,
+  registerUser,
+  signToken,
+  verifyToken,
+  type SessionClaims,
+} from './src/auth';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    auth?: SessionClaims;
+  }
+}
+import {
   listProfiles,
   getActiveProfile,
   setActiveProfile,
@@ -388,6 +404,64 @@ app.use(express.json({ limit: '10mb' }));
 app.use(
   express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false, maxAge: 0 }),
 );
+
+// --- Auth gate: open single-user server until the first user registers,
+// then every /api route needs a Bearer token except the allowlist below. ---
+const AUTH_PUBLIC_PATHS = new Set([
+  '/api/version',
+  '/api/update',
+  '/api/auth/status',
+  '/api/auth/login',
+  '/api/auth/register',
+]);
+
+function bearerToken(req: express.Request): string | null {
+  const header = req.headers.authorization;
+  if (!header) return null;
+  const [scheme, token] = header.split(' ');
+  return /^Bearer$/i.test(scheme) && token ? token : null;
+}
+
+app.use('/api', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!isAuthEnabled()) {
+    next();
+    return;
+  }
+  const pathname = req.originalUrl.split('?')[0];
+  if (AUTH_PUBLIC_PATHS.has(pathname)) {
+    next();
+    return;
+  }
+  const claims = verifyToken(bearerToken(req) ?? '');
+  if (!claims) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  req.auth = claims;
+  next();
+});
+
+function requireAdmin(req: express.Request, res: express.Response): boolean {
+  if (!req.auth?.admin) {
+    res.status(403).json({ error: 'Admin access required' });
+    return false;
+  }
+  return true;
+}
+
+// Login brute-force throttle: 10 attempts per IP per minute.
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function loginThrottled(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + 60000 });
+    return false;
+  }
+  entry.count++;
+  return entry.count > 10;
+}
 
 app.get('/api/version', (_req: express.Request, res: express.Response) => {
   res.json({ version: getAppVersion() });
@@ -1220,6 +1294,79 @@ app.post('/api/eval/ab', async (req: express.Request, res: express.Response) => 
   } catch (e) {
     log.error('Eval A/B failed', e as Error);
     res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+// --- Auth (optional multi-user; inactive until the first user registers) ---
+
+app.get('/api/auth/status', (_req: express.Request, res: express.Response) => {
+  res.json({ enabled: isAuthEnabled() });
+});
+
+app.post('/api/auth/register', (req: express.Request, res: express.Response) => {
+  const body = req.body as { username?: unknown; password?: unknown };
+  try {
+    const token = bearerToken(req);
+    const requester = token ? verifyToken(token) : null;
+    const user = registerUser(
+      typeof body.username === 'string' ? body.username : '',
+      typeof body.password === 'string' ? body.password : '',
+      requester,
+    );
+    res.status(201).json({ username: user.username, admin: user.admin });
+  } catch (e) {
+    const message = (e as Error).message;
+    const status = message.includes('admin session') ? 403 : 400;
+    res.status(status).json({ error: message });
+  }
+});
+
+app.post('/api/auth/login', (req: express.Request, res: express.Response) => {
+  const ip = req.ip ?? 'unknown';
+  if (loginThrottled(ip)) {
+    res.status(429).json({ error: 'Too many login attempts, try again later' });
+    return;
+  }
+  const body = req.body as { username?: unknown; password?: unknown };
+  try {
+    const user = authenticateUser(
+      typeof body.username === 'string' ? body.username : '',
+      typeof body.password === 'string' ? body.password : '',
+    );
+    res.json({
+      token: signToken(user.username, user.admin),
+      username: user.username,
+      admin: user.admin,
+    });
+  } catch (e) {
+    res.status(401).json({ error: (e as Error).message });
+  }
+});
+
+app.get('/api/auth/me', (req: express.Request, res: express.Response) => {
+  if (!req.auth) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  res.json({ username: req.auth.sub, admin: req.auth.admin });
+});
+
+app.get('/api/auth/users', (req: express.Request, res: express.Response) => {
+  if (!requireAdmin(req, res)) return;
+  res.json({ users: listUsers() });
+});
+
+app.delete('/api/auth/users/:username', (req: express.Request, res: express.Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const ok = deleteUser(req.params.username as string);
+    if (!ok) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
   }
 });
 

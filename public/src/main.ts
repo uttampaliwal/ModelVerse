@@ -109,6 +109,10 @@ async function init(): Promise<void> {
   const { initErrorBoundary } = await import('./error-boundary.js');
   initErrorBoundary();
 
+  const { initAuthUI, checkAuthState } = await import('./auth.js');
+  initAuthUI();
+  await checkAuthState().catch((e) => logError('init:auth', e));
+
   // PWA: register the service worker for offline static assets (best-effort).
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch((e) => logError('init:serviceWorker', e));

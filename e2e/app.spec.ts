@@ -39,9 +39,14 @@ test.describe('app shell', () => {
 
   test('global errors surface a toast instead of failing silently', async ({ page }) => {
     await page.goto('/');
-    await page.evaluate(() => {
-      void Promise.reject(new Error('e2e probe'));
-    });
-    await expect(page.locator('#toastContainer .toast.error')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#welcomeScreen')).toBeVisible();
+    // Retry: a probe fired while app init is still attaching handlers is
+    // legitimately missed, so re-fire until the boundary observes it.
+    await expect(async () => {
+      await page.evaluate(() => {
+        void Promise.reject(new Error('e2e probe'));
+      });
+      await expect(page.locator('#toastContainer .toast.error')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
   });
 });

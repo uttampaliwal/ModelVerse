@@ -57,6 +57,17 @@ Multi-turn cited chat over documents: accepts `{ input }` or `{ messages[] }` pl
 
 Compares two retrieval modes over the seed dataset: `{ modeA?, modeB?, provider?: 'hash' | 'minilm', topK? }` returns per-mode aggregates, deltas, and a winner by recall@k.
 
+### Auth (`src/auth.ts`)
+
+Optional multi-user API auth, dependency-free (scrypt password hashing, HMAC-signed Bearer tokens, JSON user store):
+
+- **Disabled by default**: with no users registered the server behaves exactly as before (open single-user).
+- **Bootstrap**: `POST /api/auth/register` with no users creates the first account as admin. Afterwards registration needs an admin token (or `ALLOW_PUBLIC_REGISTER=1`).
+- **Enforcement**: once enabled, every `/api/*` route except `/api/version`, `/api/update`, and `/api/auth/(status|login|register)` returns 401 without a valid token. Deleting a user revokes their sessions; deleting the last user disables auth again.
+- **Login hardening**: 10 attempts per IP per minute (429 beyond that); passwords 8–128 chars, timing-safe comparison.
+- Secrets live in `users.json` / `.auth-secret` (0600, gitignored, excluded from Docker and release zips). Override paths with `AUTH_STORE_FILE` / `AUTH_SECRET_FILE`.
+- The browser stores the token in `localStorage`, attaches it in `api()`, shows a login overlay on 401, and offers sign-out in the sidebar. Conversations stay per-browser IndexedDB for now — API-level isolation only.
+
 ### Config Schemas (`src/config-schemas.ts`)
 
 Zod schemas for validating settings, profiles, metadata, and plugin config. The `loadAndValidate()` helper reads a JSON file, validates it against a schema, and returns defaults on failure.
@@ -83,6 +94,12 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | ------ | ---------------------------- | -------------------------------- |
 | GET    | `/api/version`               | App version from package.json    |
 | GET    | `/api/update`                | Update check (cached 6h)         |
+| GET    | `/api/auth/status`           | Whether auth is enabled          |
+| POST   | `/api/auth/register`         | Register (open for first admin)  |
+| POST   | `/api/auth/login`            | Login (throttled) → token        |
+| GET    | `/api/auth/me`               | Current session                  |
+| GET    | `/api/auth/users`            | List users (admin)               |
+| DELETE | `/api/auth/users/:username`  | Delete user (admin)              |
 | GET    | `/api/engines`               | Available engines                |
 | POST   | `/api/chat`                  | Send message, receive SSE stream |
 | POST   | `/api/server/start`          | Load a model                     |

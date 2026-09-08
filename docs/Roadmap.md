@@ -18,7 +18,7 @@
 
 ## v0.4 — Collaboration
 
-- [ ] Multi-user with authentication
+- [x] Multi-user with authentication (API-level; per-user server stores still open)
 - [ ] Shared conversation links
 - [ ] Collaborative prompt editing
 - [ ] Usage analytics dashboard
