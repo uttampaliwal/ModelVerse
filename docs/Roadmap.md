@@ -21,7 +21,7 @@
 - [x] Multi-user with authentication (API-level; per-user server stores still open)
 - [ ] Shared conversation links
 - [ ] Collaborative prompt editing
-- [ ] Usage analytics dashboard
+- [x] Usage analytics dashboard (local operational metrics: sidebar Metrics modal + `GET /api/metrics`)
 
 ## v1.0 — Production
 

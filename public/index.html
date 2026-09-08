@@ -276,6 +276,26 @@
           <span class="version-badge" id="versionBadge" title="ModelVerse version"></span>
           <button
             class="icon-btn"
+            id="metricsBtn"
+            title="Server metrics"
+            aria-label="Open server metrics"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn"
             id="logoutBtn"
             title="Sign out"
             aria-label="Sign out"
@@ -1474,6 +1494,37 @@ You are a helpful assistant.</textarea>
           <span class="search-hint"><kbd>↑↓</kbd> Navigate</span>
           <span class="search-hint"><kbd>Enter</kbd> Open</span>
           <span class="search-hint"><kbd>Esc</kbd> Close</span>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal-overlay"
+      id="metricsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="metricsTitle"
+    >
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="metricsTitle">Server Metrics</h3>
+          <button class="icon-btn" id="metricsCloseBtn" aria-label="Close metrics dialog">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" id="metricsBody">
+          <div class="welcome-empty-text">Loading…</div>
         </div>
       </div>
     </div>

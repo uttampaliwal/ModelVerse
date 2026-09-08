@@ -76,6 +76,19 @@ test.describe('api', () => {
     expect((await request.get('/api/queue')).ok()).toBeTruthy();
   });
 
+  test('metrics endpoint reports a summary shape', async ({ request }) => {
+    // Generate one failure event, then check the aggregate.
+    await request.post('/api/plugins/tools/execute', {
+      data: { tool: 'nope:missing', params: {} },
+    });
+    const res = await request.get('/api/metrics');
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(typeof body.uptimeMs).toBe('number');
+    expect(typeof body.total).toBe('number');
+    expect(body.kinds.tool.count).toBeGreaterThan(0);
+  });
+
   test('update check never fails hard', async ({ request }) => {
     const res = await request.get('/api/update');
     expect(res.ok()).toBeTruthy();

@@ -258,6 +258,18 @@ async function init(): Promise<void> {
     if (modal) modal.classList.add('active');
   });
 
+  const metricsBtn = $('metricsBtn');
+  metricsBtn?.addEventListener('click', () => {
+    void import('./metrics.js').then((m) => m.openMetrics());
+  });
+  const metricsModal = $('metricsModal');
+  metricsModal?.addEventListener('click', (e) => {
+    if (e.target === metricsModal) metricsModal.classList.remove('active');
+  });
+  metricsModal
+    ?.querySelector('#metricsCloseBtn')
+    ?.addEventListener('click', () => metricsModal.classList.remove('active'));
+
   const exportModal = $('exportModal');
   if (exportModal) {
     exportModal.querySelectorAll('.export-option').forEach((opt) => {

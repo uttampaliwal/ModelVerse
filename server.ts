@@ -22,6 +22,7 @@ import { VectorStore } from './src/vector-store';
 import { createEmbeddingProvider } from './src/embeddings';
 import { cancelDownload, getDownload, listDownloads, startDownload } from './src/model-download';
 import { getUpdateInfo } from './src/update-checker';
+import { recordMetric, summarizeMetrics } from './src/metrics';
 import {
   authenticateUser,
   deleteUser,
@@ -170,8 +171,10 @@ class RequestQueue {
   private async processEntry(entry: QueueEntry): Promise<void> {
     if (this.processing) return;
     this.processing = true;
+    const startedAt = Date.now();
 
     const engine = engines.getActive();
+    const engineId = engines.getActiveId();
     if (!engine.running) {
       if (!entry.res.headersSent) {
         entry.res.setHeader('Content-Type', 'text/event-stream');
@@ -183,6 +186,11 @@ class RequestQueue {
       entry.res.end();
       entry.status = 'failed';
       entry.error = 'Engine not running';
+      recordMetric('chat', Date.now() - startedAt, {
+        engine: engineId,
+        success: false,
+        detail: 'Engine not running',
+      });
       this.currentId = null;
       this.processing = false;
       this.entries = this.entries.filter((e) => e.id !== entry.id);
@@ -249,6 +257,11 @@ class RequestQueue {
         entry.status = 'failed';
         entry.error = (streamErr as Error).message;
       }
+      recordMetric('chat', Date.now() - startedAt, {
+        engine: engineId,
+        success: entry.status === 'completed',
+        detail: entry.status === 'completed' ? undefined : entry.error,
+      });
 
       this.currentId = null;
       this.processing = false;
@@ -264,6 +277,11 @@ class RequestQueue {
       }
       entry.status = 'failed';
       entry.error = (e as Error).message;
+      recordMetric('chat', Date.now() - startedAt, {
+        engine: engineId,
+        success: false,
+        detail: entry.error,
+      });
       this.currentId = null;
       this.processing = false;
       this.entries = this.entries.filter((e) => e.id !== entry.id);
@@ -470,6 +488,10 @@ app.get('/api/version', (_req: express.Request, res: express.Response) => {
 app.get('/api/update', async (_req: express.Request, res: express.Response) => {
   const info = await getUpdateInfo(getAppVersion());
   res.json(info);
+});
+
+app.get('/api/metrics', (_req: express.Request, res: express.Response) => {
+  res.json(summarizeMetrics());
 });
 
 app.get('/api/engines', (_req: express.Request, res: express.Response) => {
@@ -864,8 +886,13 @@ app.post('/api/plugins/tools/execute', async (req: express.Request, res: express
   if (typeof tool !== 'string' || !tool.trim()) {
     return res.status(400).json({ success: false, error: 'Missing required field: tool' });
   }
+  const startedAt = Date.now();
   try {
     const result = await plugins.executeTool(tool, params || {});
+    recordMetric('tool', Date.now() - startedAt, {
+      success: result.success,
+      detail: result.success ? tool : result.error,
+    });
     // Honest status codes: misconfiguration / validation failures are 400,
     // so agents and UI never mistake them for successful observations.
     if (!result.success) {
@@ -873,6 +900,7 @@ app.post('/api/plugins/tools/execute', async (req: express.Request, res: express
     }
     res.json(result);
   } catch (e) {
+    recordMetric('tool', Date.now() - startedAt, { success: false, detail: (e as Error).message });
     res.status(500).json({ error: (e as Error).message });
   }
 });
@@ -1002,6 +1030,10 @@ app.post('/api/agent/run', async (req: express.Request, res: express.Response) =
       log.server(
         `Agent run (functions) completed (${result.stoppedReason}, ${result.iterations} iterations, ${result.toolCalls} tool calls, ${Date.now() - started}ms)`,
       );
+      recordMetric('agent', Date.now() - started, {
+        engine: engines.getActiveId(),
+        success: result.success,
+      });
       res.json({ ...result, mode: 'functions' });
       return;
     }
@@ -1023,9 +1055,18 @@ app.post('/api/agent/run', async (req: express.Request, res: express.Response) =
     log.server(
       `Agent run (react) completed (${result.stoppedReason}, ${result.iterations} iterations, ${Date.now() - started}ms)`,
     );
+    recordMetric('agent', Date.now() - started, {
+      engine: engines.getActiveId(),
+      success: result.success,
+    });
     res.json({ ...result, mode: 'react' });
   } catch (e) {
     log.error('Agent run failed', e as Error);
+    recordMetric('agent', Date.now() - started, {
+      engine: engines.getActiveId(),
+      success: false,
+      detail: (e as Error).message,
+    });
     res.status(500).json({ error: (e as Error).message });
   }
 });
@@ -1074,6 +1115,7 @@ app.post('/api/agent/rag-chat', async (req: express.Request, res: express.Respon
   if (!engine.running) {
     return res.status(503).json({ error: 'Engine not running' });
   }
+  const ragStartedAt = Date.now();
 
   try {
     // Prefer the semantic vector store; fall back to keyword RAG when empty.
@@ -1161,8 +1203,17 @@ app.post('/api/agent/rag-chat', async (req: express.Request, res: express.Respon
       retrievalMode,
       prompt: promptTemplate ? promptName : 'default',
     });
+    recordMetric('rag-chat', Date.now() - ragStartedAt, {
+      engine: engines.getActiveId(),
+      success: true,
+    });
   } catch (e) {
     log.error('RAG chat failed', e as Error);
+    recordMetric('rag-chat', Date.now() - ragStartedAt, {
+      engine: engines.getActiveId(),
+      success: false,
+      detail: (e as Error).message,
+    });
     res.status(500).json({ error: (e as Error).message });
   }
 });
@@ -1239,6 +1290,7 @@ app.post('/api/eval/ab', async (req: express.Request, res: express.Response) => 
     typeof body.modeB === 'string' && validModes.has(body.modeB) ? body.modeB : 'keyword';
   const providerId = body.provider === 'minilm' ? 'minilm' : 'hash';
 
+  const evalStartedAt = Date.now();
   try {
     const dataset = loadEvalDataset(
       path.join(__dirname, 'scripts', 'data', 'rag-eval-dataset.json'),
@@ -1291,8 +1343,13 @@ app.post('/api/eval/ab', async (req: express.Request, res: express.Response) => 
             ? 'a'
             : 'b',
     });
+    recordMetric('eval-ab', Date.now() - evalStartedAt, { success: true });
   } catch (e) {
     log.error('Eval A/B failed', e as Error);
+    recordMetric('eval-ab', Date.now() - evalStartedAt, {
+      success: false,
+      detail: (e as Error).message,
+    });
     res.status(500).json({ error: (e as Error).message });
   }
 });
@@ -1328,17 +1385,23 @@ app.post('/api/auth/login', (req: express.Request, res: express.Response) => {
     return;
   }
   const body = req.body as { username?: unknown; password?: unknown };
+  const loginStartedAt = Date.now();
   try {
     const user = authenticateUser(
       typeof body.username === 'string' ? body.username : '',
       typeof body.password === 'string' ? body.password : '',
     );
+    recordMetric('login', Date.now() - loginStartedAt, { success: true });
     res.json({
       token: signToken(user.username, user.admin),
       username: user.username,
       admin: user.admin,
     });
   } catch (e) {
+    recordMetric('login', Date.now() - loginStartedAt, {
+      success: false,
+      detail: 'invalid credentials',
+    });
     res.status(401).json({ error: (e as Error).message });
   }
 });

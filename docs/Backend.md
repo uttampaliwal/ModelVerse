@@ -68,6 +68,14 @@ Optional multi-user API auth, dependency-free (scrypt password hashing, HMAC-sig
 - Secrets live in `users.json` / `.auth-secret` (0600, gitignored, excluded from Docker and release zips). Override paths with `AUTH_STORE_FILE` / `AUTH_SECRET_FILE`.
 - The browser stores the token in `localStorage`, attaches it in `api()`, shows a login overlay on 401, and offers sign-out in the sidebar. Conversations stay per-browser IndexedDB for now — API-level isolation only.
 
+### Metrics (`src/metrics.ts`)
+
+In-memory operational metrics (bounded 2000-event ring, resets on restart): per-kind counts/success/average latency for `chat`, `agent`, `rag-chat`, `tool`, `download` (reserved), `login`, and `eval-ab`, plus per-engine request counts and the last 20 failures. Served at `GET /api/metrics` (auth-gated like everything else once auth is enabled) and rendered in the sidebar Metrics dashboard.
+
+### Python guardrails (`src/plugins/python.ts`)
+
+`execute_python` honors its settings for the first time: `python_path` selects the interpreter, `max_timeout` clamps client timeouts (hard cap 120s, and timeouts now correctly fail instead of silently succeeding), and `allowed_modules` statically rejects disallowed imports. Output is capped at 100KB per stream (the runaway process is killed). `run_notebook` only accepts `.ipynb` paths. This is defense in depth, not a sandbox: static import scanning cannot see dynamic imports, so do not expose the plugin on untrusted networks.
+
 ### Config Schemas (`src/config-schemas.ts`)
 
 Zod schemas for validating settings, profiles, metadata, and plugin config. The `loadAndValidate()` helper reads a JSON file, validates it against a schema, and returns defaults on failure.
@@ -100,6 +108,7 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | GET    | `/api/auth/me`               | Current session                  |
 | GET    | `/api/auth/users`            | List users (admin)               |
 | DELETE | `/api/auth/users/:username`  | Delete user (admin)              |
+| GET    | `/api/metrics`               | Operational metrics summary      |
 | GET    | `/api/engines`               | Available engines                |
 | POST   | `/api/chat`                  | Send message, receive SSE stream |
 | POST   | `/api/server/start`          | Load a model                     |

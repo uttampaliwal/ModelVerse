@@ -194,3 +194,23 @@ kbd {
   outline: none;
   border-color: var(--accent);
 }
+
+/* Metrics dashboard */
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 16px;
+  font-size: 13px;
+}
+
+.metrics-table th,
+.metrics-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.metrics-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}

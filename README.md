@@ -61,7 +61,7 @@
 | **Speech**           | `text_to_speech`, `speech_to_text`                                                | TTS (Piper / OpenAI / eSpeak) and STT (Whisper)                                                            |
 | **Web Search**       | `web_search`, `fetch_url`                                                         | DuckDuckGo / Brave / Google search with page fetching                                                      |
 | **RAG**              | `ingest_document`, `search_knowledge`, `list_documents`                           | Document ingestion and keyword search over knowledge bases                                                 |
-| **Python Execution** | `execute_python`, `run_notebook`                                                  | Sandboxed Python and Jupyter notebook execution                                                            |
+| **Python Execution** | `execute_python`, `run_notebook`                                                  | Guardrailed Python (module allowlist, clamped timeouts, capped output) and Jupyter notebook execution      |
 | **Vision**           | `analyze_image`, `ocr_extract`, `describe_chart`                                  | Image analysis, OCR, chart interpretation                                                                  |
 | **Vector Store**     | `vector_upsert`, `vector_search`, `vector_delete`, `vector_clear`, `vector_stats` | Persistent embeddings (local ONNX MiniLM), chunked ingestion, hybrid retrieval with Reciprocal Rank Fusion |
 
@@ -276,7 +276,7 @@ ModelVerse/
 - [x] Multi-user with authentication (API-level; per-user server stores still open)
 - [ ] Shared conversation links
 - [ ] Collaborative prompt editing
-- [ ] Usage analytics dashboard
+- [x] Usage analytics dashboard (local operational metrics: sidebar Metrics modal + `GET /api/metrics`)
 
 ### v1.0 — Production
 

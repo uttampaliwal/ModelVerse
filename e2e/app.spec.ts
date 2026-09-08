@@ -37,6 +37,16 @@ test.describe('app shell', () => {
     await expect(page.locator('.settings-nav-item[data-category="general"]')).toBeVisible();
   });
 
+  test('metrics modal opens from the sidebar', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#metricsBtn').click();
+    const modal = page.locator('#metricsModal');
+    await expect(modal).toHaveClass(/active/);
+    await expect(page.locator('#metricsBody')).toContainText(/By operation/, { timeout: 10000 });
+    await page.locator('#metricsCloseBtn').click();
+    await expect(modal).not.toHaveClass(/active/);
+  });
+
   test('global errors surface a toast instead of failing silently', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#welcomeScreen')).toBeVisible();
