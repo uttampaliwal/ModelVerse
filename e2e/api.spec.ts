@@ -76,6 +76,33 @@ test.describe('api', () => {
     expect((await request.get('/api/queue')).ok()).toBeTruthy();
   });
 
+  test('prompt library create/read/delete round trip', async ({ request }) => {
+    const name = `e2e-tmp-${Date.now().toString(36)}`;
+    const bad = await request.post('/api/prompts', {
+      data: { name: '../evil', template: 'x' },
+    });
+    expect(bad.status()).toBe(400);
+
+    const created = await request.post('/api/prompts', {
+      data: { name, description: 'e2e probe', template: 'Answer: {{input}}' },
+    });
+    expect(created.status()).toBe(201);
+
+    const fetched = await request.get(`/api/prompts/${name}`);
+    expect(fetched.ok()).toBeTruthy();
+    expect((await fetched.json()).template).toContain('{{input}}');
+
+    const updated = await request.post('/api/prompts', {
+      data: { name, template: 'Updated: {{input}}' },
+    });
+    expect(updated.status()).toBe(200);
+    expect((await updated.json()).created).toBe(false);
+
+    const deleted = await request.delete(`/api/prompts/${name}`);
+    expect(deleted.ok()).toBeTruthy();
+    expect((await request.get(`/api/prompts/${name}`)).status()).toBe(404);
+  });
+
   test('metrics endpoint reports a summary shape', async ({ request }) => {
     // Generate one failure event, then check the aggregate.
     await request.post('/api/plugins/tools/execute', {

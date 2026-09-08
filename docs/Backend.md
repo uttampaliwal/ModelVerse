@@ -135,6 +135,8 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | POST   | `/api/eval/ab`               | Compare retrieval modes          |
 | GET    | `/api/prompts`               | List prompt templates            |
 | GET    | `/api/prompts/:name`         | Get a prompt template            |
+| POST   | `/api/prompts`               | Create/update a prompt template  |
+| DELETE | `/api/prompts/:name`         | Delete a prompt template         |
 | GET    | `/api/metadata`              | Get model metadata               |
 | PUT    | `/api/metadata`              | Update model metadata            |
 | DELETE | `/api/metadata/:id`          | Delete metadata                  |

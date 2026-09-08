@@ -1274,6 +1274,53 @@ app.get('/api/prompts/:name', (req: express.Request, res: express.Response) => {
   res.json({ name: req.params.name, template });
 });
 
+const PROMPT_NAME_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+app.post('/api/prompts', (req: express.Request, res: express.Response) => {
+  const body = req.body as { name?: unknown; description?: unknown; template?: unknown };
+  if (typeof body.name !== 'string' || !PROMPT_NAME_RE.test(body.name)) {
+    return res.status(400).json({
+      error: 'name must be 1-64 chars: letters, digits, _ -',
+    });
+  }
+  if (
+    typeof body.template !== 'string' ||
+    body.template.length < 1 ||
+    body.template.length > 20000
+  ) {
+    return res.status(400).json({ error: 'template must be 1-20000 characters' });
+  }
+  if (body.description !== undefined && typeof body.description !== 'string') {
+    return res.status(400).json({ error: 'description must be a string' });
+  }
+  const description = typeof body.description === 'string' ? body.description.slice(0, 500) : '';
+  try {
+    if (!fs.existsSync(PROMPTS_DIR)) fs.mkdirSync(PROMPTS_DIR, { recursive: true });
+    const file = path.join(PROMPTS_DIR, `${body.name}.json`);
+    const created = !fs.existsSync(file);
+    fs.writeFileSync(
+      file,
+      JSON.stringify({ name: body.name, description, template: body.template }, null, 2),
+    );
+    res.status(created ? 201 : 200).json({ name: body.name, created });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.delete('/api/prompts/:name', (req: express.Request, res: express.Response) => {
+  const name = req.params.name as string;
+  if (!PROMPT_NAME_RE.test(name)) return res.status(400).json({ error: 'Invalid prompt name' });
+  try {
+    const file = path.join(PROMPTS_DIR, `${name}.json`);
+    if (!fs.existsSync(file)) return res.status(404).json({ error: 'Prompt not found' });
+    fs.rmSync(file);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 // --- Eval A/B comparison (retrieval modes/providers over the seed dataset) ---
 
 app.post('/api/eval/ab', async (req: express.Request, res: express.Response) => {

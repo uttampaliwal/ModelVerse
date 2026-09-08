@@ -359,10 +359,20 @@ export class LlamaCppEngine extends LLMEngine {
 
   listModels(): Promise<ModelInfo[]> {
     const models: ModelInfo[] = [];
+    // A missing models directory is normal (fresh installs) — stay silent
+    // instead of logging an error on every /api/models poll.
+    if (!fs.existsSync(this.engineConfig.modelsPath)) {
+      return Promise.resolve(models);
+    }
     try {
       const scanDir = (dir: string, depth = 0): void => {
         if (depth > 4) return;
-        const items = fs.readdirSync(dir, { withFileTypes: true });
+        let items: fs.Dirent[];
+        try {
+          items = fs.readdirSync(dir, { withFileTypes: true });
+        } catch {
+          return; // unreadable directory: skip, keep what we found
+        }
         for (const item of items) {
           const fullPath = path.join(dir, item.name);
           if (item.isDirectory()) {
