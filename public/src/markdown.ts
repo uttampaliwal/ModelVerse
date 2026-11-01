@@ -258,7 +258,7 @@ const LANG_COLORS: Record<string, string> = {
 
 function getLangIcon(lang: string): string {
   const key = lang.toLowerCase();
-  return LANG_ICONS[key] || lang.substring(0, 3);
+  return LANG_ICONS[key] || escapeHtml(lang.substring(0, 3));
 }
 
 function getLangColor(lang: string): string {
@@ -604,9 +604,9 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
 </div>`);
     } else {
       result = result.split('@@CODE' + i + '@@').join(`
-<div class="code-block" data-lang="${lang}">
+<div class="code-block" data-lang="${escapeHtml(lang)}">
   <div class="code-block-header">
-    <span class="code-block-lang"><span class="lang-icon" style="--lang-color: ${langColor}">${langIcon}</span>${langLabel}</span>
+    <span class="code-block-lang"><span class="lang-icon" style="--lang-color: ${langColor}">${langIcon}</span>${escapeHtml(langLabel)}</span>
     <div class="code-block-actions">
       <button class="code-block-btn code-block-copy" title="Copy code" aria-label="Copy code">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -618,7 +618,7 @@ export function formatMd(text: string, highlight: HighlightFn = mainThreadHighli
       </button>
       ${
         canRun
-          ? `<button class="code-block-btn code-block-run" title="Run code" aria-label="Run code" data-lang="${lang}">
+          ? `<button class="code-block-btn code-block-run" title="Run code" aria-label="Run code" data-lang="${escapeHtml(lang)}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span>Run</span>
       </button>`

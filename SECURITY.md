@@ -19,7 +19,7 @@ Self-hosted, single-operator product; strong-by-default posture, known gaps docu
 **Known gaps (accepted for a localhost tool, fix before hosting publicly)**
 
 - No CSP / X-Frame-Options / Referrer-Policy headers on static chat-app; `express.json({limit:'10mb'})` allows large bodies.
-- Several attribute interpolations are unescaped in browser code (self-XSS risk class) — tracked in ROADMAP.
+- Attribute interpolations of user content fixed (self-XSS class closed): recent-chats title (`main.ts`), code-block `data-lang`/label/icon fallback (`markdown.ts`). Unescaped-interpolation audit for new code continues via review (`esc`/`escapeHtml`).
 - Auth token kept in localStorage client-side (`public/src/api.ts`).
 - Brute-force cosine/vector-store is in-process (DoS-able at scale).
 - CORS wildcard on the API.

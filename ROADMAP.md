@@ -5,7 +5,7 @@ Authoritative long-form roadmap: `docs/Roadmap.md`. This file is the engineering
 ## Engineering debt queue
 
 - [ ] Security headers: add CSP/X-Frame-Options/Referrer-Policy to static responses (or document proxy-only path in SECURITY.md, which is currently the standing answer)
-- [ ] Escape user-controlled attribute interpolations (`public/src/main.ts:74`, `public/src/sidebar.ts:304-307`); add eslint rule/test hook to prevent new ones
+- [x] Escape user-controlled attribute interpolations — done: recent-chats title (`main.ts`) and code-block `data-lang`/lang label/`getLangIcon` fallback (`markdown.ts`). The `sidebar.ts:304-307` buttons were audited and are static ternaries (never user content). Still open: eslint rule/test hook to prevent new raw interpolations.
 - [ ] Resolve static-cache contradiction: etag/max-age on Express static ↔ `sw.js` shell precache ↔ manual `?v=` busting — pick one freshness model + document
 - [ ] Promote `settings.json` to `settings.example.json` tracked + runtime file gitignored under `data/` (code path update in `server.ts`)
 - [ ] `prompts/` runtime-writes into a tracked directory (e2e does this too) — move runtime prompt store to `data/prompts/` with seeds read-once

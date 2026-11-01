@@ -46,7 +46,7 @@ Dockerfile start.sh/bat  build node:22-slim; runtime: node server.js (port 3000)
 ## Known debts (fact-checked, prioritization in ROADMAP.md)
 
 - No security headers/CSP in front of a 10 MB-capable JSON body + innerHTML chat render (TEST your PRs with `npm audit` and keep response sizes sane).
-- Attribute-level unescaped interpolations exist (`main.ts:74`, `sidebar.ts:304-307`) — fix pattern, don't copy it.
+- Attribute interpolations of user content are now escaped (`main.ts` recent-chats title, `markdown.ts` code-block lang attrs/label/icon fallback); remaining XSS surface is the CSP-side gap above.
 - Static serving disables etag/max-age while `sw.js` precaches the shell + manual `?v=` busting — inconsistent freshness model.
 - `ws` dependency present but unused (reserved for future streaming).
 - Browser-side modules lack unit tests (Vitest covers server `src/**` only).

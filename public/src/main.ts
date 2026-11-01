@@ -71,8 +71,8 @@ function updateWelcomeScreen(): void {
       recentList.innerHTML = convs
         .map(
           (c) => `
-          <div class="welcome-recent-item" data-id="${c.id}" tabindex="0" role="button" aria-label="${c.title}">
-            <span class="welcome-recent-item-title">${c.title}</span>
+          <div class="welcome-recent-item" data-id="${c.id}" tabindex="0" role="button" aria-label="${escapeHtml(c.title)}">
+            <span class="welcome-recent-item-title">${escapeHtml(c.title)}</span>
             <span class="welcome-recent-item-time">${timeAgo(c.updatedAt)}</span>
           </div>`,
         )
