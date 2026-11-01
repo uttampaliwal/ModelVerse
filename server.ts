@@ -815,10 +815,10 @@ app.post('/api/scanner/config', (req: express.Request, res: express.Response) =>
 
 // --- Model downloads (Hugging Face → local ./models) ---
 
-app.post('/api/models/download', async (req: express.Request, res: express.Response) => {
+app.post('/api/models/download', (req: express.Request, res: express.Response) => {
   const body = req.body as { repo?: unknown; file?: unknown; filename?: unknown };
   try {
-    const id = await startDownload({
+    const id = startDownload({
       repo: typeof body.repo === 'string' ? body.repo : '',
       file: typeof body.file === 'string' ? body.file : '',
       filename: typeof body.filename === 'string' ? body.filename : undefined,

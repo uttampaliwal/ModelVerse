@@ -91,7 +91,10 @@ export function cancelDownload(id: string): boolean {
   return true;
 }
 
-export async function startDownload(req: DownloadRequest, modelsDir?: string): Promise<string> {
+// Fire-and-forget starter: validation + destination checks throw synchronously
+// (catchable at the call site), the actual transfer runs detached via
+// runDownload().
+export function startDownload(req: DownloadRequest, modelsDir?: string): string {
   const validationError = validateDownloadRequest(req);
   if (validationError) throw new Error(validationError);
   const destPath = resolveDestPath(req, modelsDir);
