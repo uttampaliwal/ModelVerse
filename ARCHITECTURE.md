@@ -10,7 +10,7 @@ Self-hosted chat UI + orchestration server for local LLM inference. One process:
 
 - **Server:** TypeScript + Express 5 + Zod 4. Auth = scrypt password hashing + HMAC tokens in gitignored file store (`src/auth.ts`). Windows/persistence via JSON files, no external DB.
 - **Browser:** vanilla TypeScript, no framework, 29 modules compiled in place by `tsc` (build emits `.js` next to `.ts` — all gitignored). CSS split across 16 files in `public/css/`. PWA shell via `manifest.json` + `sw.js`.
-- **State:** server = `settings.json` + `model-metadata.json` + `profiles/`, `prompts/`, `plugins.json`, `scanner-config.json` (runtime-mutable JSON); browser = `state.ts` singleton + IndexedDB conversations + localStorage settings cache.
+- **State:** server = `data/settings.json` (runtime; tracked template `settings.example.json`) + `model-metadata.json` (scanner-regenerated, untracked) + `profiles/`, `prompts/`, `plugins.json`, `scanner-config.json` (runtime-mutable JSON); browser = `state.ts` singleton + IndexedDB conversations + localStorage settings cache.
 - **ML deps:** `@huggingface/transformers` (MiniLM ONNX embeddings) for RAG; `pdfjs-dist`, `mammoth`, `xlsx`, `jszip`, `mathjax`, `highlight.js` (vendored into `public/vendor` postinstall by `scripts/vendor.mjs`).
 
 ## Layout

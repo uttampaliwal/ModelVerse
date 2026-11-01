@@ -7,7 +7,7 @@ Authoritative long-form roadmap: `docs/Roadmap.md`. This file is the engineering
 - [ ] Security headers: add CSP/X-Frame-Options/Referrer-Policy to static responses (or document proxy-only path in SECURITY.md, which is currently the standing answer)
 - [x] Escape user-controlled attribute interpolations — done: recent-chats title (`main.ts`) and code-block `data-lang`/lang label/`getLangIcon` fallback (`markdown.ts`). The `sidebar.ts:304-307` buttons were audited and are static ternaries (never user content). Still open: eslint rule/test hook to prevent new raw interpolations.
 - [ ] Resolve static-cache contradiction: etag/max-age on Express static ↔ `sw.js` shell precache ↔ manual `?v=` busting — pick one freshness model + document
-- [ ] Promote `settings.json` to `settings.example.json` tracked + runtime file gitignored under `data/` (code path update in `server.ts`)
+- [x] Promote `settings.json` → `settings.example.json` tracked template + runtime file `data/settings.json` under gitignored `data/` (code path update in `server.ts`: load falls back to defaults, save now mkdirs first).
 - [ ] `prompts/` runtime-writes into a tracked directory (e2e does this too) — move runtime prompt store to `data/prompts/` with seeds read-once
 - [ ] Consolidate `assets/logo.svg` into `public/icons/`; remove dead root `assets/` dir
 - [ ] Move `scripts/data/rag-eval-dataset.json` to `src/eval/data/` (it is eval source data, not a script)

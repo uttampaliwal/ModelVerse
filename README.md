@@ -130,7 +130,14 @@ The UI shell works offline after first load (service worker); chat still needs a
 
 ### Configuration
 
-Edit `settings.json` in the project root to set your default engine and port:
+The server's live config lives at `data/settings.json` (gitignored — the
+server rewrites it on engine switch / settings change). On a fresh clone it
+does not exist yet and defaults come from `settings.example.json` (tracked).
+To pre-seed, copy once before starting:
+
+```bash
+mkdir -p data && cp settings.example.json data/settings.json
+```
 
 ```json
 {

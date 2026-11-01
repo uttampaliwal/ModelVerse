@@ -13,5 +13,7 @@ model-metadata.json
 scanner-config.json
 plugins.json
 settings.json
+data/settings.json
 users.json
 .auth-secret
+data/

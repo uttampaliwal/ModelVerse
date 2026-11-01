@@ -340,7 +340,12 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue();
 
-const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+// Runtime settings live under data/ (gitignored): the server rewrites this
+// file on engine switch / settings change, so tracking it dirtied every
+// fresh worktree (ROADMAP). Tracked template: settings.example.json; on a
+// fresh start loadAndValidate() falls back to the default settings when
+// data/settings.json does not exist yet.
+const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 
 function getDefaultSettings(): ServerSettings {
   const profile = getActiveProfile();
@@ -376,6 +381,7 @@ function loadSettings(): void {
 
 function saveSettings(): void {
   try {
+    fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
   } catch (e) {
     log.error('Error saving settings', e as Error);

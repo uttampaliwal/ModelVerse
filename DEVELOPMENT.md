@@ -36,13 +36,13 @@ See ARCHITECTURE.md for full layout; quick nav:
 
 Server reads/writes repo-root JSON as its database:
 
-| File | Who owns it | Git status |
-|---|---|---|
-| `settings.json` | server settings + active engine rewrite | tracked today (dirties easily) |
-| `model-metadata.json` | scanner/download + PUT /api/metadata | untracked (was leaking machine paths) |
-| `profiles/*.json`, `prompts/*` | built-in seeds + runtime CRUD | tracked seeds; runtime additions appear in git status |
-| `plugins.json`, `scanner-config.json` | enable/scan config | gitignored per `.gitignore` |
-| `users.json`, `.auth-secret` | auth store | gitignored + dockerignored |
+| File                                  | Who owns it                                                                             | Git status                                            |
+| ------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `data/settings.json`                  | server settings + active engine rewrite (gitignored; template: `settings.example.json`) |
+| `model-metadata.json`                 | scanner/download + PUT /api/metadata                                                    | untracked (was leaking machine paths)                 |
+| `profiles/*.json`, `prompts/*`        | built-in seeds + runtime CRUD                                                           | tracked seeds; runtime additions appear in git status |
+| `plugins.json`, `scanner-config.json` | enable/scan config                                                                      | gitignored per `.gitignore`                           |
+| `users.json`, `.auth-secret`          | auth store                                                                              | gitignored + dockerignored                            |
 
 Rule: new runtime files must be gitignored + dockerignored from birth; seed files (profiles/prompts) may be tracked but expect runtime writes — treat them as data with code as default.
 

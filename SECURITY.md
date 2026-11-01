@@ -13,7 +13,7 @@ Self-hosted, single-operator product; strong-by-default posture, known gaps docu
 - Auth: scrypt-hashed users, HMAC-signed session tokens, tokens stored server-side (`AUTH_SECRET_FILE`), protected + guest routes separated (see `docs/Backend.md` + e2e auth checks).
 - Path traversal guards on model/metadata endpoints (covered by `e2e/api.spec.ts`).
 - Python-code plugin runs inside guardrails (`src/plugins/…` + `tests/python-guardrails.test.ts`: sandbox constraints).
-- Docker image contains only built artifacts; local state (users.json, .auth-secret, settings.json, model-metadata.json) is dockerignored.
+- Docker image contains only built artifacts; local state (users.json, .auth-secret, data/settings.json, model-metadata.json) is dockerignored.
 - Engine secrets (`OPENAI_API_KEY`) come from environment only; nothing is persisted to git.
 
 **Known gaps (accepted for a localhost tool, fix before hosting publicly)**
@@ -26,7 +26,7 @@ Self-hosted, single-operator product; strong-by-default posture, known gaps docu
 
 ## Rules for contributors
 
-- Never commit: `users.json`, `.auth-secret`, `settings.json` (runtime), `model-metadata.json` (machine paths), `plugins.json`/`scanner-config.json` runtime data — gate by `.gitignore`, verify `.dockerignore` covers them.
+- Never commit: `users.json`, `.auth-secret`, `data/settings.json` (runtime; tracked template `settings.example.json`), `model-metadata.json` (machine paths), `plugins.json`/`scanner-config.json` runtime data — gate by `.gitignore`, verify `.dockerignore` covers them.
 - Keep request limits, auth checks, and plugin guardrails unchanged — they get worse silently and nobody notices.
 - Adding endpoints: zod-validate the body and pick an auth route tier (public/protected) deliberately.
 - Escape user-controlled interpolation in HTML (`escapeHtml`).
