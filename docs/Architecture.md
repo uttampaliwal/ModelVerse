@@ -23,7 +23,7 @@ ModelVerse/
 ├── server.ts              # Express entry point
 ├── src/                   # Server-side TypeScript
 │   ├── engines/           # LLM backend adapters (llama.cpp, Ollama, OpenAI, etc.)
-│   ├── plugins/           # Plugin system + 6 built-in plugins
+│   ├── plugins/           # Plugin system + 7 built-in plugins
 │   ├── config-schemas.ts  # Zod validation schemas
 │   ├── profiles.ts        # Generation profile management
 │   ├── model-metadata.ts  # Model metadata CRUD
@@ -31,8 +31,8 @@ ModelVerse/
 │   └── logger.ts          # File-based logging
 ├── public/                # Client-side SPA
 │   ├── index.html         # App shell
-│   ├── css/               # 14 stylesheets
-│   ├── src/               # 25 TypeScript modules
+│   ├── css/               # 16 stylesheets
+│   ├── src/               # 29 TypeScript modules
 │   └── vendor/            # Vendored third-party libs
 ├── profiles/              # 7 built-in generation profiles
 ├── scripts/               # Build/utility scripts

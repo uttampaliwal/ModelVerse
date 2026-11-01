@@ -113,12 +113,17 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | POST   | `/api/chat`                  | Send message, receive SSE stream |
 | POST   | `/api/server/start`          | Load a model                     |
 | POST   | `/api/server/stop`           | Unload model                     |
+| POST   | `/api/server/switch`         | Switch active engine             |
+| POST   | `/api/server/select`         | Select/pin model selection       |
 | GET    | `/api/status`                | Server/engine status             |
 | GET    | `/api/system`                | System resources (GPU, RAM)      |
 | GET    | `/api/models`                | Scanned models                   |
-| POST   | `/api/models/scan`           | Trigger rescan                   |
+| GET    | `/api/scanner/scan`          | Trigger rescan + return models   |
+| GET    | `/api/scanner/sources`       | List selectable scan sources     |
+| GET    | `/api/scanner/config`        | Read scanner config              |
+| POST   | `/api/scanner/config`        | Update scanner config            |
 | GET    | `/api/profiles`              | List profiles                    |
-| POST   | `/api/profiles`              | Save a profile                   |
+| POST   | `/api/profiles/save`         | Save a profile                   |
 | DELETE | `/api/profiles/:name`        | Delete a profile                 |
 | GET    | `/api/settings`              | Get settings                     |
 | POST   | `/api/settings`              | Update settings                  |
@@ -137,8 +142,9 @@ Simple file-based logging with levels: `info`, `warn`, `error`, `server`.
 | GET    | `/api/prompts/:name`         | Get a prompt template            |
 | POST   | `/api/prompts`               | Create/update a prompt template  |
 | DELETE | `/api/prompts/:name`         | Delete a prompt template         |
-| GET    | `/api/metadata`              | Get model metadata               |
-| PUT    | `/api/metadata`              | Update model metadata            |
+| GET    | `/api/metadata`              | List all model metadata          |
+| GET    | `/api/metadata/:id`          | Get model metadata               |
+| PUT    | `/api/metadata/:id`          | Update model metadata            |
 | DELETE | `/api/metadata/:id`          | Delete metadata                  |
 | GET    | `/api/metadata/search`       | Search metadata                  |
 

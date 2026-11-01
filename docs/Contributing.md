@@ -69,8 +69,8 @@ ModelVerse/
 │   └── logger.ts          # Logging
 ├── public/                # Client-side SPA
 │   ├── index.html         # App shell
-│   ├── css/               # 14 stylesheets
-│   ├── src/               # 25 TypeScript modules
+│   ├── css/               # 16 stylesheets
+│   ├── src/               # 29 TypeScript modules
 │   └── vendor/            # Third-party libraries
 ├── profiles/              # Built-in generation profiles
 ├── scripts/               # Build/utility scripts

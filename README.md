@@ -215,8 +215,8 @@ ModelVerse/
 │   └── plugins/           # 7 plugins
 ├── public/                # Client-side (browser)
 │   ├── index.html         # Single-page app
-│   ├── css/               # 14 stylesheets
-│   ├── src/               # 25 TypeScript modules
+│   ├── css/               # 16 stylesheets
+│   ├── src/               # 29 TypeScript modules
 │   └── vendor/            # Vendored libraries
 ├── profiles/              # Built-in profiles (JSON)
 ├── scripts/               # Build/utility scripts + RAG eval dataset

@@ -4,7 +4,7 @@ A single-page application built with vanilla TypeScript. No framework — just t
 
 ## Entry Point
 
-`public/index.html` — App shell with CSS includes and a `<div id="app">` mount point.
+`public/index.html` — static app shell with CSS includes and a pre-rendered `.app` DOM tree (no framework mount point; modules wire into existing DOM).
 
 ## Module Overview (`public/src/`)
 
@@ -24,7 +24,7 @@ A single-page application built with vanilla TypeScript. No framework — just t
 | `attachments.ts`  | File upload, parsing (PDF, DOCX, XLSX, ZIP)                    |
 | `image-viewer.ts` | Full-screen image viewer with pinch-zoom                       |
 | `db.ts`           | IndexedDB wrapper for conversation persistence                 |
-| `state.ts`        | Global app state (`AppState`)                                  |
+| `state.ts`        | "Global" UI/cache state, IndexedDB conversations over `db.ts` (settings live in server `settings.json` + `settings.ts`) |
 | `types.ts`        | Shared TypeScript types/interfaces                             |
 | `api.ts`          | Fetch wrapper for API calls                                    |
 | `theme.ts`        | Theme switching (7 themes)                                     |
@@ -39,10 +39,9 @@ A single-page application built with vanilla TypeScript. No framework — just t
 ## State Management
 
 A simple global `AppState` object in `state.ts` holds:
-
 - `conversations` — list of all conversations
 - `ui` — UI state (folders, active tab, sidebar visibility)
-- `settings` — current app settings
+- conversation persistence lives in IndexedDB (`db.ts`); settings persist server-side (`settings.json` via `/api/settings`) with a browser cache in `settings.ts`
 - `models` — available models
 
 ## Key Patterns
@@ -54,7 +53,7 @@ A simple global `AppState` object in `state.ts` holds:
 
 ## Styling
 
-14 CSS files in `public/css/`:
+16 CSS files in `public/css/`:
 
 | File               | Purpose                                 |
 | ------------------ | --------------------------------------- |
