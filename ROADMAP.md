@@ -8,6 +8,7 @@ Authoritative long-form roadmap: `docs/Roadmap.md`. This file is the engineering
 - [x] Escape user-controlled attribute interpolations — done: recent-chats title (`main.ts`) and code-block `data-lang`/lang label/`getLangIcon` fallback (`markdown.ts`). The `sidebar.ts:304-307` buttons were audited and are static ternaries (never user content). Still open: eslint rule/test hook to prevent new raw interpolations.
 - [ ] Resolve static-cache contradiction: etag/max-age on Express static ↔ `sw.js` shell precache ↔ manual `?v=` busting — pick one freshness model + document
 - [x] Promote `settings.json` → `settings.example.json` tracked template + runtime file `data/settings.json` under gitignored `data/` (code path update in `server.ts`: load falls back to defaults, save now mkdirs first).
+- [ ] Dependabot grouping policy: major bumps in the `dev` group (e.g. `typescript@7` — incompatible with `typescript-eslint@8`) break the CI gate; consider `ignore` for majors or separate minor-patch/major groups so routine dev updates stay green.
 - [ ] `prompts/` runtime-writes into a tracked directory (e2e does this too) — move runtime prompt store to `data/prompts/` with seeds read-once
 - [ ] Consolidate `assets/logo.svg` into `public/icons/`; remove dead root `assets/` dir
 - [ ] Move `scripts/data/rag-eval-dataset.json` to `src/eval/data/` (it is eval source data, not a script)
